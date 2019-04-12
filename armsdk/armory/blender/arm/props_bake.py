@@ -7,6 +7,7 @@ import subprocess
 from bpy.types import Menu, Panel, UIList
 from bpy.props import *
 import numpy as np
+import math
 
 class ArmBakeListItem(bpy.types.PropertyGroup):
     obj: PointerProperty(type=bpy.types.Object, description="The object to bake")
@@ -254,6 +255,13 @@ class ArmBakeApplyButton(bpy.types.Operator):
             s = 12.92 * lin
         return s
 
+    def saturate(self, num, floats=True):
+        if num < 0:
+            num = 0
+        elif num > (1 if floats else 255):
+            num = (1 if floats else 255)
+        return num
+
     def execute(self, context):
         scn = context.scene
         if len(scn.arm_bakelist) == 0:
@@ -364,6 +372,52 @@ class ArmBakeApplyButton(bpy.types.Operator):
                     img_array = ndata2.ravel()
                     bpy.data.images[image.name].pixels = img_array
 
+                    #Encode it to RGBM or RGBD
+
+                    if scn.arm_bakelist_encoding == "RGBM":
+                        
+                        #encode_cache = bpy.data.images[image.name]
+
+                        #sima = context.space_data
+                        # Image
+                        ima = bpy.data.images[image.name]
+                        ima_name = ima.name
+
+                        if ima.colorspace_settings.name != 'Linear':
+                            ima.colorspace_settings.name = 'Linear'
+
+                        # Removing .exr or .hdr prefix
+                        if ima_name[-4:] == '.exr' or ima_name[-4:] == '.hdr':
+                            ima_name = ima_name[:-4]
+
+                        target_ima = bpy.data.images.get(ima_name + '_RGBM.png')
+                        if not target_ima:
+                            target_ima = bpy.data.images.new(
+                                    name = ima_name + '_RGBM.png',
+                                    width = ima.size[0],
+                                    height = ima.size[1],
+                                    alpha = True,
+                                    float_buffer = False
+                                    )
+                        
+                        num_pixels = len(ima.pixels)
+                        result_pixel = list(ima.pixels)
+                        
+                        # Encode to RGBM
+                        for i in range(0,num_pixels,4):
+                            for j in range(3):
+                                result_pixel[i+j] *= 1.0 / 8.0
+                            result_pixel[i+3] = self.saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
+                            result_pixel[i+3] = math.ceil(result_pixel[i+3] * 255.0) / 255.0
+                            for j in range(3):
+                                result_pixel[i+j] /= result_pixel[i+3]
+                        
+                        target_ima.pixels = result_pixel
+                        
+                        ima = target_ima
+
+                    else:
+                        pass
             else:
                 print("Packing images")
                 bpy.data.images[img_name].pack(as_png=True)
@@ -376,6 +430,11 @@ class ArmBakeApplyButton(bpy.types.Operator):
                     old = slot.material
                     slot.material = bpy.data.materials[old.name.split('_' + ob.name)[0]]
                     bpy.data.materials.remove(old, do_unlink=True)
+
+        # Convert to RGBM/RGBD
+        #for o in scn.arm_bakelist:
+
+            
 
         #Restore uv slots
         for o in scn.arm_bakelist:
@@ -473,10 +532,6 @@ class ArmBakeApplyButton(bpy.types.Operator):
                 else:
 
                     pass
-
-        # Convert to RGBM/RGBD
-
-        #for o in scn.arm_bakelist:
 
         return{'FINISHED'}
 
@@ -584,6 +639,9 @@ class ArmBakeClearAllButton(bpy.types.Operator):
     bl_label = 'Clear'
 
     def execute(self, context):
+        #print(os.getcwd())
+        #gimpPath = "C:/Program Files/GIMP 2/bin/gimp-2.10.exe"
+        #subprocess.call([gimpPath + ])
         scn = context.scene
         scn.arm_bakelist.clear()
         return{'FINISHED'}
@@ -633,6 +691,25 @@ def register():
         items = [('Save', 'Save', 'Save'),
                  ('Pack', 'Pack', 'Pack')],
         name = "Save or pack on apply", default='Save')
+
+    bpy.types.Scene.arm_bakelist_filtering = EnumProperty(
+        items = [('Gaussian', 'Gaussian', 'Gaussian'),
+                 ('Selective Gaussian', 'Selective Gaussian', 'Selective Gaussian')],
+        name = "Lightmap Filtering", default='Gaussian')
+    bpy.types.Scene.arm_bakelist_filtering_gauss_mode = EnumProperty(
+        items = [('Light', 'Light', 'Light'), #1.0
+                 ('Easy', 'Easy', 'Easy'), #2.0
+                 ('Medium', 'Medium', 'Medium'), #4.0
+                 ('Hard', 'Hard', 'Hard'), #8.0
+                 ('Aggressive', 'Aggressive', 'Aggressive')], #16.0
+        name = "Gaussian filter strength", default='Medium')
+    bpy.types.Scene.arm_bakelist_filtering_selective_gauss_blur_radius = FloatProperty(name="Blur Radius", description="Selective Gaussian Blur Radius", default=15.0, min=100.0, max=1.0)
+    bpy.types.Scene.arm_bakelist_filtering_selective_gauss_blur_delta = FloatProperty(name="Max Delta", description="Threshold value for selection filter", default=1.0, min=1.0, max=0.0)
+    bpy.types.Scene.arm_bakelist_filtering_despeckle = BoolProperty(name="Despeckle Filter", description="Despeckle filter", default=False) #Adaptive / Radius: 1 / BlackLvl: -1 / WhiteLvl: 256
+
+    bpy.types.Scene.arm_bakelist_direct = BoolProperty(name="Direct Contribution", description="Direct Contribution", default=True)
+    bpy.types.Scene.arm_bakelist_indirect = BoolProperty(name="Indirect Contribution", description="Indirect Contribution", default=True)
+    bpy.types.Scene.arm_bakelist_color = BoolProperty(name="Color Contribution", description="Color Contribution", default=False)
     bpy.types.Scene.arm_bakelist_denoise = BoolProperty(name="Denoise", description="Denoise baked maps", default=True)
 
 def unregister():
