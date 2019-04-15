@@ -514,16 +514,22 @@ class ArmBakeApplyButton(bpy.types.Operator):
 
                     #Add another image texture node above
                     LightmapNode = nodetree.nodes.new(type="ShaderNodeTexImage")
-                    LightmapNode.location = ((baseColorNode.location[0],baseColorNode.location[1] + 300))
-                    LightmapNode.image = bpy.data.images[ob.name + "_baked"]
+                    LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
+                    LightmapNode.image = bpy.data.images[ob.name + "_baked_RGBM.png"]
                     LightmapNode.name = "Lightmap_Image"
-                    
-                    #connect LightmapNode to MixRGB
-                    nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2]) 
 
+                    #Add the Decode RGBM
+                    DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
+                    DecodeNode.node_tree = bpy.data.node_groups["RGBM Decode"]
+                    DecodeNode.location = self.lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
+
+                    nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
+                    nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
+                    nodetree.links.new(DecodeNode.outputs[0], mixNode.inputs[2])
+                    
                     #Add a uv map behind and set it to -1
                     UVLightmap = nodetree.nodes.new(type="ShaderNodeUVMap")
-                    UVLightmap.location = ((LightmapNode.location[0] - 300, LightmapNode.location[1]))
+                    UVLightmap.location = ((LightmapNode.location[0] - 400, LightmapNode.location[1]))
                     UVLightmap.uv_map = "UVMap_baked"
                     UVLightmap.name = "Lightmap_UV"
 
