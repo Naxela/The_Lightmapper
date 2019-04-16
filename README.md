@@ -6,12 +6,14 @@ Armory Lightmapper is an addon for Armory3D that implements lightmapping and den
 It expands the existing Armory bake tool with HDR lightmap baking (diffuse + indirect contribution as 32 bit float), as well as an OIDN based denoising. It is structured in this way:
 
 - Bake 32 bit lightmap with cycles
-- Denoise the map with Intel Denoiser (Convert to an from .pfm file)
+- Denoise the map with Intel Denoiser (Convert to and from .pfm file)
 - GIMP-based filtering (Optional/WIP)
 - Encode to compatible 8-bit RGBA png with RGBM/RGBD encoding
 - Use nodegroups to decode RGBM HDR lightmaps and auto apply
 
 ![](img/Lightmap2.gif)
+
+Note, the banding in the image above is due to gif compression. Actual banding is more miniscule, but still present.
 
 ## How To
 It is implemented in the Armory baketool. Just copy or clone it into your armsdk folder. Scroll down to your "Armory Bake" tab, and set bake type to "Lightmap".
@@ -46,3 +48,7 @@ By default, the lightmaps might seem a bit weak compared to Cycles/Eevee due to 
 ## More images
 
 ![](img/Lightmap3.jpg)
+
+![](img/Lightmap4.jpg)
+
+![](img/Lightmap5.jpg)
