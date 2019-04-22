@@ -339,18 +339,6 @@ class ArmBakeApplyButton(bpy.types.Operator):
             result_pixel[i+1] = result_pixel[i+1] * d * 255 / 6
             result_pixel[i+2] = result_pixel[i+2] * d * 255 / 6
             result_pixel[i+3] = d
-
-            #Color.rgb
-            #for j in range(3):
-            #    result_pixel[i+j] *= 1.0 / 6.0;
-
-            #color.a
-            #result_pixel[i+3] = self.saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
-            #result_pixel[i+3] = math.ceil(result_pixel[i+3] * 255.0) / 255.0
-
-            #color.rgb
-            #for j in range(3):
-            #    result_pixel[i+j] /= result_pixel[i+3]
         
         target_image.pixels = result_pixel
         
@@ -394,17 +382,13 @@ class ArmBakeApplyButton(bpy.types.Operator):
                 bakemap_path = arm.utils.get_fp() +  '\\' + 'Bakedmaps' + '\\' + img_name
 
                 if scn.arm_bakelist_type == "Lightmap":
-                    #print("Writing: " + bakemap_path + ".exr")
                     bpy.data.images[img_name].filepath_raw = bakemap_path + ".exr"
                     bpy.data.images[img_name].file_format = "OPEN_EXR"
                     bpy.data.images[img_name].save()
-                    #print("Saved image: " + bakemap_path + ".exr")
                 else:
-                    #print("Writing image: " + bakemap_path + ".exr")
                     bpy.data.images[img_name].filepath_raw = bakemap_path + ".png"
                     bpy.data.images[img_name].file_format = "PNG"
                     bpy.data.images[img_name].save()
-                    #print("Saved image: " + bakemap_path + ".png")
 
                 # Convert to PFM and denoise
                 if scn.arm_bakelist_denoise:
@@ -420,16 +404,13 @@ class ArmBakeApplyButton(bpy.types.Operator):
 
                     image_output_destination = bakemap_path + ".pfm" 
 
-                    print("Writing PFM: " + image.name + ".pfm | Resolution: " + str(width) + " x " + str(height) + " px")
                     with open(image_output_destination, "wb") as fileWritePFM:
                         arm.utils.save_pfm(fileWritePFM, image_output_array)
-                    print("PFM File exported: " + image.name + ".pfm")
 
                     print("Denoising file...")
                     if arm.utils.denoise_file(bakemap_path):
                         print("File denoised: " + bakemap_path + ".pfm")
 
-                    print("Loading file back")
                     image_denoised_input_destination = bakemap_path + "_denoised.pfm"
 
                     with open(image_denoised_input_destination, "rb") as f:
@@ -447,7 +428,6 @@ class ArmBakeApplyButton(bpy.types.Operator):
                     self.encodeImageRGBD(image, bakemap_path)
 
             else:
-                #print("Packing images")
                 bpy.data.images[img_name].pack(as_png=True)
                 bpy.data.images[img_name].save()
 
@@ -541,11 +521,17 @@ class ArmBakeApplyButton(bpy.types.Operator):
                     LightmapNode.image = bpy.data.images[ob.name + "_baked_encoded.png"]
                     LightmapNode.name = "Lightmap_Image"
 
-                    #Add the Decode RGBM
-                    DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
-                    DecodeNode.node_tree = bpy.data.node_groups["RGBM Decode"]
-                    DecodeNode.location = self.lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
-                    DecodeNode.name = "Lightmap_RGBM_Decode"
+                    #Add the Decoder node
+                    if scn.arm_bakelist_encoding == "RGBM":
+                        DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
+                        DecodeNode.node_tree = bpy.data.node_groups["RGBM Decode"]
+                        DecodeNode.location = self.lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
+                        DecodeNode.name = "Lightmap_RGBM_Decode"
+                    else:
+                        DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
+                        DecodeNode.node_tree = bpy.data.node_groups["RGBD Decode"]
+                        DecodeNode.location = self.lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
+                        DecodeNode.name = "Lightmap_RGBD_Decode"
 
                     nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
                     nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
