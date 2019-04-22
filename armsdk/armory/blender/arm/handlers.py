@@ -112,10 +112,13 @@ def on_load_post(context):
 def reload_blend_data():
     armory_pbr = bpy.data.node_groups.get('Armory PBR')
     armory_rgbm = bpy.data.node_groups.get('RGBM Decode')
+    armory_rgbd = bpy.data.node_groups.get('RGBD Decode')
     if armory_pbr == None:
         load_library('Armory PBR')
     if armory_rgbm == None:
         load_library('RGBM Decode')
+    if armory_rgbd == None:
+        load_library('RGBD Decode')
 
 def load_library(asset_name):
     if bpy.data.filepath.endswith('arm_data.blend'): # Prevent load in library itself
