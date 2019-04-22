@@ -262,6 +262,105 @@ class ArmBakeApplyButton(bpy.types.Operator):
             num = (1 if floats else 255)
         return num
 
+    def encodeImageRGBM(self, image, bakemap_path):
+        print("Encoding RGBM")
+        input_image = bpy.data.images[image.name]
+        image_name = input_image.name
+
+        if input_image.colorspace_settings.name != 'Linear':
+            input_image.colorspace_settings.name = 'Linear'
+
+        # Removing .exr or .hdr prefix
+        if image_name[-4:] == '.exr' or image_name[-4:] == '.hdr':
+            image_name = image_name[:-4]
+
+        target_image = bpy.data.images.get(image_name + '_encoded.png')
+        if not target_image:
+            target_image = bpy.data.images.new(
+                    name = image_name + '_encoded.png',
+                    width = input_image.size[0],
+                    height = input_image.size[1],
+                    alpha = True,
+                    float_buffer = False
+                    )
+        
+        num_pixels = len(input_image.pixels)
+        result_pixel = list(input_image.pixels)
+
+        for i in range(0,num_pixels,4):
+            for j in range(3):
+                result_pixel[i+j] *= 1.0 / 6.0;
+            result_pixel[i+3] = self.saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
+            result_pixel[i+3] = math.ceil(result_pixel[i+3] * 255.0) / 255.0
+            for j in range(3):
+                result_pixel[i+j] /= result_pixel[i+3]
+        
+        target_image.pixels = result_pixel
+        
+        input_image = target_image
+
+        #Save RGBM
+        input_image.filepath_raw = bakemap_path + "_encoded.png"
+        input_image.file_format = "PNG"
+        input_image.save()
+
+    def encodeImageRGBD(self, image, bakemap_path):
+        print("Encoding RGBD")
+        input_image = bpy.data.images[image.name]
+        image_name = input_image.name
+
+        if input_image.colorspace_settings.name != 'Linear':
+            input_image.colorspace_settings.name = 'Linear'
+
+        # Removing .exr or .hdr prefix
+        if image_name[-4:] == '.exr' or image_name[-4:] == '.hdr':
+            image_name = image_name[:-4]
+
+        target_image = bpy.data.images.get(image_name + '_encoded.png')
+        if not target_image:
+            target_image = bpy.data.images.new(
+                    name = image_name + '_encoded.png',
+                    width = input_image.size[0],
+                    height = input_image.size[1],
+                    alpha = True,
+                    float_buffer = False
+                    )
+        
+        num_pixels = len(input_image.pixels)
+        result_pixel = list(input_image.pixels)
+
+        for i in range(0,num_pixels,4):
+
+            m = self.saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
+            d = max(6 / m, 1)
+            d = self.saturate( math.floor(d) / 255 )
+
+            result_pixel[i] = result_pixel[i] * d * 255 / 6
+            result_pixel[i+1] = result_pixel[i+1] * d * 255 / 6
+            result_pixel[i+2] = result_pixel[i+2] * d * 255 / 6
+            result_pixel[i+3] = d
+
+            #Color.rgb
+            #for j in range(3):
+            #    result_pixel[i+j] *= 1.0 / 6.0;
+
+            #color.a
+            #result_pixel[i+3] = self.saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
+            #result_pixel[i+3] = math.ceil(result_pixel[i+3] * 255.0) / 255.0
+
+            #color.rgb
+            #for j in range(3):
+            #    result_pixel[i+j] /= result_pixel[i+3]
+        
+        target_image.pixels = result_pixel
+        
+        input_image = target_image
+
+        #Save RGBD
+        input_image.filepath_raw = bakemap_path + "_encoded.png"
+        input_image.file_format = "PNG"
+        input_image.save()
+
     def execute(self, context):
         scn = context.scene
         if len(scn.arm_bakelist) == 0:
@@ -295,59 +394,29 @@ class ArmBakeApplyButton(bpy.types.Operator):
                 bakemap_path = arm.utils.get_fp() +  '\\' + 'Bakedmaps' + '\\' + img_name
 
                 if scn.arm_bakelist_type == "Lightmap":
-                    print("Writing: " + bakemap_path + ".exr")
+                    #print("Writing: " + bakemap_path + ".exr")
                     bpy.data.images[img_name].filepath_raw = bakemap_path + ".exr"
                     bpy.data.images[img_name].file_format = "OPEN_EXR"
                     bpy.data.images[img_name].save()
-                    print("Saved image: " + bakemap_path + ".exr")
+                    #print("Saved image: " + bakemap_path + ".exr")
                 else:
-                    print("Writing image: " + bakemap_path + ".exr")
+                    #print("Writing image: " + bakemap_path + ".exr")
                     bpy.data.images[img_name].filepath_raw = bakemap_path + ".png"
                     bpy.data.images[img_name].file_format = "PNG"
                     bpy.data.images[img_name].save()
-                    print("Saved image: " + bakemap_path + ".png")
+                    #print("Saved image: " + bakemap_path + ".png")
 
-                # Convert to PFM
-
+                # Convert to PFM and denoise
                 if scn.arm_bakelist_denoise:
 
                     image = bpy.data.images[img_name]
                     width = image.size[0]
                     height = image.size[1]
 
-                    print("Setting array")
-                    #Todo - Linear to SRGB color conversion for combined maps
                     image_output_array = np.zeros([width, height, 3], dtype="float32")
                     image_output_array = np.array(image.pixels)
                     image_output_array = image_output_array.reshape(height, width, 4)
                     image_output_array = np.float32(image_output_array[:,:,:3])
-
-                    #TOOOOOO SLOW! For debugging only
-                    # for x in range(width):
-                    #     for y in range(height):
-                            
-                    #         print("x: " + str(x) + "| y: " + str(y))
-
-                    #         target = [y, x]
-
-                    #         index = (target[1] * width + target[0]) * 4
-
-                    #         pixel = [
-                    #             image.pixels[index],
-                    #             image.pixels[index + 1],
-                    #             image.pixels[index + 2],
-                    #             image.pixels[index + 3]
-                    #         ]
-
-                    #         image_output_array[y][x] = [pixel[0], pixel[1], pixel[2]]
-
-                    #print("Denoising: C")
-                    #ar_rotations = 3
-                    #image_output_array = np.rot90(image_output_array, ar_rotations)
-
-                    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    # REMEMBER TO CHECK FOR THE FOLLOWING!!!
-                    # IF MATERIAL NAMES HAS UNDERSCORES _ IN THE NAME, IT BREAKS THE SCRIPT
 
                     image_output_destination = bakemap_path + ".pfm" 
 
@@ -361,8 +430,7 @@ class ArmBakeApplyButton(bpy.types.Operator):
                         print("File denoised: " + bakemap_path + ".pfm")
 
                     print("Loading file back")
-                    image_denoised_input_destination = bakemap_path + "_denoised.pfm" 
-                    #denoised_img = bpy.data.images.new(image.name+"_denoised", width, height, alpha=False, float_buffer=True)
+                    image_denoised_input_destination = bakemap_path + "_denoised.pfm"
 
                     with open(image_denoised_input_destination, "rb") as f:
                         denoise_data, scale = arm.utils.load_pfm(f)
@@ -372,59 +440,14 @@ class ArmBakeApplyButton(bpy.types.Operator):
                     img_array = ndata2.ravel()
                     bpy.data.images[image.name].pixels = img_array
 
-                    #Encode it to RGBM or RGBD
+                #Encode it to RGBM or RGBD
+                if scn.arm_bakelist_encoding == "RGBM":
+                    self.encodeImageRGBM(image, bakemap_path)
+                else:
+                    self.encodeImageRGBD(image, bakemap_path)
 
-                    if scn.arm_bakelist_encoding == "RGBM":
-                        
-                        #encode_cache = bpy.data.images[image.name]
-
-                        #sima = context.space_data
-                        # Image
-                        ima = bpy.data.images[image.name]
-                        ima_name = ima.name
-
-                        if ima.colorspace_settings.name != 'Linear':
-                            ima.colorspace_settings.name = 'Linear'
-
-                        # Removing .exr or .hdr prefix
-                        if ima_name[-4:] == '.exr' or ima_name[-4:] == '.hdr':
-                            ima_name = ima_name[:-4]
-
-                        target_ima = bpy.data.images.get(ima_name + '_RGBM.png')
-                        if not target_ima:
-                            target_ima = bpy.data.images.new(
-                                    name = ima_name + '_RGBM.png',
-                                    width = ima.size[0],
-                                    height = ima.size[1],
-                                    alpha = True,
-                                    float_buffer = False
-                                    )
-                        
-                        num_pixels = len(ima.pixels)
-                        result_pixel = list(ima.pixels)
-                        
-                        # Encode to RGBM
-                        for i in range(0,num_pixels,4):
-                            for j in range(3):
-                                result_pixel[i+j] *= 1.0 / 8.0
-                            result_pixel[i+3] = self.saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
-                            result_pixel[i+3] = math.ceil(result_pixel[i+3] * 255.0) / 255.0
-                            for j in range(3):
-                                result_pixel[i+j] /= result_pixel[i+3]
-                        
-                        target_ima.pixels = result_pixel
-                        
-                        ima = target_ima
-
-                        #Save RGBM
-                        ima.filepath_raw = bakemap_path + "_RGBM.png"
-                        ima.file_format = "PNG"
-                        ima.save()
-
-                    else:
-                        pass
             else:
-                print("Packing images")
+                #print("Packing images")
                 bpy.data.images[img_name].pack(as_png=True)
                 bpy.data.images[img_name].save()
 
@@ -515,13 +538,14 @@ class ArmBakeApplyButton(bpy.types.Operator):
                     #Add another image texture node above
                     LightmapNode = nodetree.nodes.new(type="ShaderNodeTexImage")
                     LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
-                    LightmapNode.image = bpy.data.images[ob.name + "_baked_RGBM.png"]
+                    LightmapNode.image = bpy.data.images[ob.name + "_baked_encoded.png"]
                     LightmapNode.name = "Lightmap_Image"
 
                     #Add the Decode RGBM
                     DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
                     DecodeNode.node_tree = bpy.data.node_groups["RGBM Decode"]
                     DecodeNode.location = self.lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
+                    DecodeNode.name = "Lightmap_RGBM_Decode"
 
                     nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
                     nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
@@ -577,15 +601,15 @@ class ArmBakeCleanButton(bpy.types.Operator):
 
                     prefix = "Lightmap_"
                     if n.name == prefix + "Image":
-                        print("Remove: " + str(n) + prefix + "Image")
                         nodetree.nodes.remove(nodetree.nodes[n.name])
 
                     if n.name == prefix + "Multiplication":
-                        print("Remove: " + str(n) + prefix + "Multiplication")
                         nodetree.nodes.remove(nodetree.nodes[n.name])
 
                     if n.name == prefix + "UV":
-                        print("Remove: " + str(n) + prefix + "UV")
+                        nodetree.nodes.remove(nodetree.nodes[n.name])
+
+                    if n.name == prefix + "RGBM_Decode":
                         nodetree.nodes.remove(nodetree.nodes[n.name])
 
                     if n.name == prefix + "BasecolorNode":
@@ -594,6 +618,10 @@ class ArmBakeCleanButton(bpy.types.Operator):
                 if hasPreviousBasecolor:
                     nodetree.links.new(mainNode.inputs[0], nodetree.nodes[prefix+"BasecolorNode"].outputs[0])
                 
+        #bpy.ops.arm_bake_remove_baked_materials()
+        for mat in bpy.data.materials:
+            if mat.name.endswith('_baked'):
+                bpy.data.materials.remove(mat, do_unlink=True)
 
         return{'FINISHED'}
 
@@ -702,6 +730,12 @@ def register():
         items = [('Gaussian', 'Gaussian', 'Gaussian'),
                  ('Selective Gaussian', 'Selective Gaussian', 'Selective Gaussian')],
         name = "Lightmap Filtering", default='Gaussian')
+    bpy.types.Scene.arm_bakelist_preset = EnumProperty(
+        items = [('Light', 'Light', 'Light'),
+                 ('Easy', 'Easy', 'Easy'),
+                 ('Medium', 'Medium', 'Medium'),
+                 ('Aggressive', 'Aggressive', 'Aggressive')],
+        name = "Gaussian filter strength", default='Medium')
     bpy.types.Scene.arm_bakelist_filtering_gauss_mode = EnumProperty(
         items = [('Light', 'Light', 'Light'), #1.0
                  ('Easy', 'Easy', 'Easy'), #2.0
