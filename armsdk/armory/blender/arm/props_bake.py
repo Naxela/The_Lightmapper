@@ -376,10 +376,10 @@ class ArmBakeApplyButton(bpy.types.Operator):
                     self.report({'INFO'}, "Please save your file first")
                     return{'FINISHED'}
 
-                if not os.path.isdir(arm.utils.get_fp() + "\\Bakedmaps"):
-                    os.mkdir(arm.utils.get_fp() + "\\Bakedmaps")
+                if not os.path.isdir(arm.utils.get_fp() + "/Bakedmaps"):
+                    os.mkdir(arm.utils.get_fp() + "/Bakedmaps")
 
-                bakemap_path = arm.utils.get_fp() +  '\\' + 'Bakedmaps' + '\\' + img_name
+                bakemap_path = arm.utils.get_fp() +  '/' + 'Bakedmaps' + '/' + img_name
 
                 if scn.arm_bakelist_type == "Lightmap":
                     bpy.data.images[img_name].filepath_raw = bakemap_path + ".exr"
@@ -560,8 +560,8 @@ class ArmBakeCleanButton(bpy.types.Operator):
 
         scn = context.scene
         
-        if os.path.isdir(arm.utils.get_fp() + "\\BakedMaps"):
-            shutil.rmtree(arm.utils.get_fp() + "\\Bakedmaps")
+        if os.path.isdir(arm.utils.get_fp() + "/Bakedmaps"):
+            shutil.rmtree(arm.utils.get_fp() + "/Bakedmaps")
 
         for o in scn.arm_bakelist:
             ob = o.obj

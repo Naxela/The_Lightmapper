@@ -733,20 +733,22 @@ def denoise_file(input_path):
     sdk_path = arm.utils.get_sdk_path()
     oidn_path = sdk_path + '/lib/armory_tools/oidn/'
 
-    if arm.utils.get_os() == 'win':
-        oidn_path = oidn_path + 'denoise-win.exe'
-
-    elif arm.utils.get_os() == 'mac':
-        oidn_path = oidn_path + 'denoise-osx'
-
-    else:
-        oidn_path = oidn_path + 'denoise-linux'
-
     oidn_input_file = input_path + '.pfm'
     oidn_output_file = input_path + '_denoised.pfm'
 
-    oidnPipe = subprocess.Popen( [oidn_path, '-hdr', oidn_input_file, '-o', oidn_output_file], shell=True)
-    #print("Wait, Com")
+    if arm.utils.get_os() == 'win':
+        oidn_path = oidn_path + 'denoise-win.exe'
+        pipePath = [oidn_path, '-hdr', oidn_input_file, '-o', oidn_output_file]
+
+    elif arm.utils.get_os() == 'mac':
+        oidn_path = oidn_path + 'denoise-osx'
+        pipePath = [oidn_path + ' -hdr ' + oidn_input_file + ' -o ' + oidn_output_file]
+
+    else:
+        oidn_path = oidn_path + 'denoise-linux'
+        pipePath = [oidn_path + ' -hdr ' + oidn_input_file + ' -o ' + oidn_output_file]
+
+    oidnPipe = subprocess.Popen(pipePath, shell=True)
     oidnPipe.communicate()[0]
 
     return True
