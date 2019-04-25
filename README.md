@@ -29,21 +29,45 @@ When you click Apply afterwards, these maps will be saved and denoised. When the
 By default, the lightmaps might seem a bit weak compared to Cycles/Eevee due to different color management, but it can be adjusted by:
 - Try messing around with the Armory tonemappers
 - Crank up the exposure value (Look under "Film" in Cycles)
-- Try out the latest Postprocess settings (Addon here: https://github.com/Naxela/PPM)
+- Try out the latest Postprocess settings (Addon here: https://github.com/Naxela/PPM) - It opens up for node settings, such as exposure, gamma, gain, etc. which can help in terms of that.
 
-
-## Limitations / Todo
+## Todo
 - Look into LogLUV Encoding (More expensive, but better interpolation/less banding)
-- RGBD and perhaps RGBE encoding.
 - More work with GIMP postprocess filters
 	- Ordinary gaussian filtering
 	- Selective gaussian filtering
-	- Custom A-Trous filtering
 	- Dither/Debanding
+- Maybe use PIL or SciPy instead of GIMP
 - Look into HDR/EXR support.
-- Make further light calibrations to match either
+- Make further light calibrations to match
 - Fix errors
-- Test Linux/OSX (I've only tested Windows for now)
+- More testing/calibration
+- Lightmapping image tools
+- Pack multiple lightmaps into a single atlas
+- Find compression algorithms
+- Network-distributed rendering
+- Set max-range manually
+- Make a less-cluttered bake panel
+- Separable direct and indirect contribution
+- Lightmap blending
+- Lightmap condition sets
+- Directional lightmaps
+- Make cycles rendering presets (such as Preview, Medium, High, Production)
+- Multi-threaded encoding
+- More condition checkup on bake and apply (to prevent wasted time and reuse)
+- Investigate odd texture overrides in Armory when fake-users are applied for a material
+- Investigate odd uv shifting in Armory
+
+## Tips
+
+- Before you apply/denoise, make sure you turn your displays to "Wireframe" or "Solid" mode, as it seems to crash otherwise once the textures are applied (Due to the Blender Eevee version that Armory 0.6 comes bundled with)
+- If your results look weird, it MIGHT help to:
+	- Change your world/environment settings
+	- OR turn of "Irradiance" and "Radiance" probes under the renderpath world settings, maybe due to spherical harmonics being applied to the baked result.
+- Use RGBM encoding for most of your stuff, although RGBD might look better with highlights in rare cases.
+- Don't use underscores for material or object names, it breaks the bake-tool! Use dots or lines instead
+- Due to the compression of light values, interior values can really be a pain but it's possible to get good results with even large ranges
+- Controlling the lightmap properties with a brightness/contrast node can be useful
 
 ## More images
 
@@ -52,3 +76,7 @@ By default, the lightmaps might seem a bit weak compared to Cycles/Eevee due to 
 ![](img/Lightmap4.jpg)
 
 ![](img/Lightmap5.jpg)
+
+![](img/Lightmap6.jpg)
+
+![](img/Lightmap7.jpg)
