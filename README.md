@@ -71,6 +71,8 @@ By default, the lightmaps might seem a bit weak compared to Cycles/Eevee due to 
 
 ## More images
 
+Everyone of these images are screenshots from inside Armory, most at 256x256 or 512x512 resolution lightmaps, easily running 60 fps. Baking only took a few minutes, often mere seconds including denoising.
+
 ![](img/Lightmap3.jpg)
 
 ![](img/Lightmap4.jpg)
@@ -84,3 +86,9 @@ By default, the lightmaps might seem a bit weak compared to Cycles/Eevee due to 
 ![](img/Lightmap8.jpg)
 
 ![](img/Lightmap9.jpg)
+
+![](img/Lightmap10.jpg)
+
+![](img/Lightmap11.gif)
+
+![](img/Lightmap12.gif)

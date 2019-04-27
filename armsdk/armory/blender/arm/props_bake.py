@@ -678,6 +678,17 @@ class ArmBakeRemoveBakedMaterialsButton(bpy.types.Operator):
                 bpy.data.materials.remove(mat, do_unlink=True)
         return{'FINISHED'}
 
+class ArmBakeLightmapImageToolsEncodeRGBM(bpy.types.Operator):
+    '''Encode HDR to RGBM'''
+    bl_idname = 'arm.encode_hdr_to_rgbm'
+    bl_label = 'Encode HDR to RGBM'
+    bl_description = 'Encode 32-bit HDR Image to RGBM encoded PNG'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        print("Testing")
+        #ArmBakeApplyButton.encodeImageRGBM(self, )
+
 def register():
     bpy.utils.register_class(ArmBakeListItem)
     bpy.utils.register_class(ArmBakeList)
@@ -692,6 +703,7 @@ def register():
     bpy.utils.register_class(ArmBakeAddSelectedButton)
     bpy.utils.register_class(ArmBakeClearAllButton)
     bpy.utils.register_class(ArmBakeRemoveBakedMaterialsButton)
+    bpy.utils.register_class(ArmBakeLightmapImageToolsEncodeRGBM)
     bpy.types.Scene.arm_bakelist_scale = FloatProperty(name="Resolution", description="Resolution scale", default=100.0, min=1, max=1000, soft_min=1, soft_max=100.0, subtype='PERCENTAGE')
     bpy.types.Scene.arm_bakelist_margin = FloatProperty(name="UV Margin", description="UV Island Margin", default=0.05, min=0.0, max=1.0, soft_min=0.0, soft_max=1.0)
     bpy.types.Scene.arm_bakelist = CollectionProperty(type=ArmBakeListItem)
@@ -753,3 +765,4 @@ def unregister():
     bpy.utils.unregister_class(ArmBakeAddSelectedButton)
     bpy.utils.unregister_class(ArmBakeClearAllButton)
     bpy.utils.unregister_class(ArmBakeRemoveBakedMaterialsButton)
+    bpy.utils.unregister_class(ArmBakeLightmapImageToolsEncodeRGBM)
