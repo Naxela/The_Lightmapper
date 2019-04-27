@@ -80,3 +80,7 @@ By default, the lightmaps might seem a bit weak compared to Cycles/Eevee due to 
 ![](img/Lightmap6.jpg)
 
 ![](img/Lightmap7.jpg)
+
+![](img/Lightmap8.jpg)
+
+![](img/Lightmap9.jpg)

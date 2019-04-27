@@ -520,6 +520,7 @@ class ArmBakeApplyButton(bpy.types.Operator):
                     LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
                     LightmapNode.image = bpy.data.images[ob.name + "_baked_encoded.png"]
                     LightmapNode.name = "Lightmap_Image"
+                    LightmapNode.color_space = "NONE"
 
                     #Add the Decoder node
                     if scn.arm_bakelist_encoding == "RGBM":
