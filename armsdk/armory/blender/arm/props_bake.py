@@ -566,6 +566,8 @@ class ArmBakeCleanButton(bpy.types.Operator):
 
         for o in scn.arm_bakelist:
             ob = o.obj
+
+            o.data.uv_layers.remove(o.data.uv_layers["UVMap_baked"])
             
             for m in ob.material_slots:
 
@@ -667,6 +669,35 @@ class ArmBakeClearAllButton(bpy.types.Operator):
         scn.arm_bakelist.clear()
         return{'FINISHED'}
 
+class ArmBakeShiftUVNodes(bpy.types.Operator):
+    '''Shift the UVMap nodes'''
+    bl_idname = 'arm.bake_shift_uvnodes'
+    bl_label = 'Shift UVMap Nodes'
+    #Tempory function to shift nodes for Armory compatibility
+
+    def execute(self, context):
+        for mat in bpy.data.materials:
+            nodetree = mat.node_tree
+
+            for n in nodetree.nodes:
+
+                if n.type == "TEX_IMAGE":
+
+                    if len(n.inputs[0].links) == 0:
+                        newlocation = ((n.location[0] - 400, n.location))
+                        uvNode = nodetree.nodes.new(type="ShaderNodeUVMap")
+                        uvNode.location = ((n.location[0] - 400, n.location[1]))
+                        nodetree.links.new(n.inputs[0], uvNode.outputs[0])
+                        uvNode.uv_map = "UVMap"
+
+                if n.type == "UVMAP":
+                    if n.uv_map == "UVMap":
+                        n.uv_map = "UVMap_baked"
+                    else:
+                        n.uv_map = "UVMap"
+
+        return{'FINISHED'}
+
 class ArmBakeRemoveBakedMaterialsButton(bpy.types.Operator):
     '''Clear the list'''
     bl_idname = 'arm.bake_remove_baked_materials'
@@ -704,6 +735,7 @@ def register():
     bpy.utils.register_class(ArmBakeClearAllButton)
     bpy.utils.register_class(ArmBakeRemoveBakedMaterialsButton)
     bpy.utils.register_class(ArmBakeLightmapImageToolsEncodeRGBM)
+    bpy.utils.register_class(ArmBakeShiftUVNodes)
     bpy.types.Scene.arm_bakelist_scale = FloatProperty(name="Resolution", description="Resolution scale", default=100.0, min=1, max=1000, soft_min=1, soft_max=100.0, subtype='PERCENTAGE')
     bpy.types.Scene.arm_bakelist_margin = FloatProperty(name="UV Margin", description="UV Island Margin", default=0.05, min=0.0, max=1.0, soft_min=0.0, soft_max=1.0)
     bpy.types.Scene.arm_bakelist = CollectionProperty(type=ArmBakeListItem)
@@ -766,3 +798,4 @@ def unregister():
     bpy.utils.unregister_class(ArmBakeClearAllButton)
     bpy.utils.unregister_class(ArmBakeRemoveBakedMaterialsButton)
     bpy.utils.unregister_class(ArmBakeLightmapImageToolsEncodeRGBM)
+    bpy.utils.unregister_class(ArmBakeShiftUVNodes)

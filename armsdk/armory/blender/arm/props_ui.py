@@ -1082,6 +1082,11 @@ class ArmBakePanel(bpy.types.Panel):
             layout.prop(scn, 'arm_bakelist_encoding')
         layout.prop(scn, 'arm_bakelist_denoise')
 
+
+        row = layout.row(align=True)
+        row.alignment = 'EXPAND'
+        row.operator('arm.bake_shift_uvnodes')
+
         rows = 2
         if len(scn.arm_bakelist) > 1:
             rows = 4
