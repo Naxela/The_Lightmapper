@@ -231,6 +231,15 @@ class ArmBakeButton(bpy.types.Operator):
             o.obj.select_set(True)
         obs.active = scn.arm_bakelist[0].obj
 
+        filter_list = {}
+        if scn.arm_bakelist_direct:
+            if scn.arm_bakelist_indirect:
+                filter_list = {"DIRECT", "INDIRECT"}
+            else:
+                filter_list = {"DIRECT"}
+        else:
+            filter_list = {"INDIRECT"}
+
         if scn.arm_bakelist_type == "Lightmap":
             bpy.ops.object.bake('INVOKE_DEFAULT', type='DIFFUSE', pass_filter={"DIRECT", "INDIRECT"}, margin=4)
         else:
@@ -390,10 +399,11 @@ class ArmBakeApplyButton(bpy.types.Operator):
                     bpy.data.images[img_name].file_format = "PNG"
                     bpy.data.images[img_name].save()
 
+                image = bpy.data.images[img_name]
+
                 # Convert to PFM and denoise
                 if scn.arm_bakelist_denoise:
-
-                    image = bpy.data.images[img_name]
+                    
                     width = image.size[0]
                     height = image.size[1]
 
@@ -520,7 +530,7 @@ class ArmBakeApplyButton(bpy.types.Operator):
                     LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
                     LightmapNode.image = bpy.data.images[ob.name + "_baked_encoded.png"]
                     LightmapNode.name = "Lightmap_Image"
-                    LightmapNode.color_space = "NONE"
+                    #LightmapNode.color_space = "NONE"
 
                     #Add the Decoder node
                     if scn.arm_bakelist_encoding == "RGBM":
@@ -567,7 +577,8 @@ class ArmBakeCleanButton(bpy.types.Operator):
         for o in scn.arm_bakelist:
             ob = o.obj
 
-            o.data.uv_layers.remove(o.data.uv_layers["UVMap_baked"])
+            if hasattr(o, 'data'):
+                o.data.uv_layers.remove(o.data.uv_layers["UVMap_baked"])
             
             for m in ob.material_slots:
 
