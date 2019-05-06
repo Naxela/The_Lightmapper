@@ -68,27 +68,53 @@ By default, the lightmaps might seem a bit weak compared to Cycles/Eevee due to 
 - Don't use underscores for material or object names, it breaks the bake-tool! Use dots or lines instead
 - Due to the compression of light values, interior values can really be a pain but it's possible to get good results with even large ranges
 - Controlling the lightmap properties with a brightness/contrast node can be useful
+- Remember to remove baked materials before you startup Armory
+- Use the shift UV nodes button to shift between Eevee UV setup and Armory UV setup.
+- Sometimes Armory might keep old non-compatible textures, reload Armory scene to delete those (CTRL + SHIFT + O and Enter)
 
 ## More images
 
 Everyone of these images are screenshots from inside Armory, most at 256x256 or 512x512 resolution lightmaps, easily running 60 fps. Baking only took a few minutes, often mere seconds including denoising.
 
-![](img/Lightmap3.jpg)
+![](img/Lightmap14.jpg)
 
-![](img/Lightmap4.jpg)
+![](img/Lightmap13.jpg)
 
-![](img/Lightmap5.jpg)
-
-![](img/Lightmap6.jpg)
-
-![](img/Lightmap7.jpg)
-
-![](img/Lightmap8.jpg)
-
-![](img/Lightmap9.jpg)
-
-![](img/Lightmap10.jpg)
+![](img/Lightmap12.gif)
 
 ![](img/Lightmap11.gif)
 
-![](img/Lightmap12.gif)
+![](img/Lightmap10.jpg)
+
+![](img/Lightmap9.jpg)
+
+![](img/Lightmap8.jpg)
+
+![](img/Lightmap7.jpg)
+
+![](img/Lightmap6.jpg)
+
+![](img/Lightmap5.jpg)
+
+![](img/Lightmap4.jpg)
+
+![](img/Lightmap3.jpg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
