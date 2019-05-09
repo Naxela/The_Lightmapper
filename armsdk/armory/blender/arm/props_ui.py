@@ -1080,6 +1080,8 @@ class ArmBakePanel(bpy.types.Panel):
         layout.prop(scn, 'arm_bakelist_type')
         if scn.arm_bakelist_type == "Lightmap":
             layout.prop(scn, 'arm_bakelist_encoding')
+            layout.prop(scn, 'arm_bakelist_direct')
+            layout.prop(scn, 'arm_bakelist_indirect')
         layout.prop(scn, 'arm_bakelist_denoise')
 
 
