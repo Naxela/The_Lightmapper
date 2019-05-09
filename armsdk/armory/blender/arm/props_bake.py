@@ -119,6 +119,10 @@ class ArmBakeButton(bpy.types.Operator):
         if len(scn.arm_bakelist) == 0:
             return{'FINISHED'}
 
+        if scn.render.engine != "CYCLES":
+            self.report({'INFO'}, "Please change to Cycles rendering engine")
+            return{'FINISHED'}
+
         self.report({'INFO'}, "Once baked, hit 'Armory Bake - Apply' to pack lightmaps")
 
         # At least one material required for now..
@@ -241,7 +245,7 @@ class ArmBakeButton(bpy.types.Operator):
             filter_list = {"INDIRECT"}
 
         if scn.arm_bakelist_type == "Lightmap":
-            bpy.ops.object.bake('INVOKE_DEFAULT', type='DIFFUSE', pass_filter={"DIRECT", "INDIRECT"}, margin=4)
+            bpy.ops.object.bake('INVOKE_DEFAULT', type='DIFFUSE', pass_filter=filter_list, margin=4)
         else:
             bpy.ops.object.bake('INVOKE_DEFAULT', type='COMBINED')
 
@@ -577,8 +581,17 @@ class ArmBakeCleanButton(bpy.types.Operator):
         for o in scn.arm_bakelist:
             ob = o.obj
 
-            if hasattr(o, 'data'):
-                o.data.uv_layers.remove(o.data.uv_layers["UVMap_baked"])
+            if ob.type == "MESH":
+                if "UVMap_baked" in ob.data.uv_layers:
+                    ob.data.uv_layers.remove(ob.data.uv_layers["UVMap_baked"])
+
+            for slot in ob.material_slots:
+                mat = slot.material
+                # Remove temp material
+                if mat.name.endswith('_temp'):
+                    old = slot.material
+                    slot.material = bpy.data.materials[old.name.split('_' + ob.name)[0]]
+                    bpy.data.materials.remove(old, do_unlink=True)
             
             for m in ob.material_slots:
 
@@ -617,10 +630,10 @@ class ArmBakeCleanButton(bpy.types.Operator):
 
                 if hasPreviousBasecolor:
                     nodetree.links.new(mainNode.inputs[0], nodetree.nodes[prefix+"BasecolorNode"].outputs[0])
-                
+
         #bpy.ops.arm_bake_remove_baked_materials()
         for mat in bpy.data.materials:
-            if mat.name.endswith('_baked'):
+            if mat.name.endswith('_baked') or mat.name.endswith('_temp'):
                 bpy.data.materials.remove(mat, do_unlink=True)
 
         return{'FINISHED'}
