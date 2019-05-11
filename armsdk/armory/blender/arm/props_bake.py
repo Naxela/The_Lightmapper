@@ -564,6 +564,14 @@ class ArmBakeApplyButton(bpy.types.Operator):
 
                     pass
 
+        for mat in bpy.data.materials:
+            if mat.name.endswith('_baked'):
+                bpy.data.materials.remove(mat, do_unlink=True)
+
+        for img in bpy.data.images:
+            if not img.users:
+                bpy.data.images.remove(img)
+
         return{'FINISHED'}
 
 class ArmBakeCleanButton(bpy.types.Operator):
@@ -635,6 +643,10 @@ class ArmBakeCleanButton(bpy.types.Operator):
         for mat in bpy.data.materials:
             if mat.name.endswith('_baked') or mat.name.endswith('_temp'):
                 bpy.data.materials.remove(mat, do_unlink=True)
+
+        for img in bpy.data.images:
+            if not img.users:
+                bpy.data.images.remove(img)
 
         return{'FINISHED'}
 
