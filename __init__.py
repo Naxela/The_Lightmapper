@@ -797,8 +797,80 @@ def HDRLM_Build(self, context):
                     ndata2 = np.dstack( (ndata, np.ones((width,height)) )  )
                     img_array = ndata2.ravel()
                     bpy.data.images[image.name].pixels = img_array
+                    bpy.data.images[image.name].filepath_raw = bakemap_path + "_denoised.hdr"
+                    bpy.data.images[image.name].file_format = "HDR"
+                    bpy.data.images[image.name].save()
 
                 #Filter here
+                if scene.hdrlm_filtering_use:
+                    if scene.hdrlm_denoise_use:
+                        filter_file_input = bakemap_path + "_denoised.hdr"
+                    else:
+                        filter_file_input = bakemap_path + ".hdr"
+
+                    gimpPath = scene.hdrlm_filtering_gimp_path
+                    filter_file_output = bakemap_path + "_finalized.hdr"
+
+                    if platform.system() == 'Windows':
+                        gimpPath = os.path.join(bpy.path.abspath(gimpPath),"gimp-console-2.10.exe")
+                        #gimpPipe = 
+                    elif platform.system() == 'Darwin':
+                        self.report({'INFO'}, "Linux not implemented yet")
+                        return{'FINISHED'}
+                    else:
+                        self.report({'INFO'}, "Linux not implemented yet")
+                        return{'FINISHED'}
+
+                    os.chdir(os.path.dirname(bakemap_path))
+
+                    if scene.hdrlm_filtering_mode == "Gaussian":
+                        pfilter = "pdb.plug_in_gauss_rle(image, drw, "+str(scene.hdrlm_filtering_gaussian_strength)+", TRUE, TRUE)"
+                    else:
+                        self.report({'INFO'}, "NOT IMPLEMENTED YET")
+                        return{'FINISHED'}
+                        # if scn.arm_bakelist_filtering_gauss_mode == "Light":
+                        #     pfilter = "pdb.plug_in_sel_gauss(image, drw, 5, 20)"
+                        # elif scn.arm_bakelist_filtering_gauss_mode == "Easy":
+                        #     pfilter = "pdb.plug_in_sel_gauss(image, drw, 6, 50)"
+                        # elif scn.arm_bakelist_filtering_gauss_mode == "Medium":
+                        #     pfilter = "pdb.plug_in_sel_gauss(image, drw, 10, 80)"
+                        # elif scn.arm_bakelist_filtering_gauss_mode == "Hard":
+                        #     pfilter = "pdb.plug_in_sel_gauss(image, drw, 15, 10)"
+                        # else:
+                        #     pfilter = "pdb.plug_in_sel_gauss(image, drw, 20, 120)"
+
+                    with open('postprocess.py', 'w') as f:
+                        f.write(
+"""#!/usr/bin/python
+import os,glob,sys,time
+from gimpfu import *
+
+def convertFile(file_in, file_out):
+    image_load = pdb.gimp_file_load(file_in, file_in) #EXR File in
+    image = gimp.image_list()[0] #Attach to image list
+    drw = pdb.gimp_image_active_drawable(image)
+    #pdb.plug_in_sel_gauss(image, drw, 8, 130)
+    """ + pfilter + """
+    pdb.file_save_rgbe(image, drw, file_out, file_out)
+    #pdb.plug_in_gauss_rle(image, drw, 75, TRUE, TRUE)
+    #pdb.file_pfm_save(image, image.layers[0], file_out, file_out) #PFM File out
+    #pdb.file_png_save(image, drw, file_out, file_out, 0, 0, 1, 0, 0, 0, 0)
+    pdb.gimp_quit(1)
+
+""")
+                        f.close()
+
+                    processPath = "import sys;sys.path=['.']+sys.path;import postprocess;postprocess.convertFile('"+filter_file_input+"','"+filter_file_output+"')"
+                    endProcess = "pdb.gimp_quit(1)"
+                    pipePath = [gimpPath, '-idf', '--batch-interpreter', 'python-fu-eval', '-b', processPath, endProcess]
+                    gimpPipe = subprocess.Popen(pipePath, stderr=subprocess.DEVNULL, shell=False)
+                    gimpPipe.communicate()[0]
+                    bpy.ops.image.open(filepath=filter_file_output)
+                    bpy.data.images[obj.name+"_baked"].name = obj.name+"_temp"
+                    bpy.data.images[obj.name+"_baked_finalized.hdr"].name = obj.name + "_baked"
+                    bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])
+                    #bpy.data.images[-1].name = image.name + "_v"
+                    #image = bpy.data.images[-1]
 
                 #Encode here
 
@@ -910,7 +982,7 @@ def register():
                  ('Selective', 'Selective', 'TODO'),
                  ('Despeckle', 'Despeckle', 'TODO')],
                 name = "Filtering mode", description="TODO", default='Gaussian')
-    bpy.types.Scene.hdrlm_filtering_gaussian_strength = FloatProperty(name="Gaussian Strength", default=1.0, min=0.0, max=50.0, subtype='FACTOR')
+    bpy.types.Scene.hdrlm_filtering_gaussian_strength = FloatProperty(name="Gaussian Strength", default=5.0, min=0.0, max=50.0, subtype='FACTOR')
     bpy.types.Scene.hdrlm_filtering_selective_strength = FloatProperty(name="Selective Strength", default=1.0, min=0.0, max=50.0, subtype='FACTOR')
     bpy.types.Scene.hdrlm_filtering_selective_threshold = FloatProperty(name="Selective Threshold", default=0.2, min=0.0, max=1.0, subtype='FACTOR')
     bpy.types.Scene.hdrlm_filtering_despeckle_type = EnumProperty(
