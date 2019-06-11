@@ -15,15 +15,21 @@ from bpy.types import Menu, Panel, UIList
 import numpy as np
 from time import time
 
-#NOTES !!!!
-# UE4 INSPIRED LIGHT BAKING:
+module_pip = False
+module_opencv = False
 
-# ==> Per object settings:
-# - MESH: HDR Lightmap Settings
-# - LIGHT: HDR Lightmap Settings
-# - WORLD: HDR Lightmap Settings
+try:
+    import pip
+    module_pip = True
+except ImportError:
+    module_pip = False
 
-# IF SO, NO NEED FOR A LIST!
+try:
+    import cv2
+    module_opencv = True
+except ImportError:
+    pip 
+    module_opencv = False
 
 class HDRLM_PT_Panel(bpy.types.Panel):
     bl_label = "HDR Lightmapper"
@@ -802,75 +808,48 @@ def HDRLM_Build(self, context):
                     bpy.data.images[image.name].save()
 
                 #Filter here
+
+                #import pip OR install pip os.system('python path-to-get-pip')
+                #Check if python is set in environment variables
+                #Check if pip is installed
+                #system: pip install opencv-python
+                #system: pip install matplotlib
+
+                #install pip
+                #install opencv-python
+                #uninstall numpy
+                #install numpy
+
                 if scene.hdrlm_filtering_use:
                     if scene.hdrlm_denoise_use:
-                        filter_file_input = bakemap_path + "_denoised.hdr"
+                        filter_file_input = img_name + "_denoised.hdr"
                     else:
-                        filter_file_input = bakemap_path + ".hdr"
+                        filter_file_input = img_name + ".hdr"
 
-                    gimpPath = scene.hdrlm_filtering_gimp_path
-                    filter_file_output = bakemap_path + "_finalized.hdr"
+                    if all([module_pip, module_opencv]):
 
-                    if platform.system() == 'Windows':
-                        gimpPath = os.path.join(bpy.path.abspath(gimpPath),"gimp-console-2.10.exe")
-                        #gimpPipe = 
-                    elif platform.system() == 'Darwin':
-                        self.report({'INFO'}, "Linux not implemented yet")
-                        return{'FINISHED'}
+                        filter_file_output = img_name + "_finalized.hdr"
+                        os.chdir(os.path.dirname(bakemap_path))
+                        opencv_process_image = cv2.imread(filter_file_input, -1)
+                        #opencv_bl_result = cv2.GaussianBlur(opencv_process_image, (11,11),0)
+                        #opencv_bl_result = cv2.bilateralFilter(opencv_process_image, 9, 75, 75)
+                        opencv_bl_result = cv2.medianBlur(opencv_process_image,5)
+                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
+                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
+                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
+                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
+                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
+                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
+                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
+                        cv2.imwrite(filter_file_output, opencv_bl_result)
+                        
+                        bpy.ops.image.open(filepath=os.path.join(os.path.dirname(bakemap_path),filter_file_output))
+                        bpy.data.images[obj.name+"_baked"].name = obj.name+"_temp"
+                        bpy.data.images[obj.name+"_baked_finalized.hdr"].name = obj.name + "_baked"
+                        bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])
+
                     else:
-                        self.report({'INFO'}, "Linux not implemented yet")
-                        return{'FINISHED'}
-
-                    os.chdir(os.path.dirname(bakemap_path))
-
-                    if scene.hdrlm_filtering_mode == "Gaussian":
-                        pfilter = "pdb.plug_in_gauss_rle(image, drw, "+str(scene.hdrlm_filtering_gaussian_strength)+", TRUE, TRUE)"
-                    else:
-                        self.report({'INFO'}, "NOT IMPLEMENTED YET")
-                        return{'FINISHED'}
-                        # if scn.arm_bakelist_filtering_gauss_mode == "Light":
-                        #     pfilter = "pdb.plug_in_sel_gauss(image, drw, 5, 20)"
-                        # elif scn.arm_bakelist_filtering_gauss_mode == "Easy":
-                        #     pfilter = "pdb.plug_in_sel_gauss(image, drw, 6, 50)"
-                        # elif scn.arm_bakelist_filtering_gauss_mode == "Medium":
-                        #     pfilter = "pdb.plug_in_sel_gauss(image, drw, 10, 80)"
-                        # elif scn.arm_bakelist_filtering_gauss_mode == "Hard":
-                        #     pfilter = "pdb.plug_in_sel_gauss(image, drw, 15, 10)"
-                        # else:
-                        #     pfilter = "pdb.plug_in_sel_gauss(image, drw, 20, 120)"
-
-                    with open('postprocess.py', 'w') as f:
-                        f.write(
-"""#!/usr/bin/python
-import os,glob,sys,time
-from gimpfu import *
-
-def convertFile(file_in, file_out):
-    image_load = pdb.gimp_file_load(file_in, file_in) #EXR File in
-    image = gimp.image_list()[0] #Attach to image list
-    drw = pdb.gimp_image_active_drawable(image)
-    #pdb.plug_in_sel_gauss(image, drw, 8, 130)
-    """ + pfilter + """
-    pdb.file_save_rgbe(image, drw, file_out, file_out)
-    #pdb.plug_in_gauss_rle(image, drw, 75, TRUE, TRUE)
-    #pdb.file_pfm_save(image, image.layers[0], file_out, file_out) #PFM File out
-    #pdb.file_png_save(image, drw, file_out, file_out, 0, 0, 1, 0, 0, 0, 0)
-    pdb.gimp_quit(1)
-
-""")
-                        f.close()
-
-                    processPath = "import sys;sys.path=['.']+sys.path;import postprocess;postprocess.convertFile('"+filter_file_input+"','"+filter_file_output+"')"
-                    endProcess = "pdb.gimp_quit(1)"
-                    pipePath = [gimpPath, '-idf', '--batch-interpreter', 'python-fu-eval', '-b', processPath, endProcess]
-                    gimpPipe = subprocess.Popen(pipePath, stderr=subprocess.DEVNULL, shell=False)
-                    gimpPipe.communicate()[0]
-                    bpy.ops.image.open(filepath=filter_file_output)
-                    bpy.data.images[obj.name+"_baked"].name = obj.name+"_temp"
-                    bpy.data.images[obj.name+"_baked_finalized.hdr"].name = obj.name + "_baked"
-                    bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])
-                    #bpy.data.images[-1].name = image.name + "_v"
-                    #image = bpy.data.images[-1]
+                       print("Something wrong...") 
 
                 #Encode here
 
