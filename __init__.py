@@ -18,6 +18,17 @@ from time import time
 module_pip = False
 module_opencv = False
 
+#import pip OR install pip os.system('python path-to-get-pip')
+#Check if python is set in environment variables
+#Check if pip is installed
+#system: pip install opencv-python
+#system: pip install matplotlib
+
+#install pip
+#install opencv-python
+#uninstall numpy
+#install numpy
+
 try:
     import pip
     module_pip = True
@@ -48,39 +59,12 @@ class HDRLM_PT_Panel(bpy.types.Panel):
         row = layout.row()
         row.operator("hdrlm.open_lightmap_folder")
 
-        #row.prop(self, "HDRLM.unwrap_panel")
-
-        #layout.label(text="0: Unwrap")
-        #row.operator("image.rgbm_encode")
-        #layout.label(text="1: Bake")
-        #row = layout.row()
-        #row.operator("image.rgbm_encode")
-        #layout.label(text="2: Postprocess")
-        #row = layout.row()
-        #row.operator("image.rgbm_encode")
-        #layout.label(text="3: Apply")
-        #row = layout.row()
-        #row.operator("image.rgbm_encode")
-        #layout.label(text="4: Clean")
-        #row = layout.row()
-        #row.operator("image.rgbm_encode")
-        #row.prop(scene, "HDRLM.unwrap_panel")
-
-        #layout.use_property_split = True
-        #layout.use_property_decorate = False
-        #row = layout.row(align=True)
-        #row.operator
-
 class HDRLM_PT_MeshMenu(bpy.types.Panel):
     bl_label = "HDR Lightmapper"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
     bl_options = {'DEFAULT_CLOSED'}
-
-    #def draw_header(self, context):
-    #    scene = context.scene
-    #    self.layout.prop(scene, "hdrlm_mesh_lightmap_use", text="")
 
     def draw(self, context):
         layout = self.layout
@@ -158,7 +142,10 @@ class HDRLM_PT_Unwrap(bpy.types.Panel):
         row.prop(scene, 'hdrlm_lightmap_savedir')
         row = layout.row(align=True)
         row.prop(scene, 'hdrlm_mode')
-        #row.operator("image.rgbm_encode")
+        row = layout.row(align=True)
+        row.prop(scene, 'hdrlm_apply_on_unwrap')
+        row = layout.row(align=True)
+        row.prop(scene, 'hdrlm_dilation_margin')
 
 class HDRLM_PT_Denoise(bpy.types.Panel):
     bl_label = "Denoise"
@@ -206,27 +193,32 @@ class HDRLM_PT_Filtering(bpy.types.Panel):
         layout.use_property_decorate = False
         layout.active = scene.hdrlm_filtering_use
         
-        row = layout.row(align=True)
-        row.prop(scene, "hdrlm_filtering_gimp_path")
+        #row = layout.row(align=True)
+        #row.prop(scene, "hdrlm_filtering_gimp_path")
         row = layout.row(align=True)
         row.prop(scene, "hdrlm_filtering_mode")
         row = layout.row(align=True)
         if scene.hdrlm_filtering_mode == "Gaussian":
             row.prop(scene, "hdrlm_filtering_gaussian_strength")
-        elif scene.hdrlm_filtering_mode == "Selective":
-            row.prop(scene, "hdrlm_filtering_selective_strength")
             row = layout.row(align=True)
-            row.prop(scene, "hdrlm_filtering_selective_threshold")
+            row.prop(scene, "hdrlm_filtering_iterations")
+        elif scene.hdrlm_filtering_mode == "Box":
+            row.prop(scene, "hdrlm_filtering_box_strength")
+            row = layout.row(align=True)
+            row.prop(scene, "hdrlm_filtering_iterations")
+
+        elif scene.hdrlm_filtering_mode == "Bilateral":
+            row.prop(scene, "hdrlm_filtering_bilateral_diameter")
+            row = layout.row(align=True)
+            row.prop(scene, "hdrlm_filtering_bilateral_color_deviation")
+            row = layout.row(align=True)
+            row.prop(scene, "hdrlm_filtering_bilateral_coordinate_deviation")
+            row = layout.row(align=True)
+            row.prop(scene, "hdrlm_filtering_iterations")
         else:
-            row.prop(scene, "hdrlm_filtering_despeckle_type", expand=True)
+            row.prop(scene, "hdrlm_filtering_median_kernel", expand=True)
             row = layout.row(align=True)
-            row.prop(scene, "hdrlm_filtering_despeckle_recursive")
-            row = layout.row(align=True)
-            row.prop(scene, "hdrlm_filtering_despeckle_radius")
-            row = layout.row(align=True)
-            row.prop(scene, "hdrlm_filtering_despeckle_blacklevel")
-            row = layout.row(align=True)
-            row.prop(scene, "hdrlm_filtering_despeckle_whitelevel")
+            row.prop(scene, "hdrlm_filtering_iterations")
 
 class HDRLM_PT_Encoding(bpy.types.Panel):
     bl_label = "Encoding"
@@ -262,8 +254,6 @@ class HDRLM_PT_Compression(bpy.types.Panel):
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
-        #row = layout.row(align=True)
-        #row.operator("image.rgbm_encode")
         if scene.hdrlm_encoding_mode == "RGBE":
             layout.label(text="HDR compression not available for RGBE")
         else:
@@ -289,8 +279,6 @@ class HDRLM_PT_LightmapList(bpy.types.Panel):
 #class HDRLM_PT_LightmapStatus:
 #    def __init__(self):
 
-
-
 class HDRLM_BuildLighting(bpy.types.Operator):
     """Builds the lighting"""
     bl_idname = "hdrlm.build_lighting"
@@ -299,7 +287,6 @@ class HDRLM_BuildLighting(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        #print("Building light...")
         HDRLM_Build(self, context)
         return {'FINISHED'}
 
@@ -545,13 +532,8 @@ def save_pfm(file, image, scale=1):
 
     print("PFM export took %.3f s" % (time() - start))
 
-#def updateQuality(self, context):
-#    scene = context.scene
-#
-#    if 
 def HDRLM_Build(self, context):
 
-    #Pre bake
     scene = context.scene
     cycles = bpy.data.scenes[scene.name].cycles
 
@@ -563,7 +545,14 @@ def HDRLM_Build(self, context):
         self.report({'INFO'}, "Please save your file first")
         return{'FINISHED'}
 
-    #print("Build Start")
+    scriptDir = os.path.dirname(os.path.realpath(__file__))
+    if os.path.isdir(os.path.join(scriptDir,"OIDN")):
+        scene.hdrlm_oidn_path = os.path.join(scriptDir,"OIDN")
+
+    if scene.hdrlm_denoise_use:
+        if scene.hdrlm_oidn_path == "":
+            self.report({'INFO'}, "No denoise OIDN path assigned")
+            return{'FINISHED'}
 
     prevCyclesSettings = [
         cycles.samples,
@@ -650,6 +639,14 @@ def HDRLM_Build(self, context):
                 obs = bpy.context.view_layer.objects
                 active = obs.active
 
+                #Remove existing baked materials and images
+                for mat in bpy.data.materials:
+                    if mat.name.endswith('_baked'):
+                        bpy.data.materials.remove(mat, do_unlink=True)
+                for img in bpy.data.images:
+                    if img.name == obj.name + "_baked":
+                        bpy.data.images.remove(img, do_unlink=True)
+
                 #Make sure there's one material available
                 if len(obj.material_slots) == 0:
                     if not "MaterialDefault" in bpy.data.materials:
@@ -694,11 +691,13 @@ def HDRLM_Build(self, context):
                     img_node.select = True
                     nodes.active = img_node
 
+                if scene.hdrlm_apply_on_unwrap:
+                    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
                 uv_layers = obj.data.uv_layers
-                if not "UVMap_baked" in uv_layers:
+                if not "UVMap_Lightmap" in uv_layers:
                     uvmap = uv_layers.new(name="UVMap_Lightmap")
                     uv_layers.active_index = len(uv_layers) - 1
-                    #obs.active = obj
                     if obj.hdrlm_mesh_lightmap_unwrap_mode == "Lightmap":
                         bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES')
                     else:
@@ -732,7 +731,7 @@ def HDRLM_Build(self, context):
                         nodes['Baked Image'].image = bpy.data.images[img_name]
 
                 print("Baking: " + bpy.context.view_layer.objects.active.name)
-                bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"})
+                bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.hdrlm_dilation_margin)
 
     for mat in bpy.data.materials:
         if mat.name.endswith('_baked'):
@@ -761,10 +760,7 @@ def HDRLM_Build(self, context):
                 bpy.data.images[img_name].file_format = "HDR"
                 bpy.data.images[img_name].save()
 
-                print(img_name + " Saved")
-
                 #Denoise here
-
                 if scene.hdrlm_denoise_use:
 
                     image = bpy.data.images[img_name]
@@ -807,19 +803,6 @@ def HDRLM_Build(self, context):
                     bpy.data.images[image.name].file_format = "HDR"
                     bpy.data.images[image.name].save()
 
-                #Filter here
-
-                #import pip OR install pip os.system('python path-to-get-pip')
-                #Check if python is set in environment variables
-                #Check if pip is installed
-                #system: pip install opencv-python
-                #system: pip install matplotlib
-
-                #install pip
-                #install opencv-python
-                #uninstall numpy
-                #install numpy
-
                 if scene.hdrlm_filtering_use:
                     if scene.hdrlm_denoise_use:
                         filter_file_input = img_name + "_denoised.hdr"
@@ -831,25 +814,51 @@ def HDRLM_Build(self, context):
                         filter_file_output = img_name + "_finalized.hdr"
                         os.chdir(os.path.dirname(bakemap_path))
                         opencv_process_image = cv2.imread(filter_file_input, -1)
-                        #opencv_bl_result = cv2.GaussianBlur(opencv_process_image, (11,11),0)
-                        #opencv_bl_result = cv2.bilateralFilter(opencv_process_image, 9, 75, 75)
-                        opencv_bl_result = cv2.medianBlur(opencv_process_image,5)
-                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
-                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
-                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
-                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
-                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
-                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
-                        opencv_bl_result = cv2.medianBlur(opencv_bl_result,5)
+
+                        if scene.hdrlm_filtering_mode == "Box":
+                            if scene.hdrlm_filtering_box_strength % 2 == 0:
+                                kernel_size = (scene.hdrlm_filtering_box_strength + 1,scene.hdrlm_filtering_box_strength + 1)
+                            else:
+                                kernel_size = (scene.hdrlm_filtering_box_strength,scene.hdrlm_filtering_box_strength)
+                            opencv_bl_result = cv2.blur(opencv_process_image, kernel_size)
+                            if scene.hdrlm_filtering_iterations > 1:
+                                for x in range(scene.hdrlm_filtering_iterations):
+                                    opencv_bl_result = cv2.blur(opencv_bl_result, kernel_size)
+
+                        elif scene.hdrlm_filtering_mode == "Gaussian":
+                            if scene.hdrlm_filtering_gaussian_strength % 2 == 0:
+                                kernel_size = (scene.hdrlm_filtering_gaussian_strength + 1,scene.hdrlm_filtering_gaussian_strength + 1)
+                            else:
+                                kernel_size = (scene.hdrlm_filtering_gaussian_strength,scene.hdrlm_filtering_gaussian_strength)
+                            sigma_size = 0
+                            opencv_bl_result = cv2.GaussianBlur(opencv_process_image, kernel_size, sigma_size)
+                            if scene.hdrlm_filtering_iterations > 1:
+                                for x in range(scene.hdrlm_filtering_iterations):
+                                    opencv_bl_result = cv2.GaussianBlur(opencv_bl_result, kernel_size, sigma_size)
+
+                        elif scene.hdrlm_filtering_mode == "Bilateral":
+                            diameter_size = scene.hdrlm_filtering_bilateral_diameter
+                            sigma_color = scene.hdrlm_filtering_bilateral_color_deviation
+                            sigma_space = scene.hdrlm_filtering_bilateral_coordinate_deviation
+                            opencv_bl_result = cv2.bilateralFilter(opencv_process_image, diameter_size, sigma_color, sigma_space)
+                            if scene.hdrlm_filtering_iterations > 1:
+                                for x in range(scene.hdrlm_filtering_iterations):
+                                    opencv_bl_result = cv2.bilateralFilter(opencv_bl_result, diameter_size, sigma_color, sigma_space)
+                        else:
+                            opencv_bl_result = cv2.medianBlur(opencv_process_image, scene.hdrlm_filtering_median_kernel)
+                            if scene.hdrlm_filtering_iterations > 1:
+                                for x in range(scene.hdrlm_filtering_iterations):
+                                    opencv_bl_result = cv2.medianBlur(opencv_bl_result, scene.hdrlm_filtering_median_kernel)
+
                         cv2.imwrite(filter_file_output, opencv_bl_result)
                         
                         bpy.ops.image.open(filepath=os.path.join(os.path.dirname(bakemap_path),filter_file_output))
-                        bpy.data.images[obj.name+"_baked"].name = obj.name+"_temp"
+                        bpy.data.images[obj.name+"_baked"].name = obj.name + "_temp"
                         bpy.data.images[obj.name+"_baked_finalized.hdr"].name = obj.name + "_baked"
                         bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])
 
                     else:
-                       print("Something wrong...") 
+                       print("Modules missing...") 
 
                 #Encode here
 
@@ -901,7 +910,6 @@ def HDRLM_Build(self, context):
         #pass
 
     #Post bake
-
     cycles.samples = prevCyclesSettings[0]
     cycles.max_bounces = prevCyclesSettings[1]
     cycles.diffuse_bounces = prevCyclesSettings[2]
@@ -912,7 +920,6 @@ def HDRLM_Build(self, context):
     cycles.caustics_reflective = prevCyclesSettings[7]
     cycles.caustics_refractive = prevCyclesSettings[8]
 
-    #print("Build End")
     return{'FINISHED'}
 
 def register():
@@ -931,7 +938,6 @@ def register():
     bpy.utils.register_class(HDRLM_PT_LightMenu)
     bpy.types.IMAGE_PT_image_properties.append(draw)
 
-    #bpy.types.Scene.hdrlm_quality = FloatProperty(name="Resolution", description="Resolution scale", default=100.0, min=1, max=1000, soft_min=1, soft_max=100.0, subtype='PERCENTAGE')
     bpy.types.Scene.hdrlm_quality = EnumProperty(
         items = [('Preview', 'Preview', 'TODO'),
                  ('Medium', 'Medium', 'TODO'),
@@ -950,28 +956,27 @@ def register():
         items = [('CPU', 'CPU', 'TODO'),
                  ('GPU', 'GPU', 'TODO')],
                 name = "Device", description="TODO", default="CPU")
+    bpy.types.Scene.hdrlm_apply_on_unwrap = BoolProperty(name="Apply scale", description="TODO", default=False)
+    bpy.types.Scene.hdrlm_dilation_margin = IntProperty(name="Dilation margin", default=16, min=1, max=64, subtype='PIXEL')
     bpy.types.Scene.hdrlm_denoise_use = BoolProperty(name="Enable denoising", description="TODO", default=False)
     bpy.types.Scene.hdrlm_oidn_path = StringProperty(name="OIDN Path", description="TODO", default="", subtype="FILE_PATH")
     bpy.types.Scene.hdrlm_oidn_use_albedo = BoolProperty(name="Use albedo map", description="TODO")
     bpy.types.Scene.hdrlm_oidn_use_normal = BoolProperty(name="Use normal map", description="TODO")
     bpy.types.Scene.hdrlm_filtering_use = BoolProperty(name="Enable filtering", description="TODO", default=False)
-    bpy.types.Scene.hdrlm_filtering_gimp_path = StringProperty(name="Gimp Path", description="TODO", default="", subtype="FILE_PATH")
+    #bpy.types.Scene.hdrlm_filtering_gimp_path = StringProperty(name="Gimp Path", description="TODO", default="", subtype="FILE_PATH")
     bpy.types.Scene.hdrlm_filtering_mode = EnumProperty(
-        items = [('Gaussian', 'Gaussian', 'TODO'),
-                 ('Selective', 'Selective', 'TODO'),
-                 ('Despeckle', 'Despeckle', 'TODO')],
-                name = "Filtering mode", description="TODO", default='Gaussian')
-    bpy.types.Scene.hdrlm_filtering_gaussian_strength = FloatProperty(name="Gaussian Strength", default=5.0, min=0.0, max=50.0, subtype='FACTOR')
-    bpy.types.Scene.hdrlm_filtering_selective_strength = FloatProperty(name="Selective Strength", default=1.0, min=0.0, max=50.0, subtype='FACTOR')
-    bpy.types.Scene.hdrlm_filtering_selective_threshold = FloatProperty(name="Selective Threshold", default=0.2, min=0.0, max=1.0, subtype='FACTOR')
-    bpy.types.Scene.hdrlm_filtering_despeckle_type = EnumProperty(
-        items = [('Median', 'Median', 'TODO'),
-                 ('Adaptive', 'Adaptive', 'TODO')],
-                name = "Filter type", description="TODO", default='Median')
-    bpy.types.Scene.hdrlm_filtering_despeckle_recursive = BoolProperty(name="Recursive filtering", description="TODO", default=False)
-    bpy.types.Scene.hdrlm_filtering_despeckle_radius = IntProperty(name="Filter radius", default=3, min=1, max=30)
-    bpy.types.Scene.hdrlm_filtering_despeckle_blacklevel = IntProperty(name="Black Level", default=7, min=-1, max=255)
-    bpy.types.Scene.hdrlm_filtering_despeckle_whitelevel = IntProperty(name="White Level", default=248, min=0, max=256)
+        items = [('Box', 'Box', 'TODO'),
+                 ('Gaussian', 'Gaussian', 'TODO'),
+                 ('Bilateral', 'Bilateral', 'TODO'),
+                 ('Median', 'Median', 'TODO')],
+                name = "Filter", description="TODO", default='Gaussian')
+    bpy.types.Scene.hdrlm_filtering_gaussian_strength = IntProperty(name="Gaussian Strength", default=11, min=1, max=50)
+    bpy.types.Scene.hdrlm_filtering_iterations = IntProperty(name="Filter Iterations", default=1, min=1, max=50)
+    bpy.types.Scene.hdrlm_filtering_box_strength = IntProperty(name="Box Strength", default=1, min=1, max=50)
+    bpy.types.Scene.hdrlm_filtering_bilateral_diameter = IntProperty(name="Pixel diameter", default=11, min=1, max=50)
+    bpy.types.Scene.hdrlm_filtering_bilateral_color_deviation = IntProperty(name="Color deviation", default=75, min=1, max=100)
+    bpy.types.Scene.hdrlm_filtering_bilateral_coordinate_deviation = IntProperty(name="Color deviation", default=75, min=1, max=100)
+    bpy.types.Scene.hdrlm_filtering_median_kernel = IntProperty(name="Median kernel", default=3, min=1, max=5)
     bpy.types.Scene.hdrlm_encoding_mode = EnumProperty(
         items = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
                  ('RGBD', 'RGBD', '8-bit HDR encoding. Same as RGBM, but better for highlights and stylized looks.'),
@@ -1002,11 +1007,12 @@ def register():
                  ('2048', '2048', 'TODO'),
                  ('4096', '4096', 'TODO'),
                  ('8192', '8192', 'TODO')],
-                name = "Lightmap Resolution", description="TODO", default='512')
+                name = "Lightmap Resolution", description="TODO", default='256')
     bpy.types.Object.hdrlm_mesh_lightmap_unwrap_mode = EnumProperty(
         items = [('Lightmap', 'Lightmap', 'TODO'),
-                 ('Smart Project', 'Smart Project', 'TODO')],
-                name = "Unwrap Mode", description="TODO", default='Lightmap')
+                 ('Smart Project', 'Smart Project', 'TODO'),
+                 ('Copy Existing', 'Copy Existing', 'TODO')],
+                name = "Unwrap Mode", description="TODO", default='Smart Project')
     bpy.types.Object.hdrlm_mesh_bake_ao = BoolProperty(name="Bake AO", description="TODO", default=False)
     bpy.types.Object.hdrlm_light_lightmap_use = BoolProperty(name="Enable for Lightmapping", description="TODO", default=True)
     bpy.types.Object.hdrlm_light_type = EnumProperty(
@@ -1031,31 +1037,6 @@ def unregister():
     bpy.utils.unregister_class(HDRLM_PT_MeshMenu)
     bpy.utils.unregister_class(HDRLM_PT_LightMenu)
     bpy.types.IMAGE_PT_image_properties.remove(draw)
-# @persistent
-# def load_node_groups(scene):
-#     root = bpy.utils.script_path_user()
-#     sep = os.sep
-
-#     # get addons folder
-#     filepath = root + sep + "addons"
-
-#     # Dealing with two possible name for addon folder
-#     dirs = next(os.walk(filepath))[1]
-#     folder = [x for x in dirs if x == 'hdr-2-rgbm' or x == 'hdr-2-rgbm-master'][0]
-
-#     # Node groups necessary are in nodegroups_lib.blend
-#     filepath = filepath + sep + folder + sep + "nodegroups_lib.blend"
-
-#     # Load node groups
-#     with bpy.data.libraries.load(filepath) as (data_from, data_to):
-
-#         exist_groups = [ng.name for ng in bpy.data.node_groups]
-#         for ng in data_from.node_groups:
-#             if ng not in exist_groups:
-#                 data_to.node_groups.append(ng)
-
-# # Load decode rgbm node groups after loading blend file
-# bpy.app.handlers.load_post.append(load_node_groups)
 
 if __name__ == "__main__":
     register()
