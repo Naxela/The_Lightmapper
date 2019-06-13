@@ -80,16 +80,16 @@ class HDRLM_PT_MeshMenu(bpy.types.Panel):
             if obj.hdrlm_mesh_lightmap_use:
                 row = layout.row()
                 row.prop(obj, "hdrlm_mesh_apply_after")
-                row = layout.row()
-                row.prop(obj, "hdrlm_mesh_emissive")
-                row = layout.row()
-                row.prop(obj, "hdrlm_mesh_emissive_shadow")
-                row = layout.row()
-                row.prop(obj, "hdrlm_mesh_lightmap_resolution")
-                row = layout.row()
-                row.prop(obj, "hdrlm_mesh_lightmap_unwrap_mode")
-                row = layout.row()
-                row.prop(obj, "hdrlm_mesh_bake_ao")
+                #row = layout.row()
+                #row.prop(obj, "hdrlm_mesh_emissive")
+                #row = layout.row()
+                #row.prop(obj, "hdrlm_mesh_emissive_shadow")
+                #row = layout.row()
+                #row.prop(obj, "hdrlm_mesh_lightmap_resolution")
+                #row = layout.row()
+                #row.prop(obj, "hdrlm_mesh_lightmap_unwrap_mode")
+                #row = layout.row()
+                #row.prop(obj, "hdrlm_mesh_bake_ao")
 
 class HDRLM_PT_LightMenu(bpy.types.Panel):
     bl_label = "HDR Lightmapper"
@@ -169,10 +169,10 @@ class HDRLM_PT_Denoise(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.prop(scene, "hdrlm_oidn_path")
-        row = layout.row(align=True)
-        row.prop(scene, "hdrlm_oidn_use_albedo")
-        row = layout.row(align=True)
-        row.prop(scene, "hdrlm_oidn_use_normal")
+        #row = layout.row(align=True)
+        #row.prop(scene, "hdrlm_oidn_use_albedo")
+        #row = layout.row(align=True)
+        #row.prop(scene, "hdrlm_oidn_use_normal")
 
 class HDRLM_PT_Filtering(bpy.types.Panel):
     bl_label = "Filtering"
@@ -622,9 +622,9 @@ def HDRLM_Build(self, context):
     scene = context.scene
     cycles = bpy.data.scenes[scene.name].cycles
 
-    if scene.render.engine != "CYCLES":
-        self.report({'INFO'}, "Please change to Cycles rendering engine")
-        return{'FINISHED'}
+    #if scene.render.engine != "CYCLES":
+    #    self.report({'INFO'}, "Please change to Cycles rendering engine")
+    #    return{'FINISHED'}
 
     if not bpy.data.is_saved:
         self.report({'INFO'}, "Please save your file first")
@@ -649,10 +649,12 @@ def HDRLM_Build(self, context):
         cycles.volume_bounces,
         cycles.caustics_reflective,
         cycles.caustics_refractive,
-        cycles.device
+        cycles.device,
+        scene.render.engine
     ]
 
     cycles.device = scene.hdrlm_mode
+    scene.render.engine = "CYCLES"
     
     if scene.hdrlm_quality == "Preview":
         cycles.samples = 32
@@ -1021,6 +1023,8 @@ def HDRLM_Build(self, context):
     cycles.volume_bounces = prevCyclesSettings[6]
     cycles.caustics_reflective = prevCyclesSettings[7]
     cycles.caustics_refractive = prevCyclesSettings[8]
+    cycles.device = prevCyclesSettings[9]
+    scene.render.engine = prevCyclesSettings[10]
 
     return{'FINISHED'}
 
