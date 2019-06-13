@@ -984,6 +984,10 @@ def HDRLM_Build(self, context):
 
                     nodetree = bpy.data.materials[slot.name].node_tree
 
+                    for n in nodetree.nodes:
+                        if "Lightmap" in n.name:
+                            nodetree.nodes.remove(n)
+
                     outputNode = nodetree.nodes[0]
 
                     mainNode = outputNode.inputs[0].links[0].from_node
