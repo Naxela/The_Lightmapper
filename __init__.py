@@ -29,6 +29,11 @@ module_opencv = False
 #uninstall numpy
 #install numpy
 
+#TODO:
+#CHECK IF TWO OBJECTS SHARE MATERIAL IF SO SPLIT [Privatize Materials]?? Add shared material support later on...
+#Weighted lightmap [Fixed;Dimension] for [Selection/Volume/Collection]
+#ADD MARGIN FOR UVUNWRAP
+
 try:
     import pip
     module_pip = True
@@ -78,16 +83,18 @@ class HDRLM_PT_MeshMenu(bpy.types.Panel):
             row = layout.row(align=True)
             row.prop(obj, "hdrlm_mesh_lightmap_use")
             if obj.hdrlm_mesh_lightmap_use:
-                row = layout.row()
-                row.prop(obj, "hdrlm_mesh_apply_after")
+                #row = layout.row()
+                #row.prop(obj, "hdrlm_mesh_apply_after")
                 #row = layout.row()
                 #row.prop(obj, "hdrlm_mesh_emissive")
                 #row = layout.row()
                 #row.prop(obj, "hdrlm_mesh_emissive_shadow")
-                #row = layout.row()
-                #row.prop(obj, "hdrlm_mesh_lightmap_resolution")
-                #row = layout.row()
-                #row.prop(obj, "hdrlm_mesh_lightmap_unwrap_mode")
+                row = layout.row()
+                row.prop(obj, "hdrlm_mesh_lightmap_resolution")
+                row = layout.row()
+                row.prop(obj, "hdrlm_mesh_lightmap_unwrap_mode")
+                row = layout.row()
+                row.prop(obj, "hdrlm_mesh_unwrap_margin")
                 #row = layout.row()
                 #row.prop(obj, "hdrlm_mesh_bake_ao")
 
@@ -299,71 +306,84 @@ class HDRLM_CleanLighting(bpy.types.Operator):
 
     def execute(self, context):
 
-        scene = context.scene
-
-        filepath = bpy.data.filepath
-        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.hdrlm_lightmap_savedir)
-        if os.path.isdir(dirpath):
-            shutil.rmtree(dirpath)
-
-        for obj in bpy.data.objects:
-
-            ###### MESH / BAKING
-            if obj.type == "MESH":
-                if obj.hdrlm_mesh_lightmap_use:
-
-                    if obj.type == "MESH":
-                        if "UVMap_baked" in obj.data.uv_layers:
-                            obj.data.uv_layers.remove(obj.data.uv_layers["UVMap_Lightmaps"])
-
-                    for slot in obj.material_slots:
-                        mat = slot.material
-                        # Remove temp material
-                        if mat.name.endswith('_temp'):
-                            old = slot.material
-                            slot.material = bpy.data.materials[old.name.split('_' + obj.name)[0]]
-                            bpy.data.materials.remove(old, do_unlink=True)
+        for m in bpy.data.materials: #TODO - CHANGE INTO SPECIFIC MATERIAL
+            nodetree = m.node_tree
+            nodes = nodetree.nodes
+            mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
             
-                    for m in obj.material_slots:
+            for n in nodes:
+                if "LM" in n.name:
+                    nodetree.links.new(n.outputs[0], mainNode.inputs[0])
+            
+            for n in nodes:
+                if "Lightmap" in n.name:
+                    nodes.remove(n)
+
+        # scene = context.scene
+
+        # filepath = bpy.data.filepath
+        # dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.hdrlm_lightmap_savedir)
+        # if os.path.isdir(dirpath):
+        #     shutil.rmtree(dirpath)
+
+        # for obj in bpy.data.objects:
+
+        #     ###### MESH / BAKING
+        #     if obj.type == "MESH":
+        #         if obj.hdrlm_mesh_lightmap_use:
+
+        #             if obj.type == "MESH":
+        #                 if "UVMap_baked" in obj.data.uv_layers:
+        #                     obj.data.uv_layers.remove(obj.data.uv_layers["UVMap_Lightmaps"])
+
+        #             for slot in obj.material_slots:
+        #                 mat = slot.material
+        #                 # Remove temp material
+        #                 if mat.name.endswith('_temp'):
+        #                     old = slot.material
+        #                     slot.material = bpy.data.materials[old.name.split('_' + obj.name)[0]]
+        #                     bpy.data.materials.remove(old, do_unlink=True)
+            
+        #             for m in obj.material_slots:
                         
-                        nodetree = bpy.data.materials[m.name].node_tree
+        #                 nodetree = bpy.data.materials[m.name].node_tree
 
-                        #Get the material output node
-                        OutputNode = nodetree.nodes[0]
+        #                 #Get the material output node
+        #                 OutputNode = nodetree.nodes[0]
 
-                        #Get the connected node (usually either principled bsdf or armory)
-                        mainNode = OutputNode.inputs[0].links[0].from_node
+        #                 #Get the connected node (usually either principled bsdf or armory)
+        #                 mainNode = OutputNode.inputs[0].links[0].from_node
 
-                        hasPreviousBasecolor = False
+        #                 hasPreviousBasecolor = False
 
-                        for n in nodetree.nodes:
+        #                 for n in nodetree.nodes:
 
-                            prefix = "Lightmap_"
-                            if n.name == prefix + "Image":
-                                nodetree.nodes.remove(nodetree.nodes[n.name])
+        #                     prefix = "Lightmap_"
+        #                     if n.name == prefix + "Image":
+        #                         nodetree.nodes.remove(nodetree.nodes[n.name])
 
-                            if n.name == prefix + "Multiplication":
-                                nodetree.nodes.remove(nodetree.nodes[n.name])
+        #                     if n.name == prefix + "Multiplication":
+        #                         nodetree.nodes.remove(nodetree.nodes[n.name])
 
-                            if n.name == prefix + "UV":
-                                nodetree.nodes.remove(nodetree.nodes[n.name])
+        #                     if n.name == prefix + "UV":
+        #                         nodetree.nodes.remove(nodetree.nodes[n.name])
 
-                            if n.name == prefix + "RGBM_Decode":
-                                nodetree.nodes.remove(nodetree.nodes[n.name])
+        #                     if n.name == prefix + "RGBM_Decode":
+        #                         nodetree.nodes.remove(nodetree.nodes[n.name])
 
-                            if n.name == prefix + "BasecolorNode":
-                                hasPreviousBasecolor = True
+        #                     if n.name == prefix + "BasecolorNode":
+        #                         hasPreviousBasecolor = True
 
-                        if hasPreviousBasecolor:
-                            nodetree.links.new(mainNode.inputs[0], nodetree.nodes[prefix+"BasecolorNode"].outputs[0])
+        #                 if hasPreviousBasecolor:
+        #                     nodetree.links.new(mainNode.inputs[0], nodetree.nodes[prefix+"BasecolorNode"].outputs[0])
 
-        for mat in bpy.data.materials:
-            if mat.name.endswith('_baked') or mat.name.endswith('_temp'):
-                bpy.data.materials.remove(mat, do_unlink=True)
+        # for mat in bpy.data.materials:
+        #     if mat.name.endswith('_baked') or mat.name.endswith('_temp'):
+        #         bpy.data.materials.remove(mat, do_unlink=True)
 
-        for img in bpy.data.images:
-            if not img.users:
-                bpy.data.images.remove(img)
+        # for img in bpy.data.images:
+        #     if not img.users:
+        #         bpy.data.images.remove(img)
 
         return{'FINISHED'}
 
@@ -536,6 +556,9 @@ def encodeImageRGBD(self, image, maxRange, outDir):
     input_image.filepath_raw = outDir + "_encoded.png"
     input_image.file_format = "PNG"
     input_image.save()
+
+def lerpNodePoints(self, a, b, c):
+    return (a + c * (b - a))
 
 def draw(self, context):
     row = self.layout.row()
@@ -786,14 +809,16 @@ def HDRLM_Build(self, context):
                     uvmap = uv_layers.new(name="UVMap_Lightmap")
                     uv_layers.active_index = len(uv_layers) - 1
                     if obj.hdrlm_mesh_lightmap_unwrap_mode == "Lightmap":
-                        bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES')
-                    else:
+                        bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.hdrlm_mesh_unwrap_margin)
+                    elif obj.hdrlm_mesh_lightmap_unwrap_mode == "Smart Project":
                         bpy.ops.object.select_all(action='DESELECT')
                         obj.select_set(True)
                         bpy.ops.object.mode_set(mode='EDIT')
                         bpy.ops.mesh.select_all(action='DESELECT')
                         bpy.ops.object.mode_set(mode='OBJECT')
-                        bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=0.05, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+                        bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.hdrlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+                    else:
+                        pass
                 else:
                     for i in range(0, len(uv_layers)):
                         if uv_layers[i].name == 'UVMap_Lightmap':
@@ -817,8 +842,72 @@ def HDRLM_Build(self, context):
                         nodes = mat.node_tree.nodes
                         nodes['Baked Image'].image = bpy.data.images[img_name]
 
+
+
+
+                for m in bpy.data.materials: #TODO - CHANGE INTO SPECIFIC MATERIAL
+                    nodetree = m.node_tree
+                    nodes = nodetree.nodes
+                    mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
+                    
+                    for n in nodes:
+                        if "LM" in n.name:
+                            nodetree.links.new(n.outputs[0], mainNode.inputs[0])
+                    
+                    for n in nodes:
+                        if "Lightmap" in n.name:
+                            nodes.remove(n)
+
+                # NEW METHOD
+
+                # # import bpy
+                #for slot in obj.material_slots:
+
+                #    nodetree = bpy.data.materials[slot.name].node_tree
+                #    nodes = nodetree.nodes
+                #    mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
+
+                    #for n in nodes:
+                    #    if "LM" in n.name:
+                    #        nodetree.links.new(n.outputs[0], mainNode.inputs[0])
+
+                    #for n in nodes:
+                    #    if "Lightmap" in n.name:
+                    #        print("Remove")
+                    #        nodes.remove(n)
+
+
+
+
+                # nodetree_pb = bpy.data.materials[slot.name].node_tree
+
+                # outputNode_pb = nodetree_pb.nodes[0]
+
+                # mainNode_pb = outputNode_pb.inputs[0].links[0].from_node
+
+                # previousImage_pb = False
+
+                # #BEFORE BAKING WE NEED TO RESET/REMOVE the lightmaps
+
+                # if len(mainNode_pb.inputs[0].links) > 0:
+                #     if mainNode_pb.inputs[0].links[0].from_node.name == "Lightmap_Multiplication":
+                #         prevMultiplicationNode = mainNode_pb.inputs[0].links[0].from_node
+                #         prevImage_pb = prevMultiplicationNode.inputs[1].links[0].from_node
+                #         prevImage_pb.name = "LM_pNode_pb"
+                #         previousImage_pb = True
+                #         nodetree_pb.links.new(prevImage_pb.outputs[0], mainNode_pb.inputs[1])
+
+                #!!!
+                # REMOVE ALL LIGHTMAP NODES - AFTER RESETTING THE IMAGE NODE
+
+
+                # #DO SOMETHING HERE
+                # for n in nodetree_pb.nodes:
+                #     if "Lightmap" in n.name:
+                #         nodetree_pb.nodes.remove(n)
+
                 print("Baking: " + bpy.context.view_layer.objects.active.name)
-                bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.hdrlm_dilation_margin)
+                bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT","COLOR"}, margin=scene.hdrlm_dilation_margin)
 
     for mat in bpy.data.materials:
         if mat.name.endswith('_baked'):
@@ -932,10 +1021,16 @@ def HDRLM_Build(self, context):
                                 for x in range(scene.hdrlm_filtering_iterations):
                                     opencv_bl_result = cv2.bilateralFilter(opencv_bl_result, diameter_size, sigma_color, sigma_space)
                         else:
-                            opencv_bl_result = cv2.medianBlur(opencv_process_image, scene.hdrlm_filtering_median_kernel)
+
+                            if scene.hdrlm_filtering_median_kernel % 2 == 0:
+                                kernel_size = (scene.hdrlm_filtering_median_kernel + 1 , scene.hdrlm_filtering_median_kernel + 1)
+                            else:
+                                kernel_size = (scene.hdrlm_filtering_median_kernel, scene.hdrlm_filtering_median_kernel)
+
+                            opencv_bl_result = cv2.medianBlur(opencv_process_image, kernel_size[0])
                             if scene.hdrlm_filtering_iterations > 1:
                                 for x in range(scene.hdrlm_filtering_iterations):
-                                    opencv_bl_result = cv2.medianBlur(opencv_bl_result, scene.hdrlm_filtering_median_kernel)
+                                    opencv_bl_result = cv2.medianBlur(opencv_bl_result, kernel_size[0])
 
                         cv2.imwrite(filter_file_output, opencv_bl_result)
                         
@@ -957,13 +1052,6 @@ def HDRLM_Build(self, context):
                     bpy.data.images[obj.name+"_baked"].name = obj.name + "_temp"
                     bpy.data.images[obj.name+"_baked_encoded"].name = obj.name + "_baked"
                     bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])
-                
-
-                    #print()
-                    #bpy.data.images[obj.name+"_baked"].pixels = bpy.data.images[obj.name+"_baked"+"_Enctemp"].pixels
-                    #bpy.data.images[obj.name+"_baked"].name = obj.name + "_temp"
-
-                    #bpy.data.images[obj.name+"_baked"+"_Enctemp"].name = obj.name+"_baked"
 
     #Apply and restore materials
     for obj in bpy.data.objects:
@@ -984,27 +1072,42 @@ def HDRLM_Build(self, context):
 
                     nodetree = bpy.data.materials[slot.name].node_tree
 
-                    for n in nodetree.nodes:
-                        if "Lightmap" in n.name:
-                            nodetree.nodes.remove(n)
-
                     outputNode = nodetree.nodes[0]
 
                     mainNode = outputNode.inputs[0].links[0].from_node
 
-                    ####
+                    if len(mainNode.inputs[0].links) == 0:
+                        baseColorValue = mainNode.inputs[0].default_value
+                        baseColorNode = nodetree.nodes.new(type="ShaderNodeRGB")
+                        baseColorNode.outputs[0].default_value = baseColorValue
+                        baseColorNode.location = ((mainNode.location[0]-500,mainNode.location[1]))
+                        baseColorNode.name = "Lightmap_BasecolorNode_A"
+                    else:
+                        baseColorNode = mainNode.inputs[0].links[0].from_node
+                        baseColorNode.name = "LM_P"
+
+                    nodePos1 = mainNode.location
+                    nodePos2 = baseColorNode.location
+
+                    mixNode = nodetree.nodes.new(type="ShaderNodeMixRGB")
+                    mixNode.name = "Lightmap_Multiplication"
+                    mixNode.location = lerpNodePoints(self, nodePos1, nodePos2, 0.5)
+                    mixNode.blend_type = 'MULTIPLY'
+                    mixNode.inputs[0].default_value = 1.0
 
                     LightmapNode = nodetree.nodes.new(type="ShaderNodeTexImage")
+                    LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
                     LightmapNode.image = bpy.data.images[obj.name + "_baked"]
                     LightmapNode.name = "Lightmap_Image"
-                    LightmapNode.image.colorspace_settings.name = scene.hdrlm_encoding_colorspace
 
                     UVLightmap = nodetree.nodes.new(type="ShaderNodeUVMap")
                     UVLightmap.uv_map = "UVMap_Lightmap"
                     UVLightmap.name = "Lightmap_UV"
+                    UVLightmap.location = ((-700, 0))
 
-                    nodetree.links.new(LightmapNode.outputs[0], mainNode.inputs[0])
-
+                    nodetree.links.new(baseColorNode.outputs[0], mixNode.inputs[1]) 
+                    nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2])
+                    nodetree.links.new(mixNode.outputs[0], mainNode.inputs[0]) 
                     nodetree.links.new(UVLightmap.outputs[0], LightmapNode.inputs[0])
     
     for mat in bpy.data.materials:
@@ -1056,7 +1159,8 @@ def register():
                  ('Custom', 'Custom', 'TODO')],
                 name = "Lightmapping Quality", description="TODO", default='Preview')
     bpy.types.Scene.hdrlm_lightmap_scale = EnumProperty(
-        items = [('8', '1/8', 'TODO'),
+        items = [('16', '1/16', 'TODO'),
+                 ('8', '1/8', 'TODO'),
                  ('4', '1/4', 'TODO'),
                  ('2', '1/2', 'TODO'),
                  ('1', '1/1', 'TODO')],
@@ -1123,6 +1227,7 @@ def register():
                  ('Smart Project', 'Smart Project', 'TODO'),
                  ('Copy Existing', 'Copy Existing', 'TODO')],
                 name = "Unwrap Mode", description="TODO", default='Smart Project')
+    bpy.types.Object.hdrlm_mesh_unwrap_margin = FloatProperty(name="Unwrap Margin", default=0.05, min=0.0, max=1.0, subtype='FACTOR')
     bpy.types.Object.hdrlm_mesh_bake_ao = BoolProperty(name="Bake AO", description="TODO", default=False)
     bpy.types.Object.hdrlm_light_lightmap_use = BoolProperty(name="Enable for Lightmapping", description="TODO", default=True)
     bpy.types.Object.hdrlm_light_type = EnumProperty(
