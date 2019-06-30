@@ -153,6 +153,8 @@ class HDRLM_PT_Unwrap(bpy.types.Panel):
         row.prop(scene, 'hdrlm_apply_on_unwrap')
         row = layout.row(align=True)
         row.prop(scene, 'hdrlm_dilation_margin')
+        row = layout.row(align=True)
+        row.prop(scene, 'hdrlm_indirect_only')
 
 class HDRLM_PT_Denoise(bpy.types.Panel):
     bl_label = "Denoise"
@@ -907,7 +909,11 @@ def HDRLM_Build(self, context):
                 #         nodetree_pb.nodes.remove(n)
 
                 print("Baking: " + bpy.context.view_layer.objects.active.name)
-                bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT","COLOR"}, margin=scene.hdrlm_dilation_margin)
+
+                if scene.hdrlm_indirect_only:
+                    bpy.ops.object.bake(type="DIFFUSE", pass_filter={"INDIRECT"}, margin=scene.hdrlm_dilation_margin)
+                else:
+                    bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.hdrlm_dilation_margin)
 
     for mat in bpy.data.materials:
         if mat.name.endswith('_baked'):
@@ -1092,7 +1098,11 @@ def HDRLM_Build(self, context):
                     mixNode = nodetree.nodes.new(type="ShaderNodeMixRGB")
                     mixNode.name = "Lightmap_Multiplication"
                     mixNode.location = lerpNodePoints(self, nodePos1, nodePos2, 0.5)
-                    mixNode.blend_type = 'MULTIPLY'
+                    if scene.hdrlm_indirect_only:
+                        mixNode.blend_type = 'ADD'
+                    else:
+                        mixNode.blend_type = 'MULTIPLY'
+                    
                     mixNode.inputs[0].default_value = 1.0
 
                     LightmapNode = nodetree.nodes.new(type="ShaderNodeTexImage")
@@ -1171,6 +1181,7 @@ def register():
                  ('GPU', 'GPU', 'TODO')],
                 name = "Device", description="TODO", default="CPU")
     bpy.types.Scene.hdrlm_apply_on_unwrap = BoolProperty(name="Apply scale", description="TODO", default=False)
+    bpy.types.Scene.hdrlm_indirect_only = BoolProperty(name="Indirect Only", description="TODO", default=False)
     bpy.types.Scene.hdrlm_dilation_margin = IntProperty(name="Dilation margin", default=16, min=1, max=64, subtype='PIXEL')
     bpy.types.Scene.hdrlm_denoise_use = BoolProperty(name="Enable denoising", description="TODO", default=False)
     bpy.types.Scene.hdrlm_oidn_path = StringProperty(name="OIDN Path", description="TODO", default="", subtype="FILE_PATH")
