@@ -60,6 +60,12 @@ class HDRLM_PT_Panel(bpy.types.Panel):
         row = layout.row()
         row.operator("hdrlm.build_lighting")
         row = layout.row()
+        row.operator("hdrlm.build_lighting_selected")
+        row = layout.row()
+        row.operator("hdrlm.enable_lighting")
+        row = layout.row()
+        row.operator("hdrlm.disable_lighting")
+        row = layout.row()
         row.operator("hdrlm.clean_lighting")
         row = layout.row()
         row.operator("hdrlm.open_lightmap_folder")
@@ -155,6 +161,8 @@ class HDRLM_PT_Unwrap(bpy.types.Panel):
         row.prop(scene, 'hdrlm_dilation_margin')
         row = layout.row(align=True)
         row.prop(scene, 'hdrlm_indirect_only')
+        row = layout.row(align=True)
+        row.prop(scene, 'bpy.types.Scene.hdrlm_delete_cache')
 
 class HDRLM_PT_Denoise(bpy.types.Panel):
     bl_label = "Denoise"
@@ -299,6 +307,60 @@ class HDRLM_BuildLighting(bpy.types.Operator):
         HDRLM_Build(self, context)
         return {'FINISHED'}
 
+class HDRLM_BuildLightingSelected(bpy.types.Operator):
+    """Builds the lighting for a selected"""
+    bl_idname = "hdrlm.build_lighting_selected"
+    bl_label = "Build Light for selected"
+    bl_description = "TODO"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        #TODO! SOME WAY TO TOGGLE ON AND OFF THE EXISTING OBJ WITH LIGHTMAPPING VALUES
+        #Array prev toggle = all with lightmap true
+        previousToggle = []
+
+        for obj in bpy.data.objects:
+            if(obj.hdrlm_mesh_lightmap_use):
+                previousToggle.append(obj.name)
+            obj.hdrlm_mesh_lightmap_use = False
+
+        for obj in bpy.context.selected_objects:
+            obj.hdrlm_mesh_lightmap_use = True
+
+        HDRLM_Build(self, context)
+
+        for obj in bpy.data.objects:
+            obj.hdrlm_mesh_lightmap_use = False
+            if obj.name in previousToggle:
+                obj.hdrlm_mesh_lightmap_use = True
+            
+        return {'FINISHED'}
+
+class HDRLM_ToggleEnableforSelection(bpy.types.Operator):
+    """Toggle lightmapping for selection"""
+    bl_idname = "hdrlm.enable_lighting"
+    bl_label = "Enable for selection"
+    bl_description = "TODO"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        for obj in bpy.context.selected_objects:
+            obj.hdrlm_mesh_lightmap_use = True
+        return {'FINISHED'}
+
+class HDRLM_ToggleDisableforSelection(bpy.types.Operator):
+    """Disable lightmapping for selection"""
+    bl_idname = "hdrlm.disable_lighting"
+    bl_label = "Disable for selection"
+    bl_description = "TODO"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        for obj in bpy.context.selected_objects:
+            obj.hdrlm_mesh_lightmap_use = False
+        return {'FINISHED'}
+
 class HDRLM_CleanLighting(bpy.types.Operator):
     """Clean lightmap cache"""
     bl_idname = "hdrlm.clean_lighting"
@@ -320,6 +382,20 @@ class HDRLM_CleanLighting(bpy.types.Operator):
             for n in nodes:
                 if "Lightmap" in n.name:
                     nodes.remove(n)
+
+        for obj in bpy.data.objects:
+            for slot in obj.material_slots:
+                #Soft refresh
+                #tempMat = bpy.data.materials.new(name='hdrlm_temporary_shift')
+                #tempMat.use_nodes = True
+                mat = bpy.data.materials[slot.material.name]
+                #slot.material = bpy.data.materials["hdrlm_temporary_shift"]
+                #slot.material = mat
+
+        for mat in bpy.data.materials:
+            if mat.name.endswith('_baked') or mat.name.endswith('_temp'):
+                bpy.data.materials.remove(mat, do_unlink=True)
+
 
         # scene = context.scene
 
@@ -663,6 +739,41 @@ def HDRLM_Build(self, context):
         if scene.hdrlm_oidn_path == "":
             self.report({'INFO'}, "No denoise OIDN path assigned")
             return{'FINISHED'}
+
+    invalidNaming = False
+
+    for obj in bpy.data.objects:
+        if "_" in obj.name:
+            obj.name = obj.name.replace("_",".")
+        if " " in obj.name:
+            obj.name = obj.name.replace(" ",".")
+        if "[" in obj.name:
+            obj.name = obj.name.replace("[",".")
+        if "]" in obj.name:
+            obj.name = obj.name.replace("]",".")
+            #self.report({'INFO'}, "Invalid object name found - Please don't use underscores.")
+            #return{'FINISHED'}
+        if len(obj.name) > 60:
+                obj.name = "TooLongName"
+                invalidNaming = True
+
+        for slot in obj.material_slots:
+            if "_" in slot.material.name:
+                slot.material.name = slot.material.name.replace("_",".")
+            if " " in slot.material.name:
+                slot.material.name = slot.material.name.replace(" ",".")
+            if "[" in slot.material.name:
+                slot.material.name = slot.material.name.replace("[",".")
+            if "[" in slot.material.name:
+                slot.material.name = slot.material.name.replace("]",".")
+            
+            if len(slot.material.name) > 60:
+                slot.material.name = "TooLongName"
+                invalidNaming = True
+
+    if(invalidNaming):
+        self.report({'INFO'}, "Naming errors")
+        return{'FINISHED'}
 
     prevCyclesSettings = [
         cycles.samples,
@@ -1148,6 +1259,9 @@ def HDRLM_Build(self, context):
 def register():
     bpy.utils.register_class(HDRLM_EncodeToRGBM)
     bpy.utils.register_class(HDRLM_BuildLighting)
+    bpy.utils.register_class(HDRLM_BuildLightingSelected)
+    bpy.utils.register_class(HDRLM_ToggleEnableforSelection)
+    bpy.utils.register_class(HDRLM_ToggleDisableforSelection)
     bpy.utils.register_class(HDRLM_CleanLighting)
     bpy.utils.register_class(HDRLM_LightmapFolder)
     bpy.utils.register_class(HDRLM_PT_Panel)
@@ -1183,6 +1297,7 @@ def register():
     bpy.types.Scene.hdrlm_apply_on_unwrap = BoolProperty(name="Apply scale", description="TODO", default=False)
     bpy.types.Scene.hdrlm_indirect_only = BoolProperty(name="Indirect Only", description="TODO", default=False)
     bpy.types.Scene.hdrlm_dilation_margin = IntProperty(name="Dilation margin", default=16, min=1, max=64, subtype='PIXEL')
+    bpy.types.Scene.hdrlm_delete_cache = BoolProperty(name="Delete cache", description="TODO", default=True)
     bpy.types.Scene.hdrlm_denoise_use = BoolProperty(name="Enable denoising", description="TODO", default=False)
     bpy.types.Scene.hdrlm_oidn_path = StringProperty(name="OIDN Path", description="TODO", default="", subtype="FILE_PATH")
     bpy.types.Scene.hdrlm_oidn_use_albedo = BoolProperty(name="Use albedo map", description="TODO")
@@ -1195,10 +1310,10 @@ def register():
                  ('Bilateral', 'Bilateral', 'TODO'),
                  ('Median', 'Median', 'TODO')],
                 name = "Filter", description="TODO", default='Gaussian')
-    bpy.types.Scene.hdrlm_filtering_gaussian_strength = IntProperty(name="Gaussian Strength", default=11, min=1, max=50)
+    bpy.types.Scene.hdrlm_filtering_gaussian_strength = IntProperty(name="Gaussian Strength", default=3, min=1, max=50)
     bpy.types.Scene.hdrlm_filtering_iterations = IntProperty(name="Filter Iterations", default=1, min=1, max=50)
     bpy.types.Scene.hdrlm_filtering_box_strength = IntProperty(name="Box Strength", default=1, min=1, max=50)
-    bpy.types.Scene.hdrlm_filtering_bilateral_diameter = IntProperty(name="Pixel diameter", default=11, min=1, max=50)
+    bpy.types.Scene.hdrlm_filtering_bilateral_diameter = IntProperty(name="Pixel diameter", default=3, min=1, max=50)
     bpy.types.Scene.hdrlm_filtering_bilateral_color_deviation = IntProperty(name="Color deviation", default=75, min=1, max=100)
     bpy.types.Scene.hdrlm_filtering_bilateral_coordinate_deviation = IntProperty(name="Color deviation", default=75, min=1, max=100)
     bpy.types.Scene.hdrlm_filtering_median_kernel = IntProperty(name="Median kernel", default=3, min=1, max=5)
@@ -1238,7 +1353,7 @@ def register():
                  ('Smart Project', 'Smart Project', 'TODO'),
                  ('Copy Existing', 'Copy Existing', 'TODO')],
                 name = "Unwrap Mode", description="TODO", default='Smart Project')
-    bpy.types.Object.hdrlm_mesh_unwrap_margin = FloatProperty(name="Unwrap Margin", default=0.05, min=0.0, max=1.0, subtype='FACTOR')
+    bpy.types.Object.hdrlm_mesh_unwrap_margin = FloatProperty(name="Unwrap Margin", default=0.1, min=0.0, max=1.0, subtype='FACTOR')
     bpy.types.Object.hdrlm_mesh_bake_ao = BoolProperty(name="Bake AO", description="TODO", default=False)
     bpy.types.Object.hdrlm_light_lightmap_use = BoolProperty(name="Enable for Lightmapping", description="TODO", default=True)
     bpy.types.Object.hdrlm_light_type = EnumProperty(
@@ -1251,6 +1366,9 @@ def register():
 def unregister():
     bpy.utils.unregister_class(HDRLM_EncodeToRGBM)
     bpy.utils.unregister_class(HDRLM_BuildLighting)
+    bpy.utils.unregister_class(HDRLM_BuildLightingSelected)
+    bpy.utils.unregister_class(HDRLM_ToggleEnableforSelection)
+    bpy.utils.unregister_class(HDRLM_ToggleDisableforSelection)
     bpy.utils.unregister_class(HDRLM_CleanLighting)
     bpy.utils.unregister_class(HDRLM_LightmapFolder)
     bpy.utils.unregister_class(HDRLM_PT_Panel)
