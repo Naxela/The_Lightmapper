@@ -161,8 +161,8 @@ class HDRLM_PT_Unwrap(bpy.types.Panel):
         row.prop(scene, 'hdrlm_dilation_margin')
         row = layout.row(align=True)
         row.prop(scene, 'hdrlm_indirect_only')
-        row = layout.row(align=True)
-        row.prop(scene, 'bpy.types.Scene.hdrlm_delete_cache')
+        #row = layout.row(align=True)
+        #row.prop(scene, 'bpy.types.Scene.hdrlm_delete_cache')
 
 class HDRLM_PT_Denoise(bpy.types.Panel):
     bl_label = "Denoise"
@@ -740,40 +740,40 @@ def HDRLM_Build(self, context):
             self.report({'INFO'}, "No denoise OIDN path assigned")
             return{'FINISHED'}
 
-    invalidNaming = False
+    # invalidNaming = False
 
-    for obj in bpy.data.objects:
-        if "_" in obj.name:
-            obj.name = obj.name.replace("_",".")
-        if " " in obj.name:
-            obj.name = obj.name.replace(" ",".")
-        if "[" in obj.name:
-            obj.name = obj.name.replace("[",".")
-        if "]" in obj.name:
-            obj.name = obj.name.replace("]",".")
-            #self.report({'INFO'}, "Invalid object name found - Please don't use underscores.")
-            #return{'FINISHED'}
-        if len(obj.name) > 60:
-                obj.name = "TooLongName"
-                invalidNaming = True
+    # for obj in bpy.data.objects:
+    #     if "_" in obj.name:
+    #         obj.name = obj.name.replace("_",".")
+    #     if " " in obj.name:
+    #         obj.name = obj.name.replace(" ",".")
+    #     if "[" in obj.name:
+    #         obj.name = obj.name.replace("[",".")
+    #     if "]" in obj.name:
+    #         obj.name = obj.name.replace("]",".")
+    #         #self.report({'INFO'}, "Invalid object name found - Please don't use underscores.")
+    #         #return{'FINISHED'}
+    #     if len(obj.name) > 60:
+    #             obj.name = "TooLongName"
+    #             invalidNaming = True
 
-        for slot in obj.material_slots:
-            if "_" in slot.material.name:
-                slot.material.name = slot.material.name.replace("_",".")
-            if " " in slot.material.name:
-                slot.material.name = slot.material.name.replace(" ",".")
-            if "[" in slot.material.name:
-                slot.material.name = slot.material.name.replace("[",".")
-            if "[" in slot.material.name:
-                slot.material.name = slot.material.name.replace("]",".")
+    #     for slot in obj.material_slots:
+    #         if "_" in slot.material.name:
+    #             slot.material.name = slot.material.name.replace("_",".")
+    #         if " " in slot.material.name:
+    #             slot.material.name = slot.material.name.replace(" ",".")
+    #         if "[" in slot.material.name:
+    #             slot.material.name = slot.material.name.replace("[",".")
+    #         if "[" in slot.material.name:
+    #             slot.material.name = slot.material.name.replace("]",".")
             
-            if len(slot.material.name) > 60:
-                slot.material.name = "TooLongName"
-                invalidNaming = True
+    #         if len(slot.material.name) > 60:
+    #             slot.material.name = "TooLongName"
+    #             invalidNaming = True
 
-    if(invalidNaming):
-        self.report({'INFO'}, "Naming errors")
-        return{'FINISHED'}
+    # if(invalidNaming):
+    #     self.report({'INFO'}, "Naming errors")
+    #     return{'FINISHED'}
 
     prevCyclesSettings = [
         cycles.samples,
@@ -955,39 +955,39 @@ def HDRLM_Build(self, context):
                         nodes = mat.node_tree.nodes
                         nodes['Baked Image'].image = bpy.data.images[img_name]
 
+                #for 
 
 
-
-                for m in bpy.data.materials: #TODO - CHANGE INTO SPECIFIC MATERIAL
-                    nodetree = m.node_tree
-                    nodes = nodetree.nodes
-                    mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
+                # for m in bpy.data.materials: #TODO - CHANGE INTO SPECIFIC MATERIAL
+                #     nodetree = m.node_tree
+                #     nodes = nodetree.nodes
+                #     mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
                     
-                    for n in nodes:
-                        if "LM" in n.name:
-                            nodetree.links.new(n.outputs[0], mainNode.inputs[0])
+                #     for n in nodes:
+                #         if "LM" in n.name:
+                #             nodetree.links.new(n.outputs[0], mainNode.inputs[0])
                     
-                    for n in nodes:
-                        if "Lightmap" in n.name:
-                            nodes.remove(n)
+                #     for n in nodes:
+                #         if "Lightmap" in n.name:
+                #             nodes.remove(n)
 
                 # NEW METHOD
 
                 # # import bpy
-                #for slot in obj.material_slots:
+                for slot in obj.material_slots:
 
-                #    nodetree = bpy.data.materials[slot.name].node_tree
-                #    nodes = nodetree.nodes
-                #    mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
+                    nodetree = bpy.data.materials[slot.name].node_tree
+                    nodes = nodetree.nodes
+                    mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
 
-                    #for n in nodes:
-                    #    if "LM" in n.name:
-                    #        nodetree.links.new(n.outputs[0], mainNode.inputs[0])
+                    for n in nodes:
+                        if "LM" in n.name:
+                            nodetree.links.new(n.outputs[0], mainNode.inputs[0])
 
-                    #for n in nodes:
-                    #    if "Lightmap" in n.name:
-                    #        print("Remove")
-                    #        nodes.remove(n)
+                    for n in nodes:
+                        if "Lightmap" in n.name:
+                                #print("Remove")
+                                nodes.remove(n)
 
 
 
@@ -1231,9 +1231,9 @@ def HDRLM_Build(self, context):
                     nodetree.links.new(mixNode.outputs[0], mainNode.inputs[0]) 
                     nodetree.links.new(UVLightmap.outputs[0], LightmapNode.inputs[0])
     
-    for mat in bpy.data.materials:
-        if mat.name.endswith('_baked'):
-            bpy.data.materials.remove(mat, do_unlink=True)
+    #for mat in bpy.data.materials:
+    #    if mat.name.endswith('_baked'):
+    #        bpy.data.materials.remove(mat, do_unlink=True)
 
     #for img in bpy.data.images:
     #    if not img.users:
