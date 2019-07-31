@@ -39,13 +39,21 @@ try:
     module_pip = True
 except ImportError:
     module_pip = False
+    print("Pip not found")
 
 try:
     import cv2
     module_opencv = True
 except ImportError:
-    pip 
+    #pip 
     module_opencv = False
+
+def ShowMessageBox(message = "", title = "Message Box", icon = 'INFO'):
+
+    def draw(self, context):
+        self.layout.label(text=message)
+
+    bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
 
 class HDRLM_PT_Panel(bpy.types.Panel):
     bl_label = "HDR Lightmapper"
@@ -186,6 +194,14 @@ class HDRLM_PT_Denoise(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.prop(scene, "hdrlm_oidn_path")
+        row = layout.row(align=True)
+        row.prop(scene, "hdrlm_oidn_verbose")
+        row = layout.row(align=True)
+        row.prop(scene, "hdrlm_oidn_threads")
+        row = layout.row(align=True)
+        row.prop(scene, "hdrlm_oidn_maxmem")
+        row = layout.row(align=True)
+        row.prop(scene, "hdrlm_oidn_affinity")
         #row = layout.row(align=True)
         #row.prop(scene, "hdrlm_oidn_use_albedo")
         #row = layout.row(align=True)
@@ -208,10 +224,29 @@ class HDRLM_PT_Filtering(bpy.types.Panel):
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
-        layout.active = scene.hdrlm_filtering_use
+        #layout.active = scene.hdrlm_filtering_use
+
+        column = layout.column()
+        box = column.box()
+        if module_opencv:
+            box.label(text="OpenCV Installed", icon="INFO")
+        else:
+            box.label(text="Please restart Blender after installing")
+            box.operator("hdrlm.install_opencv",icon="PREFERENCES")
+
+        if(scene.hdrlm_filtering_use):
+            if(module_opencv):
+                layout.active = True
+            else:
+                layout.active = False
+        else:
+            layout.active = False
         
         #row = layout.row(align=True)
         #row.prop(scene, "hdrlm_filtering_gimp_path")
+
+        #split = box.split()
+
         row = layout.row(align=True)
         row.prop(scene, "hdrlm_filtering_mode")
         row = layout.row(align=True)
@@ -255,6 +290,8 @@ class HDRLM_PT_Encoding(bpy.types.Panel):
         if scene.hdrlm_encoding_mode == "RGBM" or scene.hdrlm_encoding_mode == "RGBD":
             row = layout.row(align=True)
             row.prop(scene, "hdrlm_encoding_range")
+            row = layout.row(align=True)
+            row.prop(scene, "hdrlm_encoding_armory_setup")
         row = layout.row(align=True)
         row.prop(scene, "hdrlm_encoding_colorspace")
 
@@ -361,6 +398,18 @@ class HDRLM_ToggleDisableforSelection(bpy.types.Operator):
             obj.hdrlm_mesh_lightmap_use = False
         return {'FINISHED'}
 
+class HDRLM_MakeUniqueMaterials(bpy.types.Operator):
+    """Disable lightmapping for selection"""
+    bl_idname = "hdrlm.make_unique_materials"
+    bl_label = "Make Unique Materials"
+    bl_description = "TODO"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        #for obj in bpy.context.selected_objects:
+        #    obj.hdrlm_mesh_lightmap_use = False
+        return {'FINISHED'}
+
 class HDRLM_CleanLighting(bpy.types.Operator):
     """Clean lightmap cache"""
     bl_idname = "hdrlm.clean_lighting"
@@ -369,6 +418,8 @@ class HDRLM_CleanLighting(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+
+
 
         for m in bpy.data.materials: #TODO - CHANGE INTO SPECIFIC MATERIAL
             nodetree = m.node_tree
@@ -388,7 +439,12 @@ class HDRLM_CleanLighting(bpy.types.Operator):
                 #Soft refresh
                 #tempMat = bpy.data.materials.new(name='hdrlm_temporary_shift')
                 #tempMat.use_nodes = True
-                mat = bpy.data.materials[slot.material.name]
+                #mat = bpy.data.materials[slot.material.name]
+                #slot.material = bpy.data.materials["AAA"]
+                #slot.material = mat
+                pass
+                #mat = bpy.
+                #mat = bpy.data.materials[slot.material.name]
                 #slot.material = bpy.data.materials["hdrlm_temporary_shift"]
                 #slot.material = mat
 
@@ -489,6 +545,48 @@ class HDRLM_LightmapFolder(bpy.types.Operator):
 
         return{'FINISHED'}
 
+class HDRLM_InstallOpenCV(bpy.types.Operator):
+    """Install OpenCV"""
+    bl_idname = "hdrlm.install_opencv"
+    bl_label = "Install OpenCV"
+    bl_description = "TODO"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        pythonbinpath = bpy.app.binary_path_python
+
+        if platform.system() == "Windows":
+            pythonlibpath = os.path.join(os.path.dirname(os.path.dirname(pythonbinpath)), "lib")
+        else:
+            pythonlibpath = os.path.join(os.path.dirname(os.path.dirname(pythonbinpath)), "lib", os.path.basename(pythonbinpath)[:-1])
+
+        ensurepippath = os.path.join(pythonlibpath, "ensurepip")
+
+        cmda = [pythonbinpath, ensurepippath, "--upgrade", "--user"]
+        pip = subprocess.run(cmda, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        if pip.returncode == 0:
+            print("Sucessfully installed pip!\n")
+        else:
+            print("Failed to install pip!\n")
+            return{'FINISHED'}
+
+        cmdb = [pythonbinpath, "-m", "pip", "install", "opencv-python"]
+        
+        opencv = subprocess.run(cmdb, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        if opencv.returncode == 0:
+            print("Sucessfully installed OpenCV!\n")
+        else:
+            print("Failed to install OpenCV!\n")
+            return{'FINISHED'}
+
+        module_opencv = True
+        ShowMessageBox("Please restart blender to enable OpenCV filtering", "Restart", 'PREFERENCES')
+
+        return{'FINISHED'}
+
 # function to clamp float
 def saturate(num, floats=True):
     if num < 0:
@@ -550,7 +648,7 @@ class HDRLM_EncodeToRGBM(bpy.types.Operator):
 
         return {'FINISHED'}
 
-def encodeImageRGBM(self, image, maxRange, outDir):
+def encodeImageRGBM(self, image, maxRange, outDir, quality):
     input_image = bpy.data.images[image.name]
     image_name = input_image.name
 
@@ -589,7 +687,10 @@ def encodeImageRGBM(self, image, maxRange, outDir):
     #Save RGBM
     input_image.filepath_raw = outDir + "_encoded.png"
     input_image.file_format = "PNG"
-    input_image.save()
+    bpy.context.scene.render.image_settings.quality = quality
+    input_image.save_render(filepath = input_image.filepath_raw, scene = bpy.context.scene)
+    #input_image.
+    #input_image.save()
 
 def encodeImageRGBD(self, image, maxRange, outDir):
     input_image = bpy.data.images[image.name]
@@ -653,7 +754,7 @@ def load_pfm(file, as_flat_list=False):
     with open(r"path/to/file.pfm", "rb") as f:
         data, scale = load_pfm(f)
     """
-    start = time()
+    #start = time()
 
     header = file.readline().decode("utf-8").rstrip()
     if header == "PF":
@@ -682,7 +783,7 @@ def load_pfm(file, as_flat_list=False):
         result = data
     else:
         result = np.reshape(data, shape)
-    print("PFM import took %.3f s" % (time() - start))
+    #print("PFM import took %.3f s" % (time() - start))
     return result, scale
 
 def save_pfm(file, image, scale=1):
@@ -692,7 +793,7 @@ def save_pfm(file, image, scale=1):
     with open(r"/path/to/out.pfm", "wb") as f:
         save_pfm(f, data)
     """
-    start = time()
+    #start = time()
 
     if image.dtype.name != "float32":
         raise Exception("Image dtype must be float32 (got %s)" % image.dtype.name)
@@ -716,29 +817,45 @@ def save_pfm(file, image, scale=1):
 
     image.tofile(file)
 
-    print("PFM export took %.3f s" % (time() - start))
+    #print("PFM export took %.3f s" % (time() - start))
 
 def HDRLM_Build(self, context):
 
     scene = context.scene
     cycles = bpy.data.scenes[scene.name].cycles
-
-    #if scene.render.engine != "CYCLES":
-    #    self.report({'INFO'}, "Please change to Cycles rendering engine")
-    #    return{'FINISHED'}
-
+    
     if not bpy.data.is_saved:
         self.report({'INFO'}, "Please save your file first")
         return{'FINISHED'}
 
-    scriptDir = os.path.dirname(os.path.realpath(__file__))
-    if os.path.isdir(os.path.join(scriptDir,"OIDN")):
-        scene.hdrlm_oidn_path = os.path.join(scriptDir,"OIDN")
+    #scriptDir = os.path.dirname(os.path.realpath(__file__))
+    #if os.path.isdir(os.path.join(scriptDir,"OIDN")):
+    #    scene.hdrlm_oidn_path = os.path.join(scriptDir,"OIDN")
 
     if scene.hdrlm_denoise_use:
         if scene.hdrlm_oidn_path == "":
-            self.report({'INFO'}, "No denoise OIDN path assigned")
+            scriptDir = os.path.dirname(os.path.realpath(__file__))
+            if os.path.isdir(os.path.join(scriptDir,"OIDN")):
+                scene.hdrlm_oidn_path = os.path.join(scriptDir,"OIDN")
+                if scene.hdrlm_oidn_path == "":
+                    self.report({'INFO'}, "No denoise OIDN path assigned")
+                    return{'FINISHED'}
+
+    for obj in bpy.data.objects:
+        if "_" in obj.name:
+            self.report({'INFO'}, "Invalid object name found - Please don't use underscores.")
             return{'FINISHED'}
+
+    for slot in obj.material_slots:
+        if "_" in slot.material.name:
+            self.report({'INFO'}, "Invalid material name found - Please don't use underscores.")
+            return{'FINISHED'}
+        if slot.material.users > 1:
+            self.report({'INFO'}, "Invalid material found - Armory only supports 1 user.")
+            return{'FINISHED'}
+
+    total_time = time()
+
 
     # invalidNaming = False
 
@@ -1072,17 +1189,46 @@ def HDRLM_Build(self, context):
 
                     denoise_output_destination = bakemap_path + "_denoised.pfm"
 
+                    Scene = context.scene
+
+                    verbose = Scene.hdrlm_oidn_verbose
+                    affinity = Scene.hdrlm_oidn_affinity
+
+                    if verbose:
+                        v = "3"
+                    else:
+                        v = "0"
+
+                    if affinity:
+                        a = "1"
+                    else:
+                        a = "0"
+
+                    threads = str(Scene.hdrlm_oidn_threads)
+                    maxmem = str(Scene.hdrlm_oidn_maxmem)
+
                     if platform.system() == 'Windows':
                         oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise-win.exe")
-                        pipePath = [oidnPath, '-hdr', image_output_destination, '-o', denoise_output_destination]
+                        pipePath = [oidnPath, '-hdr', image_output_destination, '-o', denoise_output_destination, '-verbose', v, '-threads', threads, '-affinity', a, '-maxmem', maxmem]
                     elif platform.system() == 'Darwin':
                         oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise-osx")
-                        pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination]
+                        pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + n]
                     else:
                         oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise-linux")
-                        pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination]
+                        pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + n]
                         
-                    denoisePipe = subprocess.Popen(pipePath, shell=True)
+                    
+                    #print(pipePath)
+                    #denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
+                    if not verbose:
+                        denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
+                    else:
+                        denoisePipe = subprocess.Popen(pipePath, shell=True)
+                    #cmda = [pythonbinpath, ensurepippath, "--upgrade", "--user"]
+                    #pip = subprocess.run(cmda, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    #subprocess.run(pipePath, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                    #subprocess.check_(pipePath, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+
                     denoisePipe.communicate()[0]
 
                     with open(denoise_output_destination, "rb") as f:
@@ -1160,12 +1306,12 @@ def HDRLM_Build(self, context):
                        print("Modules missing...") 
 
                 if scene.hdrlm_encoding_mode == "RGBM":
-                    encodeImageRGBM(self, bpy.data.images[obj.name+"_baked"], 6.0, bakemap_path)
+                    encodeImageRGBM(self, bpy.data.images[obj.name+"_baked"], 6.0, bakemap_path, scene.hdrlm_compression)
                     bpy.data.images[obj.name+"_baked"].name = obj.name + "_temp"
                     bpy.data.images[obj.name+"_baked_encoded"].name = obj.name + "_baked"
                     bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])
                 elif scene.hdrlm_encoding_mode == "RGBD":
-                    encodeImageRGBD(self, bpy.data.images[obj.name+"_baked"], 6.0, bakemap_path)
+                    encodeImageRGBD(self, bpy.data.images[obj.name+"_baked"], 6.0, bakemap_path, scene.hdrlm_compression)
                     bpy.data.images[obj.name+"_baked"].name = obj.name + "_temp"
                     bpy.data.images[obj.name+"_baked_encoded"].name = obj.name + "_baked"
                     bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])
@@ -1186,6 +1332,9 @@ def HDRLM_Build(self, context):
                 uv_layers.active_index = 0
 
                 for slot in obj.material_slots:
+
+                    if(scene.hdrlm_encoding_armory_setup):
+                        print("Setup Armory")
 
                     nodetree = bpy.data.materials[slot.name].node_tree
 
@@ -1224,12 +1373,17 @@ def HDRLM_Build(self, context):
                     UVLightmap = nodetree.nodes.new(type="ShaderNodeUVMap")
                     UVLightmap.uv_map = "UVMap_Lightmap"
                     UVLightmap.name = "Lightmap_UV"
-                    UVLightmap.location = ((-700, 0))
+                    UVLightmap.location = ((-1000, baseColorNode.location[1] + 300))
 
                     nodetree.links.new(baseColorNode.outputs[0], mixNode.inputs[1]) 
                     nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2])
                     nodetree.links.new(mixNode.outputs[0], mainNode.inputs[0]) 
                     nodetree.links.new(UVLightmap.outputs[0], LightmapNode.inputs[0])
+
+    #for mat in bpy.data.materials:
+    #    for node in mat.node_tree.nodes:
+    #        if node.type == "RGB":
+    #            mat.node_tree.nodes.remove(node)
     
     #for mat in bpy.data.materials:
     #    if mat.name.endswith('_baked'):
@@ -1254,6 +1408,8 @@ def HDRLM_Build(self, context):
     cycles.device = prevCyclesSettings[9]
     scene.render.engine = prevCyclesSettings[10]
 
+    print("The whole ordeal took: %.3f s" % (time() - total_time))
+
     return{'FINISHED'}
 
 def register():
@@ -1270,9 +1426,10 @@ def register():
     bpy.utils.register_class(HDRLM_PT_Filtering)
     bpy.utils.register_class(HDRLM_PT_Encoding)
     bpy.utils.register_class(HDRLM_PT_Compression)
-    bpy.utils.register_class(HDRLM_PT_LightmapList)
+    #bpy.utils.register_class(HDRLM_PT_LightmapList)
     bpy.utils.register_class(HDRLM_PT_MeshMenu)
     bpy.utils.register_class(HDRLM_PT_LightMenu)
+    bpy.utils.register_class(HDRLM_InstallOpenCV)
     bpy.types.IMAGE_PT_image_properties.append(draw)
 
     bpy.types.Scene.hdrlm_quality = EnumProperty(
@@ -1300,6 +1457,10 @@ def register():
     bpy.types.Scene.hdrlm_delete_cache = BoolProperty(name="Delete cache", description="TODO", default=True)
     bpy.types.Scene.hdrlm_denoise_use = BoolProperty(name="Enable denoising", description="TODO", default=False)
     bpy.types.Scene.hdrlm_oidn_path = StringProperty(name="OIDN Path", description="TODO", default="", subtype="FILE_PATH")
+    bpy.types.Scene.hdrlm_oidn_verbose = BoolProperty(name="Verbose", description="TODO")
+    bpy.types.Scene.hdrlm_oidn_threads = IntProperty(name="Threads", default=0, min=0, max=64, description="Amount of threads to use. Set to 0 for auto-detect.")
+    bpy.types.Scene.hdrlm_oidn_maxmem = IntProperty(name="Tiling max Memory", default=0, min=512, max=32768, description="Use tiling for memory conservation. Set to 0 to disable tiling.")
+    bpy.types.Scene.hdrlm_oidn_affinity = BoolProperty(name="Set Affinity", description="TODO")
     bpy.types.Scene.hdrlm_oidn_use_albedo = BoolProperty(name="Use albedo map", description="TODO")
     bpy.types.Scene.hdrlm_oidn_use_normal = BoolProperty(name="Use normal map", description="TODO")
     bpy.types.Scene.hdrlm_filtering_use = BoolProperty(name="Enable filtering", description="TODO", default=False)
@@ -1323,6 +1484,7 @@ def register():
                  ('RGBE', 'RGBE', '32-bit HDR RGBE encoding. Best quality, but high memory usage and not compatible with all devices.')],
                 name = "Encoding Mode", description="TODO", default='RGBE')
     bpy.types.Scene.hdrlm_encoding_range = IntProperty(name="Encoding range", description="Higher gives a larger HDR range, but also gives more banding.", default=6, min=1, max=10)
+    bpy.types.Scene.hdrlm_encoding_armory_setup = BoolProperty(name="Use Armory decoder", description="TODO", default=True)
     bpy.types.Scene.hdrlm_encoding_colorspace = EnumProperty(
         items = [('XYZ', 'XYZ', 'TODO'),
                  ('sRGB', 'sRGB', 'TODO'),
@@ -1377,10 +1539,23 @@ def unregister():
     bpy.utils.unregister_class(HDRLM_PT_Filtering)
     bpy.utils.unregister_class(HDRLM_PT_Encoding)
     bpy.utils.unregister_class(HDRLM_PT_Compression)
-    bpy.utils.unregister_class(HDRLM_PT_LightmapList)
+    #bpy.utils.unregister_class(HDRLM_PT_LightmapList)
     bpy.utils.unregister_class(HDRLM_PT_MeshMenu)
     bpy.utils.unregister_class(HDRLM_PT_LightMenu)
+    bpy.utils.unregister_class(HDRLM_InstallOpenCV)
     bpy.types.IMAGE_PT_image_properties.remove(draw)
 
 if __name__ == "__main__":
     register()
+
+
+#OPTION!:
+#BAKE WITH ALBEDO
+#BAKE WITH DESIGNATED MATERIAL
+
+#Mesh name follows object name..
+#
+#import bpy
+#
+#for obj in bpy.data.objects:
+#    obj.data.name = obj.name
