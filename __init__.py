@@ -34,10 +34,10 @@ def register():
     operators.register()
     properties.register()
     panels.register()
-    utility.register()
+    #utility.register()
 
 def unregister():
     operators.unregister()
     properties.unregister()
     panels.unregister()
-    utility.unregister()
+    #utility.unregister()
