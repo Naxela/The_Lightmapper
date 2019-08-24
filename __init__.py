@@ -28,16 +28,18 @@ bl_info = {
     'category': '3D View'
 }
 
-from . addon import operators, panels, properties, utility
+from . addon import operators, panels, properties, utility, keymap
 
 def register():
     operators.register()
     properties.register()
     panels.register()
+    keymap.register()
     #utility.register()
 
 def unregister():
     operators.unregister()
     properties.unregister()
     panels.unregister()
+    keymap.unregister()
     #utility.unregister()
