@@ -8,7 +8,7 @@ bl_info = {
     "blender": (2, 80, 0)
 }
 
-import bpy, math, os, platform, subprocess, sys, re, shutil, webbrowser
+import bpy, math, os, platform, subprocess, sys, re, shutil, webbrowser, glob
 from bpy.app.handlers import persistent
 from bpy.props import *
 from bpy.types import Menu, Panel, UIList
@@ -17,6 +17,10 @@ from time import time
 
 module_pip = False
 module_opencv = False
+module_armory = False
+
+
+#bpy.context.object.update_tag({‘OBJECT’, ‘DATA’, ‘TIME’})
 
 #import pip OR install pip os.system('python path-to-get-pip')
 #Check if python is set in environment variables
@@ -48,6 +52,12 @@ except ImportError:
     #pip 
     module_opencv = False
 
+try:
+    import arm
+    module_armory = True
+except ImportError:
+    module_armory = False
+
 def ShowMessageBox(message = "", title = "Message Box", icon = 'INFO'):
 
     def draw(self, context):
@@ -69,6 +79,8 @@ class HDRLM_PT_Panel(bpy.types.Panel):
         row.operator("hdrlm.build_lighting")
         row = layout.row()
         row.operator("hdrlm.build_lighting_selected")
+        row = layout.row()
+        row.operator("hdrlm.build_ao")
         row = layout.row()
         row.operator("hdrlm.enable_lighting")
         row = layout.row()
@@ -109,8 +121,8 @@ class HDRLM_PT_MeshMenu(bpy.types.Panel):
                 row.prop(obj, "hdrlm_mesh_lightmap_unwrap_mode")
                 row = layout.row()
                 row.prop(obj, "hdrlm_mesh_unwrap_margin")
-                #row = layout.row()
-                #row.prop(obj, "hdrlm_mesh_bake_ao")
+                row = layout.row()
+                row.prop(obj, "hdrlm_mesh_bake_ao")
 
 class HDRLM_PT_LightMenu(bpy.types.Panel):
     bl_label = "HDR Lightmapper"
@@ -155,6 +167,8 @@ class HDRLM_PT_Unwrap(bpy.types.Panel):
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
+        row = layout.row()
+        row.prop(scene, 'hdrlm_mode')
         row = layout.row(align=True)
         row.prop(scene, 'hdrlm_quality')
         row = layout.row(align=True)
@@ -162,13 +176,15 @@ class HDRLM_PT_Unwrap(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(scene, 'hdrlm_lightmap_savedir')
         row = layout.row(align=True)
-        row.prop(scene, 'hdrlm_mode')
-        row = layout.row(align=True)
-        row.prop(scene, 'hdrlm_apply_on_unwrap')
+        row.prop(scene, "hdrlm_caching_mode")
         row = layout.row(align=True)
         row.prop(scene, 'hdrlm_dilation_margin')
         row = layout.row(align=True)
+        row.prop(scene, 'hdrlm_apply_on_unwrap')
+        row = layout.row(align=True)
         row.prop(scene, 'hdrlm_indirect_only')
+        row = layout.row(align=True)
+        row.prop(scene, 'hdrlm_keep_cache_files')
         #row = layout.row(align=True)
         #row.prop(scene, 'bpy.types.Scene.hdrlm_delete_cache')
 
@@ -193,15 +209,21 @@ class HDRLM_PT_Denoise(bpy.types.Panel):
         layout.active = scene.hdrlm_denoise_use
 
         row = layout.row(align=True)
-        row.prop(scene, "hdrlm_oidn_path")
-        row = layout.row(align=True)
-        row.prop(scene, "hdrlm_oidn_verbose")
-        row = layout.row(align=True)
-        row.prop(scene, "hdrlm_oidn_threads")
-        row = layout.row(align=True)
-        row.prop(scene, "hdrlm_oidn_maxmem")
-        row = layout.row(align=True)
-        row.prop(scene, "hdrlm_oidn_affinity")
+        row.prop(scene, "hdrlm_denoiser", expand=True)
+        if scene.hdrlm_denoiser == "OIDN":
+            row = layout.row(align=True)
+            row.prop(scene, "hdrlm_oidn_path")
+            row = layout.row(align=True)
+            row.prop(scene, "hdrlm_oidn_verbose")
+            row = layout.row(align=True)
+            row.prop(scene, "hdrlm_oidn_threads")
+            row = layout.row(align=True)
+            row.prop(scene, "hdrlm_oidn_maxmem")
+            row = layout.row(align=True)
+            row.prop(scene, "hdrlm_oidn_affinity")
+        if scene.hdrlm_denoiser == "Optix":
+            row = layout.row(align=True)
+            row.prop(scene, "hdrlm_optix_path")
         #row = layout.row(align=True)
         #row.prop(scene, "hdrlm_oidn_use_albedo")
         #row = layout.row(align=True)
@@ -314,6 +336,33 @@ class HDRLM_PT_Compression(bpy.types.Panel):
             row = layout.row(align=True)
             row.prop(scene, "hdrlm_compression")
 
+class HDRLM_PT_Additional(bpy.types.Panel):
+    bl_label = "Additional Armory Features"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "render"
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = "HDRLM_PT_Panel"
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        try:
+            import arm
+            module_armory = True
+        except ImportError:
+            module_armory = False
+
+        if module_armory:
+            row = layout.row(align=True)
+            layout.label(text="Armory found! Hooray!")
+            row.operator("hdrlm.create_world_volume")
+        else:
+             layout.label(text="Armory not detected.")
+
 class HDRLM_PT_LightmapList(bpy.types.Panel):
     bl_label = "Lightmaps"
     bl_space_type = "PROPERTIES"
@@ -333,6 +382,37 @@ class HDRLM_PT_LightmapList(bpy.types.Panel):
 #class HDRLM_PT_LightmapStatus:
 #    def __init__(self):
 
+class HDRLM_CreateWorldVolume(bpy.types.Operator):
+    """Create World Volume"""
+    bl_idname = "hdrlm.create_world_volume"
+    bl_label = "Create World Volume"
+    bl_description = "TODO"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        try:
+            import arm
+            module_armory = True
+        except ImportError:
+            module_armory = False
+
+        createWorldVolume(self, context, arm)
+
+        return {'FINISHED'}
+
+class HDRLM_BuildAO(bpy.types.Operator):
+    """Builds the lighting"""
+    bl_idname = "hdrlm.build_ao"
+    bl_label = "Build Ambient Occlusion"
+    bl_description = "TODO"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        HDRLM_Build_AO(self, context)
+        ##HDRLM_Build(self, context)
+        return {'FINISHED'}
+
 class HDRLM_BuildLighting(bpy.types.Operator):
     """Builds the lighting"""
     bl_idname = "hdrlm.build_lighting"
@@ -341,6 +421,7 @@ class HDRLM_BuildLighting(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+
         HDRLM_Build(self, context)
         return {'FINISHED'}
 
@@ -419,46 +500,49 @@ class HDRLM_CleanLighting(bpy.types.Operator):
 
     def execute(self, context):
 
-
-
-        for m in bpy.data.materials: #TODO - CHANGE INTO SPECIFIC MATERIAL
-            nodetree = m.node_tree
-            nodes = nodetree.nodes
-            mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
-            
-            for n in nodes:
-                if "LM" in n.name:
-                    nodetree.links.new(n.outputs[0], mainNode.inputs[0])
-            
-            for n in nodes:
-                if "Lightmap" in n.name:
-                    nodes.remove(n)
-
         for obj in bpy.data.objects:
-            for slot in obj.material_slots:
-                #Soft refresh
-                #tempMat = bpy.data.materials.new(name='hdrlm_temporary_shift')
-                #tempMat.use_nodes = True
-                #mat = bpy.data.materials[slot.material.name]
-                #slot.material = bpy.data.materials["AAA"]
-                #slot.material = mat
-                pass
-                #mat = bpy.
-                #mat = bpy.data.materials[slot.material.name]
-                #slot.material = bpy.data.materials["hdrlm_temporary_shift"]
-                #slot.material = mat
+            if obj.type == "MESH":
+                if obj.hdrlm_mesh_lightmap_use:
+                    for slot in obj.material_slots:
+                        backup_material_restore(slot)
 
-        for mat in bpy.data.materials:
-            if mat.name.endswith('_baked') or mat.name.endswith('_temp'):
-                bpy.data.materials.remove(mat, do_unlink=True)
+        # for m in bpy.data.materials: #TODO - CHANGE INTO SPECIFIC MATERIAL
+        #     nodetree = m.node_tree
+        #     nodes = nodetree.nodes
+        #     mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
+            
+        #     for n in nodes:
+        #         if "LM" in n.name:
+        #             nodetree.links.new(n.outputs[0], mainNode.inputs[0])
+            
+        #     for n in nodes:
+        #         if "Lightmap" in n.name:
+        #             nodes.remove(n)
+
+        # for obj in bpy.data.objects:
+        #     for slot in obj.material_slots:
+        #         #Soft refresh
+        #         #tempMat = bpy.data.materials.new(name='hdrlm_temporary_shift')
+        #         #tempMat.use_nodes = True
+        #         #mat = bpy.data.materials[slot.material.name]
+        #         #slot.material = bpy.data.materials["AAA"]
+        #         #slot.material = mat
+        #         pass
+        #         #mat = bpy.
+        #         #mat = bpy.data.materials[slot.material.name]
+        #         #slot.material = bpy.data.materials["hdrlm_temporary_shift"]
+        #         #slot.material = mat
+
+        # for mat in bpy.data.materials:
+        #     if mat.name.endswith('_baked') or mat.name.endswith('_temp'):
+        #         bpy.data.materials.remove(mat, do_unlink=True)
 
 
-        # scene = context.scene
-
-        # filepath = bpy.data.filepath
-        # dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.hdrlm_lightmap_savedir)
-        # if os.path.isdir(dirpath):
-        #     shutil.rmtree(dirpath)
+        scene = context.scene
+        filepath = bpy.data.filepath
+        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.hdrlm_lightmap_savedir)
+        if os.path.isdir(dirpath):
+            shutil.rmtree(dirpath)
 
         # for obj in bpy.data.objects:
 
@@ -519,6 +603,9 @@ class HDRLM_CleanLighting(bpy.types.Operator):
         #     if not img.users:
         #         bpy.data.images.remove(img)
 
+        for mat in bpy.data.materials:
+            mat.update_tag()
+
         return{'FINISHED'}
 
 
@@ -541,6 +628,9 @@ class HDRLM_LightmapFolder(bpy.types.Operator):
         dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.hdrlm_lightmap_savedir)
 
         if os.path.isdir(dirpath):
+            webbrowser.open('file://' + dirpath)
+        else:
+            os.mkdir(dirpath)
             webbrowser.open('file://' + dirpath)
 
         return{'FINISHED'}
@@ -819,6 +909,380 @@ def save_pfm(file, image, scale=1):
 
     #print("PFM export took %.3f s" % (time() - start))
 
+def backup_material_copy(slot):
+    material = slot.material
+    dup = material.copy()
+    dup.name = material.name + "_Original"
+    dup.use_fake_user = True
+
+def backup_material_restore(slot):
+    material = slot.material
+    if material.name + "_Original" in bpy.data.materials:
+        original = bpy.data.materials[material.name + "_Original"]
+        slot.material = original
+        material.name = material.name + "_temp"
+        original.name = original.name[:-9]
+        original.use_fake_user = False
+        material.user_clear()
+        bpy.data.materials.remove(material)
+    else:
+        pass
+        #Check if material has nodes with lightmap prefix
+
+def backup_material_cache():
+    filepath = bpy.data.filepath
+    dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.hdrlm_lightmap_savedir)
+    if not os.path.isdir(dirpath):
+        os.mkdir(dirpath)
+
+    cachefilepath = os.path.join(dirpath, "HDRLM_cache.blend")
+    bpy.ops.wm.save_as_mainfile(filepath=cachefilepath, copy=True)
+
+def backup_material_cache_restore(matname):
+    from os.path import join
+
+    path_to_scripts = bpy.utils.script_paths()[0]
+    path_to_script = join(path_to_scripts, 'addons_contrib', 'io_material_loader')
+
+    material_locator = "\\Material\\"
+    file_name = "practicality.blend"    
+
+    opath = "//" + file_name + material_locator + matname
+    dpath = join(path_to_script, file_name) + material_locator
+
+    bpy.ops.wm.link_append(
+            filepath=opath,     # "//filename.blend\\Folder\\"
+            filename=matname,   # "material_name
+            directory=dpath,    # "fullpath + \\Folder\\
+            filemode=1,
+            link=False,
+            autoselect=False,
+            active_layer=True,
+            instance_groups=False,
+            relative_path=True)
+
+def HDRLM_Build_AO(self, context):
+    scene = bpy.context.scene
+    scene.render.engine = "CYCLES"
+
+    prevObjRenderset = []
+
+    #for obj in bpy.context.selected_objects:
+    #    obj.hdrlm_mesh_lightmap_use = True
+
+    #Store previous settings for hide_render
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            if not obj.hide_render:
+                prevObjRenderset.append(obj.name)
+
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            obj.hide_render = True
+
+    #Bake AO for selection
+    for obj in bpy.context.selected_objects:
+        if obj.type == "MESH":
+            obj.hide_render = False
+
+    for obj in bpy.context.selected_objects:
+        if obj.type == "MESH":
+
+            if len(obj.material_slots) == 0:
+                    single = False
+                    number = 0
+                    while single == False:
+                        matname = obj.name + ".00" + str(number)
+                        if matname in bpy.data.materials:
+                            single = False
+                            number = number + 1
+                        else:
+                            mat = bpy.data.materials.new(name=matname)
+                            mat.use_nodes = True
+                            obj.data.materials.append(mat)
+                            single = True
+
+            for mat in bpy.data.materials:
+                if mat.name.endswith('_bakedAO'):
+                    bpy.data.materials.remove(mat, do_unlink=True)
+            for img in bpy.data.images:
+                if img.name == obj.name + "_bakedAO":
+                    bpy.data.images.remove(img, do_unlink=True)
+
+            #Single user materials?
+            ob = obj
+            for slot in ob.material_slots:
+                # Temp material already exists
+                if slot.material.name.endswith('_tempAO'):
+                    continue
+                n = slot.material.name + '_' + ob.name + '_tempAO'
+                if not n in bpy.data.materials:
+                    slot.material = slot.material.copy()
+                slot.material.name = n
+
+            #Add images for baking
+            img_name = obj.name + '_bakedAO'
+            res = int(obj.hdrlm_mesh_lightmap_resolution) / int(scene.hdrlm_lightmap_scale)
+            if img_name not in bpy.data.images or bpy.data.images[img_name].size[0] != res or bpy.data.images[img_name].size[1] != res:
+                img = bpy.data.images.new(img_name, res, res, alpha=False, float_buffer=False)
+                img.name = img_name
+            else:
+                img = bpy.data.images[img_name]
+
+            for slot in obj.material_slots:
+                mat = slot.material
+                mat.use_nodes = True
+                nodes = mat.node_tree.nodes
+
+                if "Baked AO Image" in nodes:
+                    img_node = nodes["Baked AO Image"]
+                else:
+                    img_node = nodes.new('ShaderNodeTexImage')
+                    img_node.name = 'Baked AO Image'
+                    img_node.location = (100, 100)
+                    img_node.image = img
+                img_node.select = True
+                nodes.active = img_node
+
+            if scene.hdrlm_apply_on_unwrap:
+                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+            uv_layers = obj.data.uv_layers
+            if not "UVMap_Lightmap" in uv_layers:
+                uvmap = uv_layers.new(name="UVMap_Lightmap")
+                uv_layers.active_index = len(uv_layers) - 1
+                if obj.hdrlm_mesh_lightmap_unwrap_mode == "Lightmap":
+                    bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.hdrlm_mesh_unwrap_margin)
+                elif obj.hdrlm_mesh_lightmap_unwrap_mode == "Smart Project":
+                    bpy.ops.object.select_all(action='DESELECT')
+                    obj.select_set(True)
+                    bpy.ops.object.mode_set(mode='EDIT')
+                    bpy.ops.mesh.select_all(action='DESELECT')
+                    bpy.ops.object.mode_set(mode='OBJECT')
+                    bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.hdrlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+                else:
+                    pass
+            else:
+                for i in range(0, len(uv_layers)):
+                    if uv_layers[i].name == 'UVMap_Lightmap':
+                        uv_layers.active_index = i
+                        break
+
+            for slot in obj.material_slots:
+
+                #ONLY 1 MATERIAL PER OBJECT SUPPORTED FOR NOW!
+                nodetree = slot.material.node_tree
+                bpy.context.active_object.active_material = slot.material
+
+                n = slot.material.name[:-5] + '_bakedAO'
+                if not n in bpy.data.materials:
+                    mat = bpy.data.materials.new(name=n)
+                    mat.use_nodes = True
+                    nodes = mat.node_tree.nodes
+                    img_node = nodes.new('ShaderNodeTexImage')
+                    img_node.name = "Baked AO Image"
+                    img_node.location = (100, 100)
+                    img_node.image = bpy.data.images[img_name]
+                    mat.node_tree.links.new(img_node.outputs[0], nodes['Principled BSDF'].inputs[0])
+                else:
+                    mat = bpy.data.materials[n]
+                    nodes = mat.node_tree.nodes
+                    nodes['Baked AO Image'].image = bpy.data.images[img_name]
+
+            for slot in obj.material_slots:
+
+                nodetree = bpy.data.materials[slot.name].node_tree
+                nodes = nodetree.nodes
+                mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
+
+                for n in nodes:
+                    if "LM" in n.name:
+                        nodetree.links.new(n.outputs[0], mainNode.inputs[0])
+
+                for n in nodes:
+                    if "Lightmap" in n.name:
+                            #print("Remove")
+                            nodes.remove(n)
+
+            print("Baking: " + bpy.context.view_layer.objects.active.name)
+
+            bpy.ops.object.bake(type="AO", margin=scene.hdrlm_dilation_margin)
+
+            for slot in obj.material_slots:
+                mat = slot.material
+                if mat.name.endswith('_tempAO'):
+                    old = slot.material
+                    slot.material = bpy.data.materials[old.name.split('_' + obj.name)[0]]
+                    bpy.data.materials.remove(old, do_unlink=True)
+
+            uv_layers = obj.data.uv_layers
+            uv_layers.active_index = 0
+
+            for slot in obj.material_slots:
+
+                nodetree = bpy.data.materials[slot.name].node_tree
+
+                outputNode = nodetree.nodes[0]
+
+                mainNode = outputNode.inputs[0].links[0].from_node
+
+                if len(mainNode.inputs[0].links) == 0:
+                    baseColorValue = mainNode.inputs[0].default_value
+                    baseColorNode = nodetree.nodes.new(type="ShaderNodeRGB")
+                    baseColorNode.outputs[0].default_value = baseColorValue
+                    baseColorNode.location = ((mainNode.location[0]-500,mainNode.location[1]))
+                    baseColorNode.name = "AO_BasecolorNode_A"
+                else:
+                    baseColorNode = mainNode.inputs[0].links[0].from_node
+                    baseColorNode.name = "AO_P"
+
+                nodePos1 = mainNode.location
+                nodePos2 = baseColorNode.location
+
+                mixNode = nodetree.nodes.new(type="ShaderNodeMixRGB")
+                mixNode.name = "AO_Multiplication"
+                mixNode.location = lerpNodePoints(self, nodePos1, nodePos2, 0.5)
+                if scene.hdrlm_indirect_only:
+                    mixNode.blend_type = 'ADD'
+                else:
+                    mixNode.blend_type = 'MULTIPLY'
+                
+                mixNode.inputs[0].default_value = 1.0
+
+                LightmapNode = nodetree.nodes.new(type="ShaderNodeTexImage")
+                LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
+                LightmapNode.image = bpy.data.images[obj.name + "_bakedAO"]
+                LightmapNode.name = "AO_Image"
+
+                UVLightmap = nodetree.nodes.new(type="ShaderNodeUVMap")
+                UVLightmap.uv_map = "UVMap_Lightmap"
+                UVLightmap.name = "AO_UV"
+                UVLightmap.location = ((-1000, baseColorNode.location[1] + 300))
+
+                nodetree.links.new(baseColorNode.outputs[0], mixNode.inputs[1]) 
+                nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2])
+                nodetree.links.new(mixNode.outputs[0], mainNode.inputs[0]) 
+                nodetree.links.new(UVLightmap.outputs[0], LightmapNode.inputs[0])
+
+            return{'FINISHED'}
+
+def createWorldVolume(self, context, arm):
+    camera = bpy.data.cameras.new("WVCam")
+    cam_obj = bpy.data.objects.new("WVCamera", camera)
+    bpy.context.collection.objects.link(cam_obj)
+
+    cam_obj.location = bpy.context.scene.cursor.location
+    camera.angle = math.radians(90)
+
+    prevResx = bpy.context.scene.render.resolution_x
+    prevResy = bpy.context.scene.render.resolution_y
+    prevCam = bpy.context.scene.camera
+    prevEngine = bpy.context.scene.render.engine
+    bpy.context.scene.camera = cam_obj
+
+    bpy.context.scene.render.engine = "CYCLES"
+    bpy.context.scene.render.resolution_x = 512
+    bpy.context.scene.render.resolution_y = 512
+
+    savedir = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.hdrlm_lightmap_savedir)
+    directory = os.path.join(savedir, "Probes")
+
+    t = 90
+
+    positions = {
+        "xp" : (math.radians(t),0,0),
+        "zp" : (math.radians(t),0,math.radians(t)),
+        "xm" : (math.radians(t),0,math.radians(t*2)),
+        "zm" : (math.radians(t),0,math.radians(-t)),
+        "yp" : (math.radians(t*2),0,math.radians(t)),
+        "ym" : (0,0,math.radians(t))
+    }
+
+    cam = cam_obj
+    image_settings = bpy.context.scene.render.image_settings
+    image_settings.file_format = "HDR"
+    image_settings.color_depth = '32'
+
+    for val in positions:
+        cam.rotation_euler = positions[val]
+        
+        filename = os.path.join(directory, val) + ".hdr"
+        bpy.data.scenes['Scene'].render.filepath = filename
+        bpy.ops.render.render(write_still=True)
+
+    sdk_path = arm.utils.get_sdk_path()
+
+    if arm.utils.get_os() == 'win':
+        cmft_path = sdk_path + '/lib/armory_tools/cmft/cmft.exe'
+    elif arm.utils.get_os() == 'mac':
+        cmft_path = '"' + sdk_path + '/lib/armory_tools/cmft/cmft-osx"'
+    else:
+        cmft_path = '"' + sdk_path + '/lib/armory_tools/cmft/cmft-linux64"'
+
+    output_file_irr = "COMBINED2.hdr"
+
+    posx = directory + "/" + "xp" + ".hdr"
+    negx = directory + "/" + "xm" + ".hdr"
+    posy = directory + "/" + "yp" + ".hdr"
+    negy = directory + "/" + "ym" + ".hdr"
+    posz = directory + "/" + "zp" + ".hdr"
+    negz = directory + "/" + "zm" + ".hdr"
+    output = directory + "/" + "combined"
+
+    if arm.utils.get_os() == 'win':
+        envpipe = [cmft_path, 
+        '--inputFacePosX', posx, 
+        '--inputFaceNegX', negx, 
+        '--inputFacePosY', posy, 
+        '--inputFaceNegY', negy, 
+        '--inputFacePosZ', posz, 
+        '--inputFaceNegZ', negz, 
+        '--output0', output, 
+        '--output0params', 
+        'hdr,rgbe,latlong']
+        
+    else:
+        envpipe = [cmft_path + '--inputFacePosX' + posx 
+        + '--inputFaceNegX' + negx 
+        + '--inputFacePosY' + posy 
+        + '--inputFaceNegY' + negy 
+        + '--inputFacePosZ' + posz 
+        + '--inputFaceNegZ' + negz 
+        + '--output0' + output 
+        + '--output0params' + 'hdr,rgbe,latlong']
+
+    subprocess.call(envpipe, shell=True)
+
+    input2 = output + ".hdr"
+    output2 = directory + "/" + "combined2"
+
+    if arm.utils.get_os() == 'win':
+        envpipe2 = [cmft_path, 
+        '--input', input2, 
+        '--filter', 'shcoeffs', 
+        '--outputNum', '1', 
+        '--output0', output2]
+        
+    else:
+        envpipe2 = [cmft_path + 
+        '--input' + input2
+        + '-filter' + 'shcoeffs'
+        + '--outputNum' + '1'
+        + '--output0' + output2]
+        
+    subprocess.call(envpipe2, shell=True)
+
+    for obj in bpy.data.objects:
+        obj.select_set(False)
+
+    cam_obj.select_set(True)
+    bpy.ops.object.delete()
+    bpy.context.scene.render.resolution_x = prevResx
+    bpy.context.scene.render.resolution_y = prevResy
+    bpy.context.scene.camera = prevCam
+    bpy.context.scene.render.engine = prevEngine
+            
+
 def HDRLM_Build(self, context):
 
     scene = context.scene
@@ -827,10 +1291,6 @@ def HDRLM_Build(self, context):
     if not bpy.data.is_saved:
         self.report({'INFO'}, "Please save your file first")
         return{'FINISHED'}
-
-    #scriptDir = os.path.dirname(os.path.realpath(__file__))
-    #if os.path.isdir(os.path.join(scriptDir,"OIDN")):
-    #    scene.hdrlm_oidn_path = os.path.join(scriptDir,"OIDN")
 
     if scene.hdrlm_denoise_use:
         if scene.hdrlm_oidn_path == "":
@@ -841,52 +1301,34 @@ def HDRLM_Build(self, context):
                     self.report({'INFO'}, "No denoise OIDN path assigned")
                     return{'FINISHED'}
 
-    for obj in bpy.data.objects:
-        if "_" in obj.name:
-            self.report({'INFO'}, "Invalid object name found - Please don't use underscores.")
-            return{'FINISHED'}
-
-    for slot in obj.material_slots:
-        if "_" in slot.material.name:
-            self.report({'INFO'}, "Invalid material name found - Please don't use underscores.")
-            return{'FINISHED'}
-        if slot.material.users > 1:
-            self.report({'INFO'}, "Invalid material found - Armory only supports 1 user.")
-            return{'FINISHED'}
-
     total_time = time()
 
+    for obj in bpy.data.objects:
+        if "_" in obj.name:
+            obj.name = obj.name.replace("_",".")
+        if " " in obj.name:
+            obj.name = obj.name.replace(" ",".")
+        if "[" in obj.name:
+            obj.name = obj.name.replace("[",".")
+        if "]" in obj.name:
+            obj.name = obj.name.replace("]",".")
+        # if len(obj.name) > 60:
+        #         obj.name = "TooLongName"
+        #         invalidNaming = True
 
-    # invalidNaming = False
-
-    # for obj in bpy.data.objects:
-    #     if "_" in obj.name:
-    #         obj.name = obj.name.replace("_",".")
-    #     if " " in obj.name:
-    #         obj.name = obj.name.replace(" ",".")
-    #     if "[" in obj.name:
-    #         obj.name = obj.name.replace("[",".")
-    #     if "]" in obj.name:
-    #         obj.name = obj.name.replace("]",".")
-    #         #self.report({'INFO'}, "Invalid object name found - Please don't use underscores.")
-    #         #return{'FINISHED'}
-    #     if len(obj.name) > 60:
-    #             obj.name = "TooLongName"
-    #             invalidNaming = True
-
-    #     for slot in obj.material_slots:
-    #         if "_" in slot.material.name:
-    #             slot.material.name = slot.material.name.replace("_",".")
-    #         if " " in slot.material.name:
-    #             slot.material.name = slot.material.name.replace(" ",".")
-    #         if "[" in slot.material.name:
-    #             slot.material.name = slot.material.name.replace("[",".")
-    #         if "[" in slot.material.name:
-    #             slot.material.name = slot.material.name.replace("]",".")
+        for slot in obj.material_slots:
+            if "_" in slot.material.name:
+                slot.material.name = slot.material.name.replace("_",".")
+            if " " in slot.material.name:
+                slot.material.name = slot.material.name.replace(" ",".")
+            if "[" in slot.material.name:
+                slot.material.name = slot.material.name.replace("[",".")
+            if "[" in slot.material.name:
+                slot.material.name = slot.material.name.replace("]",".")
             
-    #         if len(slot.material.name) > 60:
-    #             slot.material.name = "TooLongName"
-    #             invalidNaming = True
+            # if len(slot.material.name) > 60:
+            #     slot.material.name = "TooLongName"
+            #     invalidNaming = True
 
     # if(invalidNaming):
     #     self.report({'INFO'}, "Naming errors")
@@ -941,12 +1383,12 @@ def HDRLM_Build(self, context):
         cycles.caustics_refractive = False
     elif scene.hdrlm_quality == "Production":
         cycles.samples = 512
-        cycles.max_bounces = 128
-        cycles.diffuse_bounces = 128
-        cycles.glossy_bounces = 128
-        cycles.transparent_max_bounces = 128
-        cycles.transmission_bounces = 128
-        cycles.volume_bounces = 128
+        cycles.max_bounces = 256
+        cycles.diffuse_bounces = 256
+        cycles.glossy_bounces = 256
+        cycles.transparent_max_bounces = 256
+        cycles.transmission_bounces = 256
+        cycles.volume_bounces = 256
         cycles.caustics_reflective = True
         cycles.caustics_refractive = True
     else:
@@ -967,17 +1409,80 @@ def HDRLM_Build(self, context):
     for obj in bpy.data.objects:
         pass
 
-    #Bake
-    for obj in bpy.data.objects:
+    bakeNum = 0
+    currBakeNum = 0
 
-        ###### MESH / BAKING
+    for obj in bpy.data.objects:
         if obj.type == "MESH":
             if obj.hdrlm_mesh_lightmap_use:
+                bakeNum = bakeNum + 1
+
+    #Bake
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            if obj.hdrlm_mesh_lightmap_use:
+                currBakeNum = currBakeNum + 1
                 bpy.ops.object.select_all(action='DESELECT')
                 bpy.context.view_layer.objects.active = obj
                 obj.select_set(True)
                 obs = bpy.context.view_layer.objects
                 active = obs.active
+
+                if len(obj.material_slots) == 0:
+                    single = False
+                    number = 0
+                    while single == False:
+                        matname = obj.name + ".00" + str(number)
+                        if matname in bpy.data.materials:
+                            single = False
+                            number = number + 1
+                        else:
+                            mat = bpy.data.materials.new(name=matname)
+                            mat.use_nodes = True
+                            obj.data.materials.append(mat)
+                            single = True
+
+                #if len(obj.material_sl) > 1:
+                for slot in obj.material_slots:
+                    mat = slot.material
+
+                    if mat.users > 1:
+                         copymat = mat.copy()
+                         slot.material = copymat 
+
+                # #Make sure there's one material available
+                # if len(obj.material_slots) == 0:
+                #     if not "MaterialDefault" in bpy.data.materials:
+                #         mat = bpy.data.materials.new(name='MaterialDefault')
+                #         mat.use_nodes = True
+                #     else:
+                #         mat = bpy.data.materials['MaterialDefault']
+                #     obj.data.materials.append(mat)
+
+
+                # --------- MATERIAL BACKUP
+
+
+                if scene.hdrlm_caching_mode == "Copy":
+                    for slot in obj.material_slots:
+                        matname = slot.material.name
+                        originalName = matname + "_Original"
+                        hasOriginal = False
+                        if originalName in bpy.data.materials:
+                            hasOriginal = True
+                        else:
+                            hasOriginal = False
+
+                        if hasOriginal:
+                            backup_material_restore(slot)
+
+                        #Copy materials
+                        backup_material_copy(slot)
+                else: #Cache blend
+                    pass
+
+
+                # --------- MATERIAL BACKUP END
 
                 #Remove existing baked materials and images
                 for mat in bpy.data.materials:
@@ -987,16 +1492,8 @@ def HDRLM_Build(self, context):
                     if img.name == obj.name + "_baked":
                         bpy.data.images.remove(img, do_unlink=True)
 
-                #Make sure there's one material available
-                if len(obj.material_slots) == 0:
-                    if not "MaterialDefault" in bpy.data.materials:
-                        mat = bpy.data.materials.new(name='MaterialDefault')
-                        mat.use_nodes = True
-                    else:
-                        mat = bpy.data.materials['MaterialDefault']
-                    obj.data.materials.append(mat)
-
-                #Single user materials?
+                #Single user materials? ONLY ONE MATERIAL SLOT?...
+                #Fint så langt
                 ob = obj
                 for slot in ob.material_slots:
                     # Temp material already exists
@@ -1006,6 +1503,7 @@ def HDRLM_Build(self, context):
                     if not n in bpy.data.materials:
                         slot.material = slot.material.copy()
                     slot.material.name = n
+                #Fint så langt...
 
                 #Add images for baking
                 img_name = obj.name + '_baked'
@@ -1056,11 +1554,17 @@ def HDRLM_Build(self, context):
                             break
 
                 for slot in obj.material_slots:
+
+                    #ONLY 1 MATERIAL PER OBJECT SUPPORTED FOR NOW!
+                    nodetree = slot.material.node_tree
+
+                    #HER FEIL?
+                    #bpy.context.active_object.active_material = slot.material
+
                     n = slot.material.name[:-5] + '_baked'
                     if not n in bpy.data.materials:
                         mat = bpy.data.materials.new(name=n)
                         mat.use_nodes = True
-                        mat.use_fake_user = True
                         nodes = mat.node_tree.nodes
                         img_node = nodes.new('ShaderNodeTexImage')
                         img_node.name = "Baked Image"
@@ -1072,25 +1576,6 @@ def HDRLM_Build(self, context):
                         nodes = mat.node_tree.nodes
                         nodes['Baked Image'].image = bpy.data.images[img_name]
 
-                #for 
-
-
-                # for m in bpy.data.materials: #TODO - CHANGE INTO SPECIFIC MATERIAL
-                #     nodetree = m.node_tree
-                #     nodes = nodetree.nodes
-                #     mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
-                    
-                #     for n in nodes:
-                #         if "LM" in n.name:
-                #             nodetree.links.new(n.outputs[0], mainNode.inputs[0])
-                    
-                #     for n in nodes:
-                #         if "Lightmap" in n.name:
-                #             nodes.remove(n)
-
-                # NEW METHOD
-
-                # # import bpy
                 for slot in obj.material_slots:
 
                     nodetree = bpy.data.materials[slot.name].node_tree
@@ -1106,43 +1591,14 @@ def HDRLM_Build(self, context):
                                 #print("Remove")
                                 nodes.remove(n)
 
-
-
-
-                # nodetree_pb = bpy.data.materials[slot.name].node_tree
-
-                # outputNode_pb = nodetree_pb.nodes[0]
-
-                # mainNode_pb = outputNode_pb.inputs[0].links[0].from_node
-
-                # previousImage_pb = False
-
-                # #BEFORE BAKING WE NEED TO RESET/REMOVE the lightmaps
-
-                # if len(mainNode_pb.inputs[0].links) > 0:
-                #     if mainNode_pb.inputs[0].links[0].from_node.name == "Lightmap_Multiplication":
-                #         prevMultiplicationNode = mainNode_pb.inputs[0].links[0].from_node
-                #         prevImage_pb = prevMultiplicationNode.inputs[1].links[0].from_node
-                #         prevImage_pb.name = "LM_pNode_pb"
-                #         previousImage_pb = True
-                #         nodetree_pb.links.new(prevImage_pb.outputs[0], mainNode_pb.inputs[1])
-
-                #!!!
-                # REMOVE ALL LIGHTMAP NODES - AFTER RESETTING THE IMAGE NODE
-
-
-                # #DO SOMETHING HERE
-                # for n in nodetree_pb.nodes:
-                #     if "Lightmap" in n.name:
-                #         nodetree_pb.nodes.remove(n)
-
-                print("Baking: " + bpy.context.view_layer.objects.active.name)
+                print("Baking: " + bpy.context.view_layer.objects.active.name + " | " + str(currBakeNum) + " out of " + str(bakeNum))
 
                 if scene.hdrlm_indirect_only:
                     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"INDIRECT"}, margin=scene.hdrlm_dilation_margin)
                 else:
                     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.hdrlm_dilation_margin)
 
+    #Unlinked here?..
     for mat in bpy.data.materials:
         if mat.name.endswith('_baked'):
             has_user = False
@@ -1173,74 +1629,95 @@ def HDRLM_Build(self, context):
                 #Denoise here
                 if scene.hdrlm_denoise_use:
 
-                    image = bpy.data.images[img_name]
-                    width = image.size[0]
-                    height = image.size[1]
+                    if scene.hdrlm_denoiser == "OIDN":
 
-                    image_output_array = np.zeros([width, height, 3], dtype="float32")
-                    image_output_array = np.array(image.pixels)
-                    image_output_array = image_output_array.reshape(height, width, 4)
-                    image_output_array = np.float32(image_output_array[:,:,:3])
+                        image = bpy.data.images[img_name]
+                        width = image.size[0]
+                        height = image.size[1]
 
-                    image_output_destination = bakemap_path + ".pfm"
+                        image_output_array = np.zeros([width, height, 3], dtype="float32")
+                        image_output_array = np.array(image.pixels)
+                        image_output_array = image_output_array.reshape(height, width, 4)
+                        image_output_array = np.float32(image_output_array[:,:,:3])
 
-                    with open(image_output_destination, "wb") as fileWritePFM:
-                        save_pfm(fileWritePFM, image_output_array)
+                        image_output_destination = bakemap_path + ".pfm"
 
-                    denoise_output_destination = bakemap_path + "_denoised.pfm"
+                        with open(image_output_destination, "wb") as fileWritePFM:
+                            save_pfm(fileWritePFM, image_output_array)
 
-                    Scene = context.scene
+                        denoise_output_destination = bakemap_path + "_denoised.pfm"
 
-                    verbose = Scene.hdrlm_oidn_verbose
-                    affinity = Scene.hdrlm_oidn_affinity
+                        Scene = context.scene
 
-                    if verbose:
-                        v = "3"
-                    else:
-                        v = "0"
+                        verbose = Scene.hdrlm_oidn_verbose
+                        affinity = Scene.hdrlm_oidn_affinity
 
-                    if affinity:
-                        a = "1"
-                    else:
-                        a = "0"
+                        if verbose:
+                            v = "3"
+                        else:
+                            v = "0"
 
-                    threads = str(Scene.hdrlm_oidn_threads)
-                    maxmem = str(Scene.hdrlm_oidn_maxmem)
+                        if affinity:
+                            a = "1"
+                        else:
+                            a = "0"
 
-                    if platform.system() == 'Windows':
-                        oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise-win.exe")
-                        pipePath = [oidnPath, '-hdr', image_output_destination, '-o', denoise_output_destination, '-verbose', v, '-threads', threads, '-affinity', a, '-maxmem', maxmem]
-                    elif platform.system() == 'Darwin':
-                        oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise-osx")
-                        pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + n]
-                    else:
-                        oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise-linux")
-                        pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + n]
-                        
+                        threads = str(Scene.hdrlm_oidn_threads)
+                        maxmem = str(Scene.hdrlm_oidn_maxmem)
+
+                        if platform.system() == 'Windows':
+                            oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise-win.exe")
+                            pipePath = [oidnPath, '-hdr', image_output_destination, '-o', denoise_output_destination, '-verbose', v, '-threads', threads, '-affinity', a, '-maxmem', maxmem]
+                        elif platform.system() == 'Darwin':
+                            oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise-osx")
+                            pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + n]
+                        else:
+                            oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise-linux")
+                            pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + n]
+                            
+                        if not verbose:
+                            denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
+                        else:
+                            denoisePipe = subprocess.Popen(pipePath, shell=True)
+
+                        denoisePipe.communicate()[0]
+
+                        with open(denoise_output_destination, "rb") as f:
+                            denoise_data, scale = load_pfm(f)
+
+                        ndata = np.array(denoise_data)
+                        ndata2 = np.dstack( (ndata, np.ones((width,height)) )  )
+                        img_array = ndata2.ravel()
+                        bpy.data.images[image.name].pixels = img_array
+                        bpy.data.images[image.name].filepath_raw = bakemap_path + "_denoised.hdr"
+                        bpy.data.images[image.name].file_format = "HDR"
+                        bpy.data.images[image.name].save()
                     
-                    #print(pipePath)
-                    #denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
-                    if not verbose:
+                    elif scene.hdrlm_denoiser == "Optix":
+
+                        image_output_destination = bakemap_path + ".hdr"
+                        denoise_output_destination = bakemap_path + "_denoised.hdr"
+
+                        if platform.system() == 'Windows':
+                            optixPath = os.path.join(bpy.path.abspath(scene.hdrlm_optix_path),"Denoiser.exe")
+                            pipePath = [optixPath, '-i', image_output_destination, '-o', denoise_output_destination]
+                        elif platform.system() == 'Darwin':
+                            print("Mac for Optix is still unsupported")    
+                        else:
+                            print("Linux for Optix is still unsupported")
+
                         denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
+
+                        #if not verbose:
+                        #    denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
+                        #else:
+                        #    denoisePipe = subprocess.Popen(pipePath, shell=True)
+
+                        denoisePipe.communicate()[0]
+
                     else:
-                        denoisePipe = subprocess.Popen(pipePath, shell=True)
-                    #cmda = [pythonbinpath, ensurepippath, "--upgrade", "--user"]
-                    #pip = subprocess.run(cmda, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    #subprocess.run(pipePath, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-                    #subprocess.check_(pipePath, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
-                    denoisePipe.communicate()[0]
-
-                    with open(denoise_output_destination, "rb") as f:
-                        denoise_data, scale = load_pfm(f)
-
-                    ndata = np.array(denoise_data)
-                    ndata2 = np.dstack( (ndata, np.ones((width,height)) )  )
-                    img_array = ndata2.ravel()
-                    bpy.data.images[image.name].pixels = img_array
-                    bpy.data.images[image.name].filepath_raw = bakemap_path + "_denoised.hdr"
-                    bpy.data.images[image.name].file_format = "HDR"
-                    bpy.data.images[image.name].save()
+                        print("FATAL ERROR: DENOISER CHOICE....")
 
                 if scene.hdrlm_filtering_use:
                     if scene.hdrlm_denoise_use:
@@ -1385,9 +1862,20 @@ def HDRLM_Build(self, context):
     #        if node.type == "RGB":
     #            mat.node_tree.nodes.remove(node)
     
-    #for mat in bpy.data.materials:
-    #    if mat.name.endswith('_baked'):
-    #        bpy.data.materials.remove(mat, do_unlink=True)
+    for mat in bpy.data.materials:
+        if mat.name.endswith('_baked'):
+            bpy.data.materials.remove(mat, do_unlink=True)
+
+    if not scene.hdrlm_keep_cache_files:
+        filepath = bpy.data.filepath
+        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.hdrlm_lightmap_savedir)
+        if os.path.isdir(dirpath):
+            list = os.listdir(dirpath)
+            for file in list:
+                if file.endswith(".pfm"):
+                    os.remove(os.path.join(dirpath,file))
+                if file.endswith("denoised.hdr"):
+                    os.remove(os.path.join(dirpath,file))
 
     #for img in bpy.data.images:
     #    if not img.users:
@@ -1408,12 +1896,16 @@ def HDRLM_Build(self, context):
     cycles.device = prevCyclesSettings[9]
     scene.render.engine = prevCyclesSettings[10]
 
+    for mat in bpy.data.materials:
+        mat.update_tag()
+
     print("The whole ordeal took: %.3f s" % (time() - total_time))
 
     return{'FINISHED'}
 
 def register():
     bpy.utils.register_class(HDRLM_EncodeToRGBM)
+    bpy.utils.register_class(HDRLM_BuildAO)
     bpy.utils.register_class(HDRLM_BuildLighting)
     bpy.utils.register_class(HDRLM_BuildLightingSelected)
     bpy.utils.register_class(HDRLM_ToggleEnableforSelection)
@@ -1426,6 +1918,8 @@ def register():
     bpy.utils.register_class(HDRLM_PT_Filtering)
     bpy.utils.register_class(HDRLM_PT_Encoding)
     bpy.utils.register_class(HDRLM_PT_Compression)
+    bpy.utils.register_class(HDRLM_PT_Additional)
+    bpy.utils.register_class(HDRLM_CreateWorldVolume)
     #bpy.utils.register_class(HDRLM_PT_LightmapList)
     bpy.utils.register_class(HDRLM_PT_MeshMenu)
     bpy.utils.register_class(HDRLM_PT_LightMenu)
@@ -1453,6 +1947,7 @@ def register():
                 name = "Device", description="TODO", default="CPU")
     bpy.types.Scene.hdrlm_apply_on_unwrap = BoolProperty(name="Apply scale", description="TODO", default=False)
     bpy.types.Scene.hdrlm_indirect_only = BoolProperty(name="Indirect Only", description="TODO", default=False)
+    bpy.types.Scene.hdrlm_keep_cache_files = BoolProperty(name="Keep cache files", description="TODO", default=False)
     bpy.types.Scene.hdrlm_dilation_margin = IntProperty(name="Dilation margin", default=16, min=1, max=64, subtype='PIXEL')
     bpy.types.Scene.hdrlm_delete_cache = BoolProperty(name="Delete cache", description="TODO", default=True)
     bpy.types.Scene.hdrlm_denoise_use = BoolProperty(name="Enable denoising", description="TODO", default=False)
@@ -1463,6 +1958,11 @@ def register():
     bpy.types.Scene.hdrlm_oidn_affinity = BoolProperty(name="Set Affinity", description="TODO")
     bpy.types.Scene.hdrlm_oidn_use_albedo = BoolProperty(name="Use albedo map", description="TODO")
     bpy.types.Scene.hdrlm_oidn_use_normal = BoolProperty(name="Use normal map", description="TODO")
+    bpy.types.Scene.hdrlm_denoiser = EnumProperty(
+        items = [('OIDN', 'OIDN', 'TODO.'),
+                 ('Optix', 'Optix', 'TODO.')],
+                name = "Denoiser", description="TODO", default='OIDN')
+    bpy.types.Scene.hdrlm_optix_path = StringProperty(name="Optix Path", description="TODO", default="", subtype="FILE_PATH")
     bpy.types.Scene.hdrlm_filtering_use = BoolProperty(name="Enable filtering", description="TODO", default=False)
     #bpy.types.Scene.hdrlm_filtering_gimp_path = StringProperty(name="Gimp Path", description="TODO", default="", subtype="FILE_PATH")
     bpy.types.Scene.hdrlm_filtering_mode = EnumProperty(
@@ -1471,6 +1971,10 @@ def register():
                  ('Bilateral', 'Bilateral', 'TODO'),
                  ('Median', 'Median', 'TODO')],
                 name = "Filter", description="TODO", default='Gaussian')
+    bpy.types.Scene.hdrlm_caching_mode = EnumProperty(
+        items = [('Copy', 'Copy Material', 'TODO'),
+                 ('Cache', 'Blend Cache', 'TODO')],
+                name = "Caching mode", description="TODO", default='Copy')
     bpy.types.Scene.hdrlm_filtering_gaussian_strength = IntProperty(name="Gaussian Strength", default=3, min=1, max=50)
     bpy.types.Scene.hdrlm_filtering_iterations = IntProperty(name="Filter Iterations", default=1, min=1, max=50)
     bpy.types.Scene.hdrlm_filtering_box_strength = IntProperty(name="Box Strength", default=1, min=1, max=50)
@@ -1494,6 +1998,19 @@ def register():
                  ('Linear', 'Linear', 'TODO'),
                  ('Filmic Log', 'Filmic Log', 'TODO')],
                 name = "Color Space", description="TODO", default='Linear')
+    bpy.types.Scene.hdrlm_on_identical_mat = EnumProperty(
+        items = [('Create', 'Create', 'TODO.'),
+                 ('Share', 'Share', 'TODO.')],
+                name = "On identical materials", description="TODO", default='Create')
+    bpy.types.Scene.hdrlm_baking_mode = EnumProperty(
+        items = [('Sequential', 'Sequential', 'TODO.'),
+                 ('Invoked', 'Invoked', 'TODO.')],
+                name = "On identical materials", description="TODO", default='Sequential')
+    bpy.types.Scene.hdrlm_lightmap_mode = EnumProperty(
+        items = [('Only Light', 'Only Light', 'TODO.'),
+                 ('With Albedo', 'With Albedo', 'TODO.'),
+                 ('Full', 'Full', 'TODO.')],
+                name = "On identical materials", description="TODO", default='Full')
     bpy.types.Scene.hdrlm_compression = IntProperty(name="PNG Compression", description="0 = No compression. 100 = Maximum compression.", default=0, min=0, max=100)
     bpy.types.Object.hdrlm_mesh_lightmap_use = BoolProperty(name="Enable Lightmapping", description="TODO", default=False)
     bpy.types.Object.hdrlm_mesh_apply_after = BoolProperty(name="Apply after build", description="TODO", default=False)
@@ -1527,6 +2044,7 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(HDRLM_EncodeToRGBM)
+    bpy.utils.unregister_class(HDRLM_BuildAO)
     bpy.utils.unregister_class(HDRLM_BuildLighting)
     bpy.utils.unregister_class(HDRLM_BuildLightingSelected)
     bpy.utils.unregister_class(HDRLM_ToggleEnableforSelection)
@@ -1539,6 +2057,8 @@ def unregister():
     bpy.utils.unregister_class(HDRLM_PT_Filtering)
     bpy.utils.unregister_class(HDRLM_PT_Encoding)
     bpy.utils.unregister_class(HDRLM_PT_Compression)
+    bpy.utils.unregister_class(HDRLM_PT_Additional)
+    bpy.utils.unregister_class(HDRLM_CreateWorldVolume)
     #bpy.utils.unregister_class(HDRLM_PT_LightmapList)
     bpy.utils.unregister_class(HDRLM_PT_MeshMenu)
     bpy.utils.unregister_class(HDRLM_PT_LightMenu)
