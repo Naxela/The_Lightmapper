@@ -1,51 +1,104 @@
-# Armory Lightmapper
-Armory Lightmapper is an addon for Armory3D that implements lightmapping and denoising capabilities for GI texture baking with support for HDR Lightmaps.
-
-Todo: Updated description...
-
-## More images
-
-Everyone of these images are screenshots from inside Armory, most at 256x256 or 512x512 resolution lightmaps, easily running 60 fps. Baking only took a few minutes, often mere seconds including denoising.
+# HDR Lightmapper (Previously Armory Lightmapper)
 
 ![](img/Lightmap14.jpg)
 
-![](img/Lightmap13.jpg)
+![](https://raw.githubusercontent.com/Naxela/PPM/master/img/wip_notice.jpg)
 
-![](img/Lightmap12.gif)
+# Description
 
-![](img/Lightmap11.gif)
+HDR Lightmapper is an addon for Blender that implements lightmapping and denoising capabilities for global illumination texture baking with support for 32-bit HDR Lightmaps.
 
-![](img/Lightmap10.jpg)
+Development information thread here: http://forums.armory3d.org/t/hdr-lightmaps-addon/3074/6
 
-![](img/Lightmap9.jpg)
+It's free and open-source.
 
-![](img/Lightmap8.jpg)
+## Features [Version 0.1]:
+- Cycles-based automated lightmap baking
 
-![](img/Lightmap7.jpg)
+![](img/D1.jpg)
 
-![](img/Lightmap6.jpg)
+- Per-object settings and individual resolution setting
 
-![](img/Lightmap5.jpg)
+![](img/D2.jpg)
 
-![](img/Lightmap4.jpg)
+- Denoising with Intel OIDN (Bundled)
 
-![](img/Lightmap3.jpg)
+![](img/D3.jpg)
 
+- Automatic CPU/GPU option and switching
 
+- Scalable lightmapping quality and resolution
 
+- OpenCV Based filtering options for post-processing
 
+- Automatic Installation for OpenCV
 
+- Direct 32-bit RGBE (.hdr) export for Armory/EEVEE/Unity
 
+- RGBM/RGBD png encoding for non-compatible engines (Godot/UE4/Etc.)
 
+- Automatic node-management (Setup, backup, restoration)
 
+## Upcoming/Todo features:
+- More stability
+- More documentation
+- New denoising option - NVIDIA Optix
+- Automated AO baking and node management
+- New filtering options
+- Equirectangular panoramic rendering with EEVEE
+- Cubemap panoramic rendering with EEVEE
+- Spherical Coefficient gathering
+- Additional bake-time Object/Light/World controls
+- Lightmap Adjustment Tools
+- Addon refactoring
+- Network Rendering
+- Texel Density management
+- UV/Lightmap Preparation tools
+- and more....
 
+# Installation
 
+Installation of the addon is straight forward. Get the latest release here, and select the zip-package: 
 
+https://github.com/Naxela/HDR_Lightmapper/releases
 
+# Usage
 
+The addon consists of 2 panel for now:
 
+The main panel located under the Render context tab controls quality and general settings for the baking process, including denoising, filtering, lightmap-location and more:
 
+![](img/atcm1.png)
 
+The second panel is located under the object tab, and controls the individual baking resolution as well as specific unwrap settings for the object:
 
+![](img/atcm2.png)
 
+The easiest way to get started is:
+- Make a scene with a cube, a plane and a light
+- Select the cube and the plane
+- Click "Build Light for selected" in the main HDR Lightmapper panel
+- Baking should take a few seconds
+- Turn on Eevee with World Light for better and quick visual review:
 
+![](img/atcm3.png)
+
+# Videos:
+
+Blender, Lightmapping and Armory
+
+[![Watch the video](img/prev.jpg)](https://www.youtube.com/watch?v=RaWNQrSaymo )
+
+# Armory HTML5 example using Baked GI w. HDR Lightmaps:
+
+Naxela's Laboratory (No quality scaling, requires decent specs):
+
+Experiment 1: http://laboratory.naxela.info/experiment_1/
+
+Experiment 2: http://laboratory.naxela.info/experiment_2/
+
+Experiment 3: http://laboratory.naxela.info/experiment_3/
+
+# Images:
+
+![](img/Gallery.jpg)
