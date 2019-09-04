@@ -79,8 +79,8 @@ class HDRLM_PT_Panel(bpy.types.Panel):
         row.operator("hdrlm.build_lighting")
         row = layout.row()
         row.operator("hdrlm.build_lighting_selected")
-        row = layout.row()
-        row.operator("hdrlm.build_ao")
+        #row = layout.row()
+        #row.operator("hdrlm.build_ao")
         row = layout.row()
         row.operator("hdrlm.enable_lighting")
         row = layout.row()
@@ -121,8 +121,8 @@ class HDRLM_PT_MeshMenu(bpy.types.Panel):
                 row.prop(obj, "hdrlm_mesh_lightmap_unwrap_mode")
                 row = layout.row()
                 row.prop(obj, "hdrlm_mesh_unwrap_margin")
-                row = layout.row()
-                row.prop(obj, "hdrlm_mesh_bake_ao")
+                #row = layout.row()
+                #row.prop(obj, "hdrlm_mesh_bake_ao")
 
 class HDRLM_PT_LightMenu(bpy.types.Panel):
     bl_label = "HDR Lightmapper"
@@ -175,8 +175,8 @@ class HDRLM_PT_Unwrap(bpy.types.Panel):
         row.prop(scene, 'hdrlm_lightmap_scale', expand=True)
         row = layout.row(align=True)
         row.prop(scene, 'hdrlm_lightmap_savedir')
-        row = layout.row(align=True)
-        row.prop(scene, "hdrlm_caching_mode")
+        #row = layout.row(align=True)
+        #row.prop(scene, "hdrlm_caching_mode")
         row = layout.row(align=True)
         row.prop(scene, 'hdrlm_dilation_margin')
         row = layout.row(align=True)
@@ -209,21 +209,21 @@ class HDRLM_PT_Denoise(bpy.types.Panel):
         layout.active = scene.hdrlm_denoise_use
 
         row = layout.row(align=True)
-        row.prop(scene, "hdrlm_denoiser", expand=True)
-        if scene.hdrlm_denoiser == "OIDN":
-            row = layout.row(align=True)
-            row.prop(scene, "hdrlm_oidn_path")
-            row = layout.row(align=True)
-            row.prop(scene, "hdrlm_oidn_verbose")
-            row = layout.row(align=True)
-            row.prop(scene, "hdrlm_oidn_threads")
-            row = layout.row(align=True)
-            row.prop(scene, "hdrlm_oidn_maxmem")
-            row = layout.row(align=True)
-            row.prop(scene, "hdrlm_oidn_affinity")
-        if scene.hdrlm_denoiser == "Optix":
-            row = layout.row(align=True)
-            row.prop(scene, "hdrlm_optix_path")
+        #row.prop(scene, "hdrlm_denoiser", expand=True)
+        #if scene.hdrlm_denoiser == "OIDN":
+        row = layout.row(align=True)
+        row.prop(scene, "hdrlm_oidn_path")
+        row = layout.row(align=True)
+        row.prop(scene, "hdrlm_oidn_verbose")
+        row = layout.row(align=True)
+        row.prop(scene, "hdrlm_oidn_threads")
+        row = layout.row(align=True)
+        row.prop(scene, "hdrlm_oidn_maxmem")
+        row = layout.row(align=True)
+        row.prop(scene, "hdrlm_oidn_affinity")
+        #if scene.hdrlm_denoiser == "Optix":
+        #    row = layout.row(align=True)
+        #    row.prop(scene, "hdrlm_optix_path")
         #row = layout.row(align=True)
         #row.prop(scene, "hdrlm_oidn_use_albedo")
         #row = layout.row(align=True)
@@ -312,10 +312,10 @@ class HDRLM_PT_Encoding(bpy.types.Panel):
         if scene.hdrlm_encoding_mode == "RGBM" or scene.hdrlm_encoding_mode == "RGBD":
             row = layout.row(align=True)
             row.prop(scene, "hdrlm_encoding_range")
-            row = layout.row(align=True)
-            row.prop(scene, "hdrlm_encoding_armory_setup")
-        row = layout.row(align=True)
-        row.prop(scene, "hdrlm_encoding_colorspace")
+            #row = layout.row(align=True)
+            #row.prop(scene, "hdrlm_encoding_armory_setup")
+        #row = layout.row(align=True)
+        #row.prop(scene, "hdrlm_encoding_colorspace")
 
 class HDRLM_PT_Compression(bpy.types.Panel):
     bl_label = "Compression"
@@ -358,7 +358,7 @@ class HDRLM_PT_Additional(bpy.types.Panel):
 
         if module_armory:
             row = layout.row(align=True)
-            layout.label(text="Armory found! Hooray!")
+            #layout.label(text="Armory found! Hooray!")
             row.operator("hdrlm.create_world_volume")
         else:
              layout.label(text="Armory not detected.")
@@ -542,7 +542,9 @@ class HDRLM_CleanLighting(bpy.types.Operator):
         filepath = bpy.data.filepath
         dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.hdrlm_lightmap_savedir)
         if os.path.isdir(dirpath):
-            shutil.rmtree(dirpath)
+            pass
+            #CHECK IF PROCESS USES DIRECTORY
+            #shutil.rmtree(dirpath)
 
         # for obj in bpy.data.objects:
 
@@ -1810,8 +1812,8 @@ def HDRLM_Build(self, context):
 
                 for slot in obj.material_slots:
 
-                    if(scene.hdrlm_encoding_armory_setup):
-                        print("Setup Armory")
+                    #if(scene.hdrlm_encoding_armory_setup):
+                    #     print("Setup Armory")
 
                     nodetree = bpy.data.materials[slot.name].node_tree
 
@@ -1918,7 +1920,7 @@ def register():
     bpy.utils.register_class(HDRLM_PT_Filtering)
     bpy.utils.register_class(HDRLM_PT_Encoding)
     bpy.utils.register_class(HDRLM_PT_Compression)
-    bpy.utils.register_class(HDRLM_PT_Additional)
+    #bpy.utils.register_class(HDRLM_PT_Additional)
     bpy.utils.register_class(HDRLM_CreateWorldVolume)
     #bpy.utils.register_class(HDRLM_PT_LightmapList)
     bpy.utils.register_class(HDRLM_PT_MeshMenu)
@@ -2057,7 +2059,7 @@ def unregister():
     bpy.utils.unregister_class(HDRLM_PT_Filtering)
     bpy.utils.unregister_class(HDRLM_PT_Encoding)
     bpy.utils.unregister_class(HDRLM_PT_Compression)
-    bpy.utils.unregister_class(HDRLM_PT_Additional)
+    #bpy.utils.unregister_class(HDRLM_PT_Additional)
     bpy.utils.unregister_class(HDRLM_CreateWorldVolume)
     #bpy.utils.unregister_class(HDRLM_PT_LightmapList)
     bpy.utils.unregister_class(HDRLM_PT_MeshMenu)

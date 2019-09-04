@@ -89,7 +89,7 @@ Blender, Lightmapping and Armory
 
 [![Watch the video](img/prev.jpg)](https://www.youtube.com/watch?v=RaWNQrSaymo )
 
-# Armory HTML5 example using Baked GI w. HDR Lightmaps:
+# Armory HTML5 examples using Baked GI w. HDR Lightmaps:
 
 Naxela's Laboratory (No quality scaling, requires decent specs):
 
