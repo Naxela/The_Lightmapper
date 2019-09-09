@@ -8,10 +8,10 @@ bl_info = {
     "blender": (2, 80, 0)
 }
 
-import bpy, math, os, platform, subprocess, sys, re, shutil, webbrowser, glob
+import bpy, math, os, platform, subprocess, sys, re, shutil, webbrowser, glob, bpy_extras
 from bpy.app.handlers import persistent
 from bpy.props import *
-from bpy.types import Menu, Panel, UIList
+from bpy.types import Menu, Panel, UIList, Operator
 import numpy as np
 from time import time
 
@@ -123,6 +123,15 @@ class HDRLM_PT_MeshMenu(bpy.types.Panel):
                 row.prop(obj, "hdrlm_mesh_unwrap_margin")
                 #row = layout.row()
                 #row.prop(obj, "hdrlm_mesh_bake_ao")
+        
+        if obj.type == "EMPTY":
+            if obj["ENVPROBE"]:
+                row = layout.row(align=True)
+                row.operator("hdrlm.render_panoramic")
+                row = layout.row(align=True)
+                row.operator("hdrlm.render_reflection_cubemap")
+                row = layout.row(align=True)
+                row.operator("hdrlm.calculate_sh")
 
 class HDRLM_PT_LightMenu(bpy.types.Panel):
     bl_label = "HDR Lightmapper"
@@ -491,6 +500,36 @@ class HDRLM_MakeUniqueMaterials(bpy.types.Operator):
         #    obj.hdrlm_mesh_lightmap_use = False
         return {'FINISHED'}
 
+class HDRLM_RenderPanoramic(bpy.types.Operator):
+    """Render panoramic"""
+    bl_idname = "hdrlm.render_panoramic"
+    bl_label = "Render panoramic"
+    bl_description = "TODO"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        pass
+
+class HDRLM_RenderReflectionCubemap(bpy.types.Operator):
+    """Render reflection cubemap"""
+    bl_idname = "hdrlm.render_reflection_cubemap"
+    bl_label = "Render reflection cubemap"
+    bl_description = "TODO"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        pass
+
+class HDRLM_CalculateSH(bpy.types.Operator):
+    """Calculate Spherical Harmonics"""
+    bl_idname = "hdrlm.calculate_sh"
+    bl_label = "Calculate spherical harmonics"
+    bl_description = "TODO"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        pass
+
 class HDRLM_CleanLighting(bpy.types.Operator):
     """Clean lightmap cache"""
     bl_idname = "hdrlm.clean_lighting"
@@ -678,6 +717,37 @@ class HDRLM_InstallOpenCV(bpy.types.Operator):
         ShowMessageBox("Please restart blender to enable OpenCV filtering", "Restart", 'PREFERENCES')
 
         return{'FINISHED'}
+
+class OBJECT_OT_add_environment_probe(bpy.types.Operator, bpy_extras.object_utils.AddObjectHelper):
+    """Create a new Environment Probe"""
+    bl_idname = "hdrlm.add_environment_probe"
+    bl_label = "Add Environment Probe"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        hdrlm_add_environment_probe(self, context)
+        return {'FINISHED'}
+
+def hdrlm_add_environment_probe(self, context):
+    probeObject = bpy.data.objects.new("empty", None)
+    bpy.context.scene.collection.objects.link(probeObject)
+    probeObject.name = "EnvironmentProbe"
+    probeObject.empty_display_type = "SPHERE"
+    probeObject["ENVPROBE"] = True
+    probeObject.location = bpy.context.scene.cursor.location
+
+    for obj in bpy.data.objects:
+        obj.select_set(False)
+
+    probeObject.select_set(True)
+    bpy.context.view_layer.objects.active = probeObject
+
+def hdrlm_add_environment_probe_button(self, context):
+    self.layout.operator(
+        OBJECT_OT_add_environment_probe.bl_idname,
+        text="Add Environment Probe",
+        icon="WORLD"
+    )
 
 # function to clamp float
 def saturate(num, floats=True):
@@ -1297,8 +1367,8 @@ def HDRLM_Build(self, context):
     if scene.hdrlm_denoise_use:
         if scene.hdrlm_oidn_path == "":
             scriptDir = os.path.dirname(os.path.realpath(__file__))
-            if os.path.isdir(os.path.join(scriptDir,"OIDN")):
-                scene.hdrlm_oidn_path = os.path.join(scriptDir,"OIDN")
+            if os.path.isdir(os.path.join(scriptDir,"OIDN/bin")):
+                scene.hdrlm_oidn_path = os.path.join(scriptDir,"OIDN/bin")
                 if scene.hdrlm_oidn_path == "":
                     self.report({'INFO'}, "No denoise OIDN path assigned")
                     return{'FINISHED'}
@@ -1668,14 +1738,14 @@ def HDRLM_Build(self, context):
                         maxmem = str(Scene.hdrlm_oidn_maxmem)
 
                         if platform.system() == 'Windows':
-                            oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise-win.exe")
+                            oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise.exe")
                             pipePath = [oidnPath, '-hdr', image_output_destination, '-o', denoise_output_destination, '-verbose', v, '-threads', threads, '-affinity', a, '-maxmem', maxmem]
                         elif platform.system() == 'Darwin':
-                            oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise-osx")
-                            pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + n]
+                            oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise")
+                            pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + v]
                         else:
-                            oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise-linux")
-                            pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + n]
+                            oidnPath = os.path.join(bpy.path.abspath(scene.hdrlm_oidn_path),"denoise")
+                            pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + v]
                             
                         if not verbose:
                             denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
@@ -1920,12 +1990,15 @@ def register():
     bpy.utils.register_class(HDRLM_PT_Filtering)
     bpy.utils.register_class(HDRLM_PT_Encoding)
     bpy.utils.register_class(HDRLM_PT_Compression)
-    #bpy.utils.register_class(HDRLM_PT_Additional)
     bpy.utils.register_class(HDRLM_CreateWorldVolume)
-    #bpy.utils.register_class(HDRLM_PT_LightmapList)
     bpy.utils.register_class(HDRLM_PT_MeshMenu)
     bpy.utils.register_class(HDRLM_PT_LightMenu)
     bpy.utils.register_class(HDRLM_InstallOpenCV)
+    bpy.utils.register_class(OBJECT_OT_add_environment_probe)
+    bpy.utils.register_class(HDRLM_RenderPanoramic)
+    bpy.utils.register_class(HDRLM_RenderReflectionCubemap)
+    bpy.utils.register_class(HDRLM_CalculateSH)
+    bpy.types.VIEW3D_MT_add.append(hdrlm_add_environment_probe_button)
     bpy.types.IMAGE_PT_image_properties.append(draw)
 
     bpy.types.Scene.hdrlm_quality = EnumProperty(
@@ -2065,6 +2138,11 @@ def unregister():
     bpy.utils.unregister_class(HDRLM_PT_MeshMenu)
     bpy.utils.unregister_class(HDRLM_PT_LightMenu)
     bpy.utils.unregister_class(HDRLM_InstallOpenCV)
+    bpy.utils.unregister_class(OBJECT_OT_add_environment_probe)
+    bpy.utils.unregister_class(HDRLM_RenderPanoramic)
+    bpy.utils.unregister_class(HDRLM_RenderReflectionCubemap)
+    bpy.utils.unregister_class(HDRLM_CalculateSH)
+    bpy.types.VIEW3D_MT_add.remove(hdrlm_add_environment_probe_button)
     bpy.types.IMAGE_PT_image_properties.remove(draw)
 
 if __name__ == "__main__":

@@ -62,6 +62,8 @@ Installation of the addon is straight forward. Get the latest release here, and 
 
 https://github.com/Naxela/HDR_Lightmapper/releases
 
+### Note! - Releases are recommended, git versions are most likely unstable
+
 # Usage
 
 The addon consists of 2 panel for now:
