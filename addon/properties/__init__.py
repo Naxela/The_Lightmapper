@@ -1,21 +1,20 @@
 import bpy
 from bpy.utils import register_class, unregister_class
-from . import scene, object, light
-from bpy.props import *
+#from . import build, clean, explore, encode, installopencv
+from . import scene
 
-# classes = [
-#     scene.TLMSceneProperties,
-#     object.TLMObjectProperties,
-#     light.TLMLightProperties
-# ]
-
+classes = [
+    scene.TLM_SceneProperties
+]
 
 def register():
-    #for cls in classes:
-    #    register_class(cls)
-    scene.register()
-    object.register()
+    for cls in classes:
+        register_class(cls)
 
+    bpy.types.Scene.TLM_Properties = bpy.props.PointerProperty(type=scene.TLM_SceneProperties)
+        
 def unregister():
     for cls in classes:
         unregister_class(cls)
+
+    del bpy.types.Scene.TLM_Properties

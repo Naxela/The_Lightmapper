@@ -9,6 +9,8 @@ class TLM_ExploreLightmaps(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        #HDRLM_Build(self, context)
-        print("Building Lightmaps...")
+
+        scene = context.scene
+        cycles = bpy.data.scenes[scene.name].cycles
+
         return {'FINISHED'}

@@ -1,10 +1,12 @@
 from bpy.utils import register_class, unregister_class
-from . import build, clean, explore
+from . import build, clean, explore, encode, installopencv
 
 classes = [
     build.TLM_BuildLightmaps,
     clean.TLM_CleanLightmaps,
-    explore.TLM_ExploreLightmaps
+    encode.TLM_EncodeLightmaps,
+    explore.TLM_ExploreLightmaps,
+    installopencv.TLM_Install_OpenCV
 ]
 
 def register():
