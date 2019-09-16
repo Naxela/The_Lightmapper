@@ -40,20 +40,25 @@ class TLM_PT_Settings(bpy.types.Panel):
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
-        # row = layout.row(align=True)
-        # row.prop(scene, 'tlm_quality')
-        # row = layout.row(align=True)
-        # row.prop(scene, 'tlm_lightmap_scale', expand=True)
-        # row = layout.row(align=True)
-        # row.prop(scene, 'tlm_lightmap_savedir')
-        # row = layout.row(align=True)
-        # row.prop(scene, 'tlm_mode')
-        # row = layout.row(align=True)
-        # row.prop(scene, 'tlm_apply_on_unwrap')
-        # row = layout.row(align=True)
-        # row.prop(scene, 'tlm_dilation_margin')
-        # row = layout.row(align=True)
-        # row.prop(scene, 'tlm_indirect_only')
+        sceneProperties = scene.TLM_Properties
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_mode")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_quality')
+        row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_bake_mode')
+        row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_lightmap_scale', expand=True)
+        row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_lightmap_savedir')
+        row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_dilation_margin')
+        row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_apply_on_unwrap')
+        row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_indirect_only')
+        row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_keep_cache_files')
 
 class TLM_PT_Denoise(bpy.types.Panel):
     bl_label = "Denoise"
@@ -65,26 +70,26 @@ class TLM_PT_Denoise(bpy.types.Panel):
 
     def draw_header(self, context):
         scene = context.scene
-        # self.layout.prop(scene, "tlm_denoise_use", text="")
+        sceneProperties = scene.TLM_Properties
+        self.layout.prop(sceneProperties, "tlm_denoise_use", text="")
 
     def draw(self, context):
         layout = self.layout
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
-        # scene = context.scene
-        # layout.active = scene.tlm_denoise_use
-
-        # row = layout.row(align=True)
-        # row.prop(scene, "tlm_oidn_path")
-        # row = layout.row(align=True)
-        # row.prop(scene, "tlm_oidn_verbose")
-        # row = layout.row(align=True)
-        # row.prop(scene, "tlm_oidn_threads")
-        # row = layout.row(align=True)
-        # row.prop(scene, "tlm_oidn_maxmem")
-        # row = layout.row(align=True)
-        # row.prop(scene, "tlm_oidn_affinity")
+        sceneProperties = scene.TLM_Properties
+        layout.active = sceneProperties.tlm_denoise_use
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_oidn_path")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_oidn_verbose")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_oidn_threads")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_oidn_maxmem")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_oidn_affinity")
 
 class TLM_PT_Filtering(bpy.types.Panel):
     bl_label = "Filtering"
@@ -96,13 +101,15 @@ class TLM_PT_Filtering(bpy.types.Panel):
 
     def draw_header(self, context):
         scene = context.scene
-        self.layout.prop(scene, "tlm_filtering_use", text="")
+        sceneProperties = scene.TLM_Properties
+        self.layout.prop(sceneProperties, "tlm_filtering_use", text="")
 
     def draw(self, context):
         layout = self.layout
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
+        sceneProperties = scene.TLM_Properties
 
         # column = layout.column()
         # box = column.box()
@@ -158,15 +165,16 @@ class TLM_PT_Encoding(bpy.types.Panel):
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
-        # row = layout.row(align=True)
-        # row.prop(scene, "tlm_encoding_mode", expand=True)
-        # if scene.tlm_encoding_mode == "RGBM" or scene.tlm_encoding_mode == "RGBD":
-        #     row = layout.row(align=True)
-        #     row.prop(scene, "tlm_encoding_range")
-        #     row = layout.row(align=True)
-        #     row.prop(scene, "tlm_encoding_armory_setup")
-        # row = layout.row(align=True)
-        # row.prop(scene, "tlm_encoding_colorspace")
+        sceneProperties = scene.TLM_Properties
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_encoding_mode", expand=True)
+        if sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD":
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_encoding_range")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_encoding_armory_setup")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_encoding_colorspace")
 
 class TLM_PT_Compression(bpy.types.Panel):
     bl_label = "Compression"
@@ -179,13 +187,14 @@ class TLM_PT_Compression(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
-        # layout.use_property_split = True
-        # layout.use_property_decorate = False
-        # if scene.tlm_encoding_mode == "RGBE":
-        #     layout.label(text="HDR compression not available for RGBE")
-        # else:
-        #     row = layout.row(align=True)
-        #     row.prop(scene, "tlm_compression")
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        sceneProperties = scene.TLM_Properties
+        if sceneProperties.tlm_encoding_mode == "RGBE":
+            layout.label(text="HDR compression not available for RGBE encoding")
+        else:
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_compression")
 
 class TLM_PT_Additional(bpy.types.Panel):
     bl_label = "Additional"

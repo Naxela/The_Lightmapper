@@ -11,5 +11,11 @@ class TLM_BuildLightmaps(bpy.types.Operator):
 
         scene = context.scene
         cycles = bpy.data.scenes[scene.name].cycles
+        sceneProperties = scene.TLM_Properties
+
+        
+
+
+        print("BUILDING LIGHTMAPS!")
 
         return{'FINISHED'}
