@@ -15,7 +15,7 @@ class TLM_PT_Panel(bpy.types.Panel):
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
-        sceneProperties = scene.TLM_Properties
+        sceneProperties = scene.TLM_SceneProperties
         row = layout.row(align=True)
         row.operator("tlm.build_lightmaps", icon="NONE", icon_value=icon.id("bake"))
         row = layout.row(align=True)
@@ -40,7 +40,7 @@ class TLM_PT_Settings(bpy.types.Panel):
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
-        sceneProperties = scene.TLM_Properties
+        sceneProperties = scene.TLM_SceneProperties
         row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_mode")
         row = layout.row(align=True)
@@ -70,7 +70,7 @@ class TLM_PT_Denoise(bpy.types.Panel):
 
     def draw_header(self, context):
         scene = context.scene
-        sceneProperties = scene.TLM_Properties
+        sceneProperties = scene.TLM_SceneProperties
         self.layout.prop(sceneProperties, "tlm_denoise_use", text="")
 
     def draw(self, context):
@@ -78,7 +78,7 @@ class TLM_PT_Denoise(bpy.types.Panel):
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
-        sceneProperties = scene.TLM_Properties
+        sceneProperties = scene.TLM_SceneProperties
         layout.active = sceneProperties.tlm_denoise_use
         row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_oidn_path")
@@ -101,7 +101,7 @@ class TLM_PT_Filtering(bpy.types.Panel):
 
     def draw_header(self, context):
         scene = context.scene
-        sceneProperties = scene.TLM_Properties
+        sceneProperties = scene.TLM_SceneProperties
         self.layout.prop(sceneProperties, "tlm_filtering_use", text="")
 
     def draw(self, context):
@@ -109,10 +109,10 @@ class TLM_PT_Filtering(bpy.types.Panel):
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
-        sceneProperties = scene.TLM_Properties
+        sceneProperties = scene.TLM_SceneProperties
 
-        # column = layout.column()
-        # box = column.box()
+        column = layout.column()
+        box = column.box()
         # if module.checkModules():
         #     box.label(text="OpenCV Installed", icon="INFO")
         # else:
@@ -127,30 +127,32 @@ class TLM_PT_Filtering(bpy.types.Panel):
         # else:
         #     layout.active = False
 
-        # row = layout.row(align=True)
-        # row.prop(scene, "tlm_filtering_mode")
-        # row = layout.row(align=True)
-        # if scene.hdrlm_filtering_mode == "Gaussian":
-        #     row.prop(scene, "tlm_filtering_gaussian_strength")
-        #     row = layout.row(align=True)
-        #     row.prop(scene, "tlm_filtering_iterations")
-        # elif scene.hdrlm_filtering_mode == "Box":
-        #     row.prop(scene, "tlm_filtering_box_strength")
-        #     row = layout.row(align=True)
-        #     row.prop(scene, "tlm_filtering_iterations")
+        layout.active = True
 
-        # elif scene.hdrlm_filtering_mode == "Bilateral":
-        #     row.prop(scene, "tlm_filtering_bilateral_diameter")
-        #     row = layout.row(align=True)
-        #     row.prop(scene, "tlm_filtering_bilateral_color_deviation")
-        #     row = layout.row(align=True)
-        #     row.prop(scene, "tlm_filtering_bilateral_coordinate_deviation")
-        #     row = layout.row(align=True)
-        #     row.prop(scene, "tlm_filtering_iterations")
-        # else:
-        #     row.prop(scene, "tlm_filtering_median_kernel", expand=True)
-        #     row = layout.row(align=True)
-        #     row.prop(scene, "tlm_filtering_iterations")
+        row = layout.row(align=True)
+        row.prop(scene.TLM_SceneProperties, "tlm_filtering_mode")
+        row = layout.row(align=True)
+        if scene.TLM_SceneProperties.tlm_filtering_mode == "Gaussian":
+            row.prop(scene.TLM_SceneProperties, "tlm_filtering_gaussian_strength")
+            row = layout.row(align=True)
+            row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
+        elif scene.TLM_SceneProperties.tlm_filtering_mode == "Box":
+            row.prop(scene.TLM_SceneProperties, "tlm_filtering_box_strength")
+            row = layout.row(align=True)
+            row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
+
+        elif scene.TLM_SceneProperties.tlm_filtering_mode == "Bilateral":
+            row.prop(scene.TLM_SceneProperties, "tlm_filtering_bilateral_diameter")
+            row = layout.row(align=True)
+            row.prop(scene.TLM_SceneProperties, "tlm_filtering_bilateral_color_deviation")
+            row = layout.row(align=True)
+            row.prop(scene.TLM_SceneProperties, "tlm_filtering_bilateral_coordinate_deviation")
+            row = layout.row(align=True)
+            row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
+        else:
+            row.prop(scene.TLM_SceneProperties, "tlm_filtering_median_kernel", expand=True)
+            row = layout.row(align=True)
+            row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
 
 class TLM_PT_Encoding(bpy.types.Panel):
     bl_label = "Encoding"
@@ -165,7 +167,7 @@ class TLM_PT_Encoding(bpy.types.Panel):
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
-        sceneProperties = scene.TLM_Properties
+        sceneProperties = scene.TLM_SceneProperties
         row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_encoding_mode", expand=True)
         if sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD":
@@ -189,7 +191,7 @@ class TLM_PT_Compression(bpy.types.Panel):
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
-        sceneProperties = scene.TLM_Properties
+        sceneProperties = scene.TLM_SceneProperties
         if sceneProperties.tlm_encoding_mode == "RGBE":
             layout.label(text="HDR compression not available for RGBE encoding")
         else:

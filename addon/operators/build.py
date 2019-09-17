@@ -1,4 +1,5 @@
 import bpy
+from .. Utility import utility
 
 class TLM_BuildLightmaps(bpy.types.Operator):
     """Builds the lightmaps"""
@@ -11,11 +12,7 @@ class TLM_BuildLightmaps(bpy.types.Operator):
 
         scene = context.scene
         cycles = bpy.data.scenes[scene.name].cycles
-        sceneProperties = scene.TLM_Properties
 
-        
-
-
-        print("BUILDING LIGHTMAPS!")
+        utility.bake_ordered(self, context)
 
         return{'FINISHED'}

@@ -62,6 +62,13 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="TODO", 
         default=False)
 
+    tlm_caching_mode = EnumProperty(
+        items = [('Copy', 'Copy Material', 'TODO'),
+                 ('Cache', 'Blend Cache', 'TODO')],
+                name = "Caching mode", 
+                description="TODO", 
+                default='Copy')
+
     tlm_indirect_only : BoolProperty(
         name="Indirect Only", 
         description="TODO", 
@@ -73,6 +80,13 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         min=1, 
         max=64, 
         subtype='PIXEL')
+
+    tlm_denoiser = EnumProperty(
+        items = [('OIDN', 'OIDN', 'TODO.'),
+                 ('Optix', 'Optix', 'TODO.')],
+                name = "Denoiser", 
+                description="TODO", 
+                default='OIDN')
 
     tlm_delete_cache : BoolProperty(
         name="Delete cache", 
