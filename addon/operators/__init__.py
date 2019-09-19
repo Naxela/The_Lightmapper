@@ -1,5 +1,5 @@
 from bpy.utils import register_class, unregister_class
-from . import build, clean, explore, encode, installopencv
+from . import build, clean, explore, encode, installopencv, gui
 
 classes = [
     build.TLM_BuildLightmaps,
@@ -8,6 +8,8 @@ classes = [
     explore.TLM_ExploreLightmaps,
     installopencv.TLM_Install_OpenCV
 ]
+
+gui.register()
 
 def register():
     for cls in classes:

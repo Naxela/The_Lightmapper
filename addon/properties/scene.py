@@ -46,11 +46,17 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 default="CPU")
 
     tlm_bake_mode : EnumProperty(
-        items = [('Ordered', 'Ordered', 'TODO'),
-                    ('Sequential', 'Sequential', 'TODO')],
+        items = [('Ordered', 'Ordered', 'TODO')],
                 name = "Baking Mode", 
                 description="TODO", 
                 default="Ordered")
+
+    # tlm_bake_mode : EnumProperty(
+    #     items = [('Ordered', 'Ordered', 'TODO'),
+    #                 ('Sequential', 'Sequential', 'TODO')],
+    #             name = "Baking Mode", 
+    #             description="TODO", 
+    #             default="Ordered")
 
     tlm_keep_cache_files : BoolProperty(
         name="Keep cache files", 
@@ -62,9 +68,15 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="TODO", 
         default=False)
 
-    tlm_caching_mode = EnumProperty(
-        items = [('Copy', 'Copy Material', 'TODO'),
-                 ('Cache', 'Blend Cache', 'TODO')],
+    # tlm_caching_mode : EnumProperty(
+    #     items = [('Copy', 'Copy', 'TODO'),
+    #              ('Cache', 'Cache', 'TODO')],
+    #             name = "Caching mode", 
+    #             description="TODO", 
+    #             default='Copy')
+
+    tlm_caching_mode : EnumProperty(
+        items = [('Copy', 'Copy', 'TODO')],
                 name = "Caching mode", 
                 description="TODO", 
                 default='Copy')

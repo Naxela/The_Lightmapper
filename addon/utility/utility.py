@@ -3,6 +3,102 @@ import cv2
 import numpy as np
 from time import time
 
+def saturate(num, floats=True):
+    if num < 0:
+        num = 0
+    elif num > (1 if floats else 255):
+        num = (1 if floats else 255)
+    return num 
+
+def encodeImageRGBM(image, maxRange, outDir, quality):
+    input_image = bpy.data.images[image.name]
+    image_name = input_image.name
+
+    if input_image.colorspace_settings.name != 'Linear':
+        input_image.colorspace_settings.name = 'Linear'
+
+    # Removing .exr or .hdr prefix
+    if image_name[-4:] == '.exr' or image_name[-4:] == '.hdr':
+        image_name = image_name[:-4]
+
+    target_image = bpy.data.images.get(image_name + '_encoded')
+    print(image_name + '_encoded')
+    if not target_image:
+        target_image = bpy.data.images.new(
+                name = image_name + '_encoded',
+                width = input_image.size[0],
+                height = input_image.size[1],
+                alpha = True,
+                float_buffer = False
+                )
+    
+    num_pixels = len(input_image.pixels)
+    result_pixel = list(input_image.pixels)
+
+    for i in range(0,num_pixels,4):
+        for j in range(3):
+            result_pixel[i+j] *= 1.0 / maxRange;
+        result_pixel[i+3] = saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
+        result_pixel[i+3] = math.ceil(result_pixel[i+3] * 255.0) / 255.0
+        for j in range(3):
+            result_pixel[i+j] /= result_pixel[i+3]
+    
+    target_image.pixels = result_pixel
+    input_image = target_image
+    
+    #Save RGBM
+    input_image.filepath_raw = outDir + "_encoded.png"
+    input_image.file_format = "PNG"
+    bpy.context.scene.render.image_settings.quality = quality
+    input_image.save_render(filepath = input_image.filepath_raw, scene = bpy.context.scene)
+    #input_image.
+    #input_image.save()
+
+def encodeImageRGBD(image, maxRange, outDir, quality):
+    input_image = bpy.data.images[image.name]
+    image_name = input_image.name
+
+    if input_image.colorspace_settings.name != 'Linear':
+        input_image.colorspace_settings.name = 'Linear'
+
+    # Removing .exr or .hdr prefix
+    if image_name[-4:] == '.exr' or image_name[-4:] == '.hdr':
+        image_name = image_name[:-4]
+
+    target_image = bpy.data.images.get(image_name + '_encoded')
+    if not target_image:
+        target_image = bpy.data.images.new(
+                name = image_name + '_encoded',
+                width = input_image.size[0],
+                height = input_image.size[1],
+                alpha = True,
+                float_buffer = False
+                )
+    
+    num_pixels = len(input_image.pixels)
+    result_pixel = list(input_image.pixels)
+
+    for i in range(0,num_pixels,4):
+
+        m = saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
+        d = max(maxRange / m, 1)
+        d = saturate( math.floor(d) / 255 )
+
+        result_pixel[i] = result_pixel[i] * d * 255 / maxRange
+        result_pixel[i+1] = result_pixel[i+1] * d * 255 / maxRange
+        result_pixel[i+2] = result_pixel[i+2] * d * 255 / maxRange
+        result_pixel[i+3] = d
+    
+    target_image.pixels = result_pixel
+    
+    input_image = target_image
+
+    #Save RGBD
+    input_image.filepath_raw = outDir + "_encoded.png"
+    input_image.file_format = "PNG"
+    bpy.context.scene.render.image_settings.quality = quality
+    input_image.save_render(filepath = input_image.filepath_raw, scene = bpy.context.scene)
+
 def backup_material_copy(slot):
     material = slot.material
     dup = material.copy()
@@ -117,7 +213,14 @@ def check_compatible_naming(self):
             if "[" in slot.material.name:
                 slot.material.name = slot.material.name.replace("]",".")
 
-def store_existing(cycles, scene):
+def store_existing(cycles, scene, context):
+    
+    selected = []
+
+    for obj in bpy.data.objects:
+        if obj.select_get():
+            selected.append(obj.name)
+
     prevCyclesSettings = [
         cycles.samples,
         cycles.max_bounces,
@@ -129,7 +232,9 @@ def store_existing(cycles, scene):
         cycles.caustics_reflective,
         cycles.caustics_refractive,
         cycles.device,
-        scene.render.engine
+        scene.render.engine,
+        bpy.context.view_layer.objects.active,
+        selected
     ]
     return prevCyclesSettings
 
@@ -194,6 +299,14 @@ def restore_settings(cycles, scene, prevCyclesSettings):
     cycles.device = prevCyclesSettings[9]
     scene.render.engine = prevCyclesSettings[10]
 
+    bpy.context.view_layer.objects.active = prevCyclesSettings[11]
+
+    for obj in bpy.data.objects:
+        if obj.name in prevCyclesSettings[12]:
+            obj.select_set(True)
+        else:
+            obj.select_set(False)
+
 def configure_world():
     pass
 
@@ -246,7 +359,7 @@ def preprocess_material(obj, scene):
 
             backup_material_copy(slot)
     else: #Cache blend
-        pass
+        print("Warning: Cache blend not supported")
 
     for mat in bpy.data.materials:
         if mat.name.endswith('_baked'):
@@ -372,9 +485,9 @@ def configure_objects(scene):
 
                     for node in nodes:
                         if "Lightmap" in node.name:
-                                nodes.remove(n)
+                                nodes.remove(node)
 
-                print("Configuring Object: " + bpy.context.view_layer.objects.active.name + " | " + str(currentIterNum) + " out of " + str(iterNum))
+                #print("Configuring Object: " + bpy.context.view_layer.objects.active.name + " | " + str(currentIterNum) + " out of " + str(iterNum))
 
 def bake_objects(scene):
 
@@ -401,7 +514,7 @@ def bake_objects(scene):
                 else:
                     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_SceneProperties.tlm_dilation_margin)
 
-                print("Baking Object: " + bpy.context.view_layer.objects.active.name + " | " + str(currentIterNum) + " out of " + str(iterNum))
+                #print("Baking Object: " + bpy.context.view_layer.objects.active.name + " | " + str(currentIterNum) + " out of " + str(iterNum))
 
 def postmanage_materials(scene):
     for mat in bpy.data.materials:
@@ -416,7 +529,7 @@ def postmanage_materials(scene):
 
     filepath = bpy.data.filepath
     dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_lightmap_savedir)
-    print("Checking for: " + dirpath)
+    #print("Checking for: " + dirpath)
     if not os.path.isdir(dirpath):
         os.mkdir(dirpath)
 
@@ -492,6 +605,7 @@ def denoise_lightmaps(scene):
                         affinity = Scene.TLM_SceneProperties.tlm_oidn_affinity
 
                         if verbose:
+                            print("Denoiser search: " + Scene.TLM_SceneProperties.tlm_oidn_path)
                             v = "3"
                         else:
                             v = "0"
@@ -507,7 +621,6 @@ def denoise_lightmaps(scene):
                         if platform.system() == 'Windows':
                             oidnPath = os.path.join(bpy.path.abspath(scene.TLM_SceneProperties.tlm_oidn_path),"denoise.exe")
                             pipePath = [oidnPath, '-hdr', image_output_destination, '-o', denoise_output_destination, '-verbose', v, '-threads', threads, '-affinity', a, '-maxmem', maxmem]
-                            print(pipePath)
                         elif platform.system() == 'Darwin':
                             oidnPath = os.path.join(bpy.path.abspath(scene.TLM_SceneProperties.tlm_oidn_path),"denoise")
                             pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + v]
@@ -608,7 +721,111 @@ def filter_lightmaps(scene):
                     else:
                        print("Modules missing...")
 
-def bake_ordered(self, context):
+def encode_lightmaps(scene):
+    filepath = bpy.data.filepath
+    dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_lightmap_savedir)
+
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                img_name = obj.name + '_baked'
+                bakemap_path = os.path.join(dirpath, img_name)
+
+                if scene.TLM_SceneProperties.tlm_encoding_mode == "RGBM":
+                    encodeImageRGBM(bpy.data.images[obj.name+"_baked"], 6.0, bakemap_path, scene.TLM_SceneProperties.tlm_compression)
+                    bpy.data.images[obj.name+"_baked"].name = obj.name + "_temp"
+                    bpy.data.images[obj.name+"_baked_encoded"].name = obj.name + "_baked"
+                    bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])
+                elif scene.TLM_SceneProperties.tlm_encoding_mode == "RGBD":
+                    encodeImageRGBD(bpy.data.images[obj.name+"_baked"], 6.0, bakemap_path, scene.TLM_SceneProperties.tlm_compression)
+                    bpy.data.images[obj.name+"_baked"].name = obj.name + "_temp"
+                    bpy.data.images[obj.name+"_baked_encoded"].name = obj.name + "_baked"
+                    bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])
+
+def lerpNodePoints(a, b, c):
+    return (a + c * (b - a))
+
+def apply_materials(scene):
+    for obj in bpy.data.objects:
+            if obj.type == "MESH":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                    for slot in obj.material_slots:
+                        mat = slot.material
+                        if mat.name.endswith('_temp'):
+                            old = slot.material
+                            slot.material = bpy.data.materials[old.name.split('_' + obj.name)[0]]
+                            bpy.data.materials.remove(old, do_unlink=True)
+
+                    uv_layers = obj.data.uv_layers
+                    uv_layers.active_index = 0
+
+                    for slot in obj.material_slots:
+
+                        #if(scene.hdrlm_encoding_armory_setup):
+                        #     print("Setup Armory")
+
+                        nodetree = bpy.data.materials[slot.name].node_tree
+
+                        outputNode = nodetree.nodes[0]
+
+                        mainNode = outputNode.inputs[0].links[0].from_node
+
+                        if len(mainNode.inputs[0].links) == 0:
+                            baseColorValue = mainNode.inputs[0].default_value
+                            baseColorNode = nodetree.nodes.new(type="ShaderNodeRGB")
+                            baseColorNode.outputs[0].default_value = baseColorValue
+                            baseColorNode.location = ((mainNode.location[0]-500,mainNode.location[1]))
+                            baseColorNode.name = "Lightmap_BasecolorNode_A"
+                        else:
+                            baseColorNode = mainNode.inputs[0].links[0].from_node
+                            baseColorNode.name = "LM_P"
+
+                        nodePos1 = mainNode.location
+                        nodePos2 = baseColorNode.location
+
+                        mixNode = nodetree.nodes.new(type="ShaderNodeMixRGB")
+                        mixNode.name = "Lightmap_Multiplication"
+                        mixNode.location = lerpNodePoints(nodePos1, nodePos2, 0.5)
+                        if scene.TLM_SceneProperties.tlm_indirect_only:
+                            mixNode.blend_type = 'ADD'
+                        else:
+                            mixNode.blend_type = 'MULTIPLY'
+                        
+                        mixNode.inputs[0].default_value = 1.0
+
+                        LightmapNode = nodetree.nodes.new(type="ShaderNodeTexImage")
+                        LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
+                        LightmapNode.image = bpy.data.images[obj.name + "_baked"]
+                        LightmapNode.name = "Lightmap_Image"
+
+                        UVLightmap = nodetree.nodes.new(type="ShaderNodeUVMap")
+                        UVLightmap.uv_map = "UVMap_Lightmap"
+                        UVLightmap.name = "Lightmap_UV"
+                        UVLightmap.location = ((-1000, baseColorNode.location[1] + 300))
+
+                        nodetree.links.new(baseColorNode.outputs[0], mixNode.inputs[1]) 
+                        nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2])
+                        nodetree.links.new(mixNode.outputs[0], mainNode.inputs[0]) 
+                        nodetree.links.new(UVLightmap.outputs[0], LightmapNode.inputs[0])
+
+    for mat in bpy.data.materials:
+        if mat.name.endswith('_baked'):
+            bpy.data.materials.remove(mat, do_unlink=True)
+
+    if not scene.TLM_SceneProperties.tlm_keep_cache_files:
+        filepath = bpy.data.filepath
+        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_lightmap_savedir)
+        if os.path.isdir(dirpath):
+            list = os.listdir(dirpath)
+            for file in list:
+                if file.endswith(".pfm"):
+                    os.remove(os.path.join(dirpath,file))
+                if file.endswith("denoised.hdr"):
+                    os.remove(os.path.join(dirpath,file))
+
+def bake_ordered(self, context, process):
     scene = context.scene
     cycles = scene.cycles
 
@@ -618,10 +835,12 @@ def bake_ordered(self, context):
         self.report({'INFO'}, "Please save your file first")
         return{'FINISHED'}
 
+    total_time = time()
+
     check_denoiser_path(self, scene)
     check_compatible_naming(self)
 
-    prevSettings = store_existing(cycles, scene)
+    prevSettings = store_existing(cycles, scene, context)
     set_settings(cycles, scene)
 
     #configure_World()
@@ -639,22 +858,29 @@ def bake_ordered(self, context):
     postmanage_materials(scene)
 
     #Denoise lightmaps
-    print("////////////////////////////// DENOISE LIGHTMAPS")
+    print("////////////////////////////// DENOISING LIGHTMAPS")
     denoise_lightmaps(scene)
 
     #Filter lightmaps
-    print("////////////////////////////// FILTER LIGHTMAPS")
+    print("////////////////////////////// FILTERING LIGHTMAPS")
     filter_lightmaps(scene)
 
-    total_time = time()
+    #Encode lightmaps
+    print("////////////////////////////// ENCODING LIGHTMAPS")
+    encode_lightmaps(scene)
 
-
-
-
+    #Apply lightmaps
+    print("////////////////////////////// Apply LIGHTMAPS")
+    apply_materials(scene)
+    
     #//////////// POSTCONFIGURATION
-
     restore_settings(cycles, scene, prevSettings)
+
+    #TODO! STORE SELECTION AND ACTIVE OBJECT
+    #TODO! RESTORE SELECTION AND ACTIVE OBJECT
 
     print("////////////////////////////// LIGHTMAPS BUILT")
 
     print("Baking finished in: %.3f s" % (time() - total_time))
+
+    process = False

@@ -48,6 +48,8 @@ class TLM_PT_Settings(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_bake_mode')
         row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_caching_mode')
+        row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_lightmap_scale', expand=True)
         row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_lightmap_savedir')
