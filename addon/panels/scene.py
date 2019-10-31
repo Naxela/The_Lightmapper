@@ -23,7 +23,7 @@ class TLM_PT_Panel(bpy.types.Panel):
         row = layout.row(align=True)
         row.operator("tlm.clean_lightmaps", icon="NONE", icon_value=icon.id("clean"))
         row = layout.row(align=True)
-        row.prop(sceneProperties, "tlm_clean_for_selection")
+        row.prop(sceneProperties, "tlm_clean_option")
         row = layout.row(align=True)
         row.operator("tlm.explore_lightmaps", icon="NONE", icon_value=icon.id("explore"))
 
@@ -50,16 +50,30 @@ class TLM_PT_Settings(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_caching_mode')
         row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_baketime_material')
+        row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_directional_mode')
+
+        if not sceneProperties.tlm_directional_mode == "None":
+            row = layout.row(align=True)
+            row.prop(sceneProperties, 'tlm_bake_normal_denoising')
+
+        row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_lightmap_scale', expand=True)
         row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_lightmap_savedir')
         row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_dilation_margin')
         row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_exposure_multiplier')
+        row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_apply_on_unwrap')
         row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_indirect_only')
         row = layout.row(align=True)
+        if sceneProperties.tlm_indirect_only:
+            row.prop(sceneProperties, 'tlm_indirect_mode')
+            row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_keep_cache_files')
 
 class TLM_PT_Denoise(bpy.types.Panel):
@@ -199,6 +213,23 @@ class TLM_PT_Compression(bpy.types.Panel):
         else:
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_compression")
+
+class TLM_PT_Selection(bpy.types.Panel):
+    bl_label = "Selection"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "render"
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = "TLM_PT_Panel"
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        layout.label(text="Enable for selection")
+        layout.label(text="Disable for selection")
+        layout.label(text="Something...")
 
 class TLM_PT_Additional(bpy.types.Panel):
     bl_label = "Additional"

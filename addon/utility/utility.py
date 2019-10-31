@@ -185,12 +185,22 @@ def check_denoiser_path(self, scene):
 
     if scene.TLM_SceneProperties.tlm_denoise_use:
         if scene.TLM_SceneProperties.tlm_oidn_path == "":
-            scriptDir = os.path.dirname(os.path.realpath(__file__))
-            if os.path.isdir(os.path.join(scriptDir,"Addon/Assets/OIDN/bin")):
-                scene.TLM_SceneProperties.tlm_oidn_path = os.path.join(scriptDir,"Addon/Assets/OIDN/bin")
-                if scene.TLM_SceneProperties.tlm_oidn_path == "":
-                    self.report({'INFO'}, "No denoise OIDN path assigned")
-                    return{'FINISHED'}
+            print("NO DENOISE PATH")
+            return False
+        else:
+            #MAKE DETAILED CHECK FOR DENOISE FILE
+            return True
+    else:
+        return True
+
+            #return{'FINISHED'}
+            # scriptDir = os.path.dirname(os.path.realpath(__file__))
+            # if os.path.isdir(os.path.join(scriptDir,"Addon/Assets/OIDN/bin")):
+            #     scene.TLM_SceneProperties.tlm_oidn_path = os.path.join(scriptDir,"Addon/Assets/OIDN/bin")
+            #     if scene.TLM_SceneProperties.tlm_oidn_path == "":
+            #         self.report({'INFO'}, "No denoise OIDN path assigned")
+            #         print("NO DENOISE PATH")
+            #         return{'FINISHED'}
 
 def check_compatible_naming(self):
     for obj in bpy.data.objects:
@@ -457,6 +467,26 @@ def configure_objects(scene):
 
                     nodetree = slot.material.node_tree
 
+                    outputNode = nodetree.nodes[0]
+                    mainNode = outputNode.inputs[0].links[0].from_node
+
+                    #use albedo white
+                    if scene.TLM_SceneProperties.tlm_baketime_material == "Blank":
+                        if not len(mainNode.inputs[0].links) == 0:
+                            ainput = mainNode.inputs[0].links[0]
+                            aoutput = mainNode.inputs[0].links[0].from_node
+                            nodetree.links.remove(aoutput.outputs[0].links[0])
+                            mainNode.inputs[0].default_value = (10,0,0,1)
+                        else:
+                            mainNode.inputs[0].default_value = (10,0,0,1)
+
+                    #directional baked normal
+                    if scene.TLM_SceneProperties.tlm_directional_mode == "None":
+                        if not len(mainNode.inputs[19].links) == 0:
+                            ninput = mainNode.inputs[19].links[0]
+                            noutput = mainNode.inputs[19].links[0].from_node
+                            nodetree.links.remove(noutput.outputs[0].links[0])
+
                     node = slot.material.name[:-5] + '_baked'
                     if not node in bpy.data.materials:
                         img_name = obj.name + '_baked'
@@ -491,30 +521,56 @@ def configure_objects(scene):
 
 def bake_objects(scene):
 
-    iterNum = 0
-    currentIterNum = 0
+    bakeMode = 0
 
-    for obj in bpy.data.objects:
-        if obj.type == "MESH":
-            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                iterNum = iterNum + 1
+    if bakeMode == 0:
 
-    for obj in bpy.data.objects:
-        if obj.type == "MESH":
-            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+        iterNum = 0
+        currentIterNum = 0
 
-                bpy.ops.object.select_all(action='DESELECT')
-                bpy.context.view_layer.objects.active = obj
-                obj.select_set(True)
-                obs = bpy.context.view_layer.objects
-                active = obs.active
+        for obj in bpy.data.objects:
+            if obj.type == "MESH":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    iterNum = iterNum + 1
 
-                if scene.TLM_SceneProperties.tlm_indirect_only:
-                    bpy.ops.object.bake(type="DIFFUSE", pass_filter={"INDIRECT"}, margin=scene.TLM_SceneProperties.tlm_dilation_margin)
-                else:
-                    bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_SceneProperties.tlm_dilation_margin)
+        for obj in bpy.data.objects:
+            if obj.type == "MESH":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
-                #print("Baking Object: " + bpy.context.view_layer.objects.active.name + " | " + str(currentIterNum) + " out of " + str(iterNum))
+                    bpy.ops.object.select_all(action='DESELECT')
+                    bpy.context.view_layer.objects.active = obj
+                    obj.select_set(True)
+                    obs = bpy.context.view_layer.objects
+                    active = obs.active
+                    obj.hide_render = False
+
+                    if scene.TLM_SceneProperties.tlm_indirect_only:
+                        bpy.ops.object.bake(type="DIFFUSE", pass_filter={"INDIRECT"}, margin=scene.TLM_SceneProperties.tlm_dilation_margin)
+                    else:
+                        bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_SceneProperties.tlm_dilation_margin)
+
+    else:
+
+        for obj in bpy.data.objects:
+            obj.select_set(False)
+
+        for obj in bpy.data.objects:
+            if obj.type == "MESH":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    obj.select_set(True)
+    
+        bpy.ops.object.bake("INVOKE_SCREEN", type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_SceneProperties.tlm_dilation_margin)
+
+        x = 1
+
+        while x < 5000:
+            print("Waiting for baking...:" + str(x))
+            x = x + 1
+
+    # if scene.TLM_SceneProperties.tlm_indirect_only:
+    #     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"INDIRECT"}, margin=scene.TLM_SceneProperties.tlm_dilation_margin)
+    # else:
+    #     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_SceneProperties.tlm_dilation_margin)
 
 def postmanage_materials(scene):
     for mat in bpy.data.materials:
@@ -605,7 +661,7 @@ def denoise_lightmaps(scene):
                         affinity = Scene.TLM_SceneProperties.tlm_oidn_affinity
 
                         if verbose:
-                            print("Denoiser search: " + Scene.TLM_SceneProperties.tlm_oidn_path)
+                            print("Denoiser search: " + os.path.join(bpy.path.abspath(scene.TLM_SceneProperties.tlm_oidn_path),"denoise.exe"))
                             v = "3"
                         else:
                             v = "0"
@@ -746,10 +802,35 @@ def encode_lightmaps(scene):
 def lerpNodePoints(a, b, c):
     return (a + c * (b - a))
 
+def load_library(asset_name):
+
+    scriptDir = os.path.dirname(os.path.realpath(__file__))
+
+    if bpy.data.filepath.endswith('tlm_data.blend'): # Prevent load in library itself
+        return
+
+    data_path = os.path.abspath(os.path.join(scriptDir, '..', 'Assets/tlm_data.blend'))
+    data_names = [asset_name]
+
+    # Import
+    data_refs = data_names.copy()
+    with bpy.data.libraries.load(data_path, link=False) as (data_from, data_to):
+        data_to.node_groups = data_refs
+
+    for ref in data_refs:
+        ref.use_fake_user = True
+
+
+            # scriptDir = os.path.dirname(os.path.realpath(__file__))
+            # if os.path.isdir(os.path.join(scriptDir,"Addon/Assets/OIDN/bin")):
+            #     scene.TLM_SceneProperties.tlm_oidn_path = os.path.join(scriptDir,"Addon/Assets/OIDN/bin")
+
 def apply_materials(scene):
     for obj in bpy.data.objects:
             if obj.type == "MESH":
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                    decoding = False
 
                     for slot in obj.material_slots:
                         mat = slot.material
@@ -763,8 +844,22 @@ def apply_materials(scene):
 
                     for slot in obj.material_slots:
 
-                        #if(scene.hdrlm_encoding_armory_setup):
-                        #     print("Setup Armory")
+                        if(scene.TLM_SceneProperties.tlm_encoding_armory_setup):
+
+                            tlm_rgbm = bpy.data.node_groups.get('RGBM Decode')
+                            tlm_rgbd = bpy.data.node_groups.get('RGBD Decode')
+
+                            if tlm_rgbm == None:
+                                load_library('RGBM Decode')
+
+                            if tlm_rgbd == None:
+                                load_library('RGBD Decode')
+
+                        if(scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
+                            tlm_exposure = bpy.data.node_groups.get('Exposure')
+
+                            if tlm_exposure == None:
+                                load_library('Exposure')
 
                         nodetree = bpy.data.materials[slot.name].node_tree
 
@@ -789,7 +884,10 @@ def apply_materials(scene):
                         mixNode.name = "Lightmap_Multiplication"
                         mixNode.location = lerpNodePoints(nodePos1, nodePos2, 0.5)
                         if scene.TLM_SceneProperties.tlm_indirect_only:
-                            mixNode.blend_type = 'ADD'
+                            if scene.TLM_SceneProperties.tlm_indirect_mode == "Additive":
+                                mixNode.blend_type = 'ADD'
+                            else:
+                                mixNode.blend_type = 'MULTIPLY'
                         else:
                             mixNode.blend_type = 'MULTIPLY'
                         
@@ -805,8 +903,47 @@ def apply_materials(scene):
                         UVLightmap.name = "Lightmap_UV"
                         UVLightmap.location = ((-1000, baseColorNode.location[1] + 300))
 
-                        nodetree.links.new(baseColorNode.outputs[0], mixNode.inputs[1]) 
-                        nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2])
+                        if(scene.TLM_SceneProperties.tlm_encoding_armory_setup):
+                            if scene.TLM_SceneProperties.tlm_encoding_mode == 'RGBM':
+                                DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
+                                DecodeNode.node_tree = bpy.data.node_groups["RGBM Decode"]
+                                DecodeNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
+                                DecodeNode.name = "Lightmap_RGBM_Decode"
+                                decoding = True
+                            if scene.TLM_SceneProperties.tlm_encoding_mode == "RGBD":
+                                DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
+                                DecodeNode.node_tree = bpy.data.node_groups["RGBD Decode"]
+                                DecodeNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
+                                DecodeNode.name = "Lightmap_RGBD_Decode"
+                                decoding = True
+
+                        if(scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
+                            ExposureNode = nodetree.nodes.new(type="ShaderNodeGroup")
+                            ExposureNode.node_tree = bpy.data.node_groups["Exposure"]
+                            ExposureNode.inputs[1].default_value = scene.TLM_SceneProperties.tlm_exposure_multiplier
+                            ExposureNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.4)
+                            ExposureNode.name = "Lightmap_Exposure"
+
+                        nodetree.links.new(baseColorNode.outputs[0], mixNode.inputs[1])   
+
+                        if decoding:
+                            if (scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
+                                nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
+                                nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
+                                #nodetree.links.new(DecodeNode.outputs[0], mixNode.inputs[2])
+                                nodetree.links.new(DecodeNode.outputs[0], ExposureNode.inputs[0])
+                                nodetree.links.new(ExposureNode.outputs[0],  mixNode.inputs[2])
+                            else:
+                                nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
+                                nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
+                                nodetree.links.new(DecodeNode.outputs[0], mixNode.inputs[2])
+                        else:
+                            if(scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
+                                nodetree.links.new(LightmapNode.outputs[0], ExposureNode.inputs[0])
+                                nodetree.links.new(ExposureNode.outputs[0],  mixNode.inputs[2])
+                            else:
+                                nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2])
+
                         nodetree.links.new(mixNode.outputs[0], mainNode.inputs[0]) 
                         nodetree.links.new(UVLightmap.outputs[0], LightmapNode.inputs[0])
 
@@ -824,6 +961,231 @@ def apply_materials(scene):
                     os.remove(os.path.join(dirpath,file))
                 if file.endswith("denoised.hdr"):
                     os.remove(os.path.join(dirpath,file))
+                #if file.endswith("finalized.hdr"):
+                #        os.remove(os.path.join(dirpath,file))
+
+        for image in bpy.data.images:
+            if image.name.endswith("_baked"):
+                image.save()
+
+def HDRLM_Build_AO():
+    scene = bpy.context.scene
+    scene.render.engine = "CYCLES"
+
+    prevObjRenderset = []
+
+    #for obj in bpy.context.selected_objects:
+    #    obj.hdrlm_mesh_lightmap_use = True
+
+    #Store previous settings for hide_render
+    # for obj in bpy.data.objects:
+    #     if obj.type == "MESH":
+    #         if not obj.hide_render:
+    #             prevObjRenderset.append(obj.name)
+
+    # for obj in bpy.data.objects:
+    #     if obj.type == "MESH":
+    #         obj.hide_render = True
+
+    # #Bake AO for selection
+    # for obj in bpy.context.selected_objects:
+    #     if obj.type == "MESH":
+    #         obj.hide_render = False
+
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            if obj.TLM_ObjectProperties.tlm_mesh_bake_ao:
+                print("AOSELECT: " + obj.name)
+
+
+
+                if len(obj.material_slots) == 0:
+                        single = False
+                        number = 0
+                        while single == False:
+                            matname = obj.name + ".00" + str(number)
+                            if matname in bpy.data.materials:
+                                single = False
+                                number = number + 1
+                            else:
+                                mat = bpy.data.materials.new(name=matname)
+                                mat.use_nodes = True
+                                obj.data.materials.append(mat)
+                                single = True
+
+                for mat in bpy.data.materials:
+                    if mat.name.endswith('_bakedAO'):
+                        bpy.data.materials.remove(mat, do_unlink=True)
+                for img in bpy.data.images:
+                    if img.name == obj.name + "_bakedAO":
+                        bpy.data.images.remove(img, do_unlink=True)
+
+                #Single user materials?
+                ob = obj
+                for slot in ob.material_slots:
+                    # Temp material already exists
+                    if slot.material.name.endswith('_tempAO'):
+                        continue
+                    n = slot.material.name + '_' + ob.name + '_tempAO'
+                    if not n in bpy.data.materials:
+                        slot.material = slot.material.copy()
+                    slot.material.name = n
+
+                #Add images for baking
+                img_name = obj.name + '_bakedAO'
+                res = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_SceneProperties.tlm_lightmap_scale)
+                if img_name not in bpy.data.images or bpy.data.images[img_name].size[0] != res or bpy.data.images[img_name].size[1] != res:
+                    img = bpy.data.images.new(img_name, res, res, alpha=False, float_buffer=False)
+                    img.name = img_name
+                else:
+                    img = bpy.data.images[img_name]
+
+                for slot in obj.material_slots:
+                    mat = slot.material
+                    mat.use_nodes = True
+                    nodes = mat.node_tree.nodes
+
+                    if "Baked AO Image" in nodes:
+                        img_node = nodes["Baked AO Image"]
+                    else:
+                        img_node = nodes.new('ShaderNodeTexImage')
+                        img_node.name = 'Baked AO Image'
+                        img_node.location = (100, 100)
+                        img_node.image = img
+                    img_node.select = True
+                    nodes.active = img_node
+
+                #Configure selection
+                bpy.ops.object.select_all(action='DESELECT')
+                bpy.context.view_layer.objects.active = obj
+                obj.select_set(True)
+                obs = bpy.context.view_layer.objects
+                active = obs.active
+
+                if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
+                    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+                uv_layers = obj.data.uv_layers
+                if not "UVMap_Lightmap" in uv_layers:
+                    uvmap = uv_layers.new(name="UVMap_Lightmap")
+                    uv_layers.active_index = len(uv_layers) - 1
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
+                        bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
+                    elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Smart Project":
+                        bpy.ops.object.select_all(action='DESELECT')
+                        obj.select_set(True)
+                        bpy.ops.object.mode_set(mode='EDIT')
+                        bpy.ops.mesh.select_all(action='DESELECT')
+                        bpy.ops.object.mode_set(mode='OBJECT')
+                        bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+                    else:
+                        pass
+                else:
+                    for i in range(0, len(uv_layers)):
+                        if uv_layers[i].name == 'UVMap_Lightmap':
+                            uv_layers.active_index = i
+                            break
+
+                for slot in obj.material_slots:
+
+                    #ONLY 1 MATERIAL PER OBJECT SUPPORTED FOR NOW!
+
+                    #SOMETHING WITH SELECTION????????????? THE ACTIVE OBJECT
+                    nodetree = slot.material.node_tree
+                    bpy.context.active_object.active_material = slot.material
+
+                    n = slot.material.name[:-5] + '_bakedAO'
+                    if not n in bpy.data.materials:
+                        mat = bpy.data.materials.new(name=n)
+                        mat.use_nodes = True
+                        nodes = mat.node_tree.nodes
+                        img_node = nodes.new('ShaderNodeTexImage')
+                        img_node.name = "Baked AO Image"
+                        img_node.location = (100, 100)
+                        img_node.image = bpy.data.images[img_name]
+                        mat.node_tree.links.new(img_node.outputs[0], nodes['Principled BSDF'].inputs[0])
+                    else:
+                        mat = bpy.data.materials[n]
+                        nodes = mat.node_tree.nodes
+                        nodes['Baked AO Image'].image = bpy.data.images[img_name]
+
+                for slot in obj.material_slots:
+
+                    nodetree = bpy.data.materials[slot.name].node_tree
+                    nodes = nodetree.nodes
+                    mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
+
+                    for n in nodes:
+                        if "LM" in n.name:
+                            nodetree.links.new(n.outputs[0], mainNode.inputs[0])
+
+                    for n in nodes:
+                        if "Lightmap" in n.name:
+                                #print("Remove")
+                                nodes.remove(n)
+
+                print("Baking AO for: " + bpy.context.view_layer.objects.active.name)
+
+                bpy.ops.object.bake(type="AO", margin=scene.TLM_SceneProperties.tlm_dilation_margin)
+
+                for slot in obj.material_slots:
+                    mat = slot.material
+                    if mat.name.endswith('_tempAO'):
+                        old = slot.material
+                        slot.material = bpy.data.materials[old.name.split('_' + obj.name)[0]]
+                        bpy.data.materials.remove(old, do_unlink=True)
+
+                uv_layers = obj.data.uv_layers
+                uv_layers.active_index = 0
+
+                for slot in obj.material_slots:
+
+                    nodetree = bpy.data.materials[slot.name].node_tree
+
+                    outputNode = nodetree.nodes[0]
+
+                    if len(outputNode.inputs[0].links > 0):
+                        mainNode = outputNode.inputs[0].links[0].from_node
+                    else:
+                        print("Tuple out of index...")
+
+                    if len(mainNode.inputs[0].links) == 0:
+                        baseColorValue = mainNode.inputs[0].default_value
+                        baseColorNode = nodetree.nodes.new(type="ShaderNodeRGB")
+                        baseColorNode.outputs[0].default_value = baseColorValue
+                        baseColorNode.location = ((mainNode.location[0]-500,mainNode.location[1]))
+                        baseColorNode.name = "AO_BasecolorNode_A"
+                    else:
+                        baseColorNode = mainNode.inputs[0].links[0].from_node
+                        baseColorNode.name = "AO_P"
+
+                    nodePos1 = mainNode.location
+                    nodePos2 = baseColorNode.location
+
+                    mixNode = nodetree.nodes.new(type="ShaderNodeMixRGB")
+                    mixNode.name = "AO_Multiplication"
+                    mixNode.location = lerpNodePoints(nodePos1, nodePos2, 0.5)
+                    if scene.TLM_SceneProperties.tlm_indirect_only:
+                        mixNode.blend_type = 'ADD'
+                    else:
+                        mixNode.blend_type = 'MULTIPLY'
+                    
+                    mixNode.inputs[0].default_value = 1.0
+
+                    LightmapNode = nodetree.nodes.new(type="ShaderNodeTexImage")
+                    LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
+                    LightmapNode.image = bpy.data.images[obj.name + "_bakedAO"]
+                    LightmapNode.name = "AO_Image"
+
+                    UVLightmap = nodetree.nodes.new(type="ShaderNodeUVMap")
+                    UVLightmap.uv_map = "UVMap_Lightmap"
+                    UVLightmap.name = "AO_UV"
+                    UVLightmap.location = ((-1000, baseColorNode.location[1] + 300))
+
+                    nodetree.links.new(baseColorNode.outputs[0], mixNode.inputs[1]) 
+                    nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2])
+                    nodetree.links.new(mixNode.outputs[0], mainNode.inputs[0]) 
+                    nodetree.links.new(UVLightmap.outputs[0], LightmapNode.inputs[0])
 
 def bake_ordered(self, context, process):
     scene = context.scene
@@ -837,7 +1199,10 @@ def bake_ordered(self, context, process):
 
     total_time = time()
 
-    check_denoiser_path(self, scene)
+    if not check_denoiser_path(self, scene):
+        self.report({'INFO'}, "No denoise OIDN path assigned")
+        return{'FINISHED'}
+
     check_compatible_naming(self)
 
     prevSettings = store_existing(cycles, scene, context)
@@ -880,6 +1245,11 @@ def bake_ordered(self, context, process):
     #TODO! RESTORE SELECTION AND ACTIVE OBJECT
 
     print("////////////////////////////// LIGHTMAPS BUILT")
+
+    #BEGIN AO Baking here...
+    HDRLM_Build_AO()
+
+    #TODO: EXPOSE AO STRENGTH AND THRESHOLD
 
     print("Baking finished in: %.3f s" % (time() - total_time))
 

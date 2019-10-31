@@ -12,6 +12,14 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Only clean for the selected objects", 
         default=False)
 
+    tlm_clean_option : EnumProperty(
+        items = [('Clean and restore', 'Clean and restore', 'TODO'),
+                    ('Selection', 'Selection', 'TODO'),
+                    ('Clean cache', 'Clean cache', 'TODO')],
+                name = "Clean option", 
+                description="TODO", 
+                default='Clean and restore')
+
     tlm_quality : EnumProperty(
         items = [('Preview', 'Preview', 'TODO'),
                     ('Medium', 'Medium', 'TODO'),
@@ -46,14 +54,39 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 default="CPU")
 
     tlm_bake_mode : EnumProperty(
-        items = [('Ordered', 'Ordered', 'TODO')],
+        items = [('Ordered', 'Foreground', 'TODO')],
                 name = "Baking Mode", 
                 description="TODO", 
                 default="Ordered")
 
+    tlm_baketime_material: EnumProperty(
+        items = [('Inherit', 'Inherit', 'TODO'), 
+                    ('Blank', 'Blank', 'TODO')],
+                name = "Baketime material", 
+                description="TODO", 
+                default="Inherit")
+
+    tlm_directional_mode: EnumProperty(
+        items = [('None', 'None', 'TODO'), 
+                    ('Baked normal', 'Baked normal', 'TODO')],
+                name = "Directional Mode", 
+                description="TODO", 
+                default="None")
+
+    tlm_bake_normal_denoising : BoolProperty(
+        name="Bake normal for denoising", 
+        description="TODO", 
+        default=False)
+
+    tlm_exposure_multiplier : FloatProperty(
+        name="Exposure Multiplier", 
+        default=0,
+        description="0 to disable. Multiplies GI value"
+    )
+
     # tlm_bake_mode : EnumProperty(
-    #     items = [('Ordered', 'Ordered', 'TODO'),
-    #                 ('Sequential', 'Sequential', 'TODO')],
+    #     items = [('Ordered', 'Foreground', 'TODO'),
+    #                 ('Sequential', 'Background', 'TODO')],
     #             name = "Baking Mode", 
     #             description="TODO", 
     #             default="Ordered")
@@ -85,6 +118,13 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Indirect Only", 
         description="TODO", 
         default=False)
+
+    tlm_indirect_mode : EnumProperty(
+        items = [('Multiply', 'Multiply', 'Multiply'),
+                ('Additive', 'Additive', 'Additive')],
+                name = "Indirect mode", 
+                description="TODO", 
+                default='Multiply')
 
     tlm_dilation_margin : IntProperty(
         name="Dilation margin", 
@@ -220,7 +260,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
     tlm_encoding_armory_setup : BoolProperty(
         name="Use Armory decoder", 
         description="TODO", 
-        default=True)
+        default=False)
 
     tlm_encoding_colorspace : EnumProperty(
         items = [('XYZ', 'XYZ', 'TODO'),

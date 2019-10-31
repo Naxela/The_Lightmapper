@@ -9,6 +9,7 @@ classes = [
     scene.TLM_PT_Filtering,
     scene.TLM_PT_Encoding,
     scene.TLM_PT_Compression,
+    scene.TLM_PT_Selection,
     scene.TLM_PT_Additional,
     object.TLM_PT_ObjectMenu,
     light.TLM_PT_LightMenu,

@@ -1,5 +1,5 @@
 from bpy.utils import register_class, unregister_class
-from . import build, clean, explore, encode, installopencv, gui
+from . import build, clean, explore, encode, installopencv, gui, xBake
 
 classes = [
     build.TLM_BuildLightmaps,
@@ -7,6 +7,7 @@ classes = [
     encode.TLM_EncodeLightmaps,
     explore.TLM_ExploreLightmaps,
     installopencv.TLM_Install_OpenCV
+    #xBake.XBake
 ]
 
 gui.register()
