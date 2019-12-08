@@ -1,4 +1,4 @@
-# HDR Lightmapper (Previously Armory Lightmapper)
+# HDR Lightmapper
 
 ![](img/Lightmap14.jpg)
 
