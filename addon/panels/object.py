@@ -37,16 +37,26 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
                     for slot in obj.material_slots:
                         nodetree = slot.material.node_tree
                         outputNode = nodetree.nodes[0]
+
+                        if(outputNode.type != "OUTPUT_MATERIAL"):
+                            for node in nodetree.nodes:
+                                if node.type == "OUTPUT_MATERIAL":
+                                    outputNode = node
+                                    break
+
                         mainNode = outputNode.inputs[0].links[0].from_node
 
-                        if mainNode.inputs[19].links[0].from_node.type == "NORMAL_MAP":
-                            NormalMap = mainNode.inputs[19].links[0].from_node
-                            if NormalMap.inputs[1].links[0].from_node.type == "TEX_IMAGE":
-                                NormalMapTex = NormalMap.inputs[1].links[0].from_node.image
-                                if NormalMapTex.size[0] > int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution):
-                                    row = layout.label(text="A connected normal map is larger than lightmap resolution")
-                                if NormalMapTex.size[0] < int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution):
-                                    row = layout.label(text="A connected normal map is smaller than lightmap resolution")
+                        if len(mainNode.inputs[20].links) > 0:
+                            if mainNode.inputs[20].links[0].from_node.type == "NORMAL_MAP":
+                                NormalMap = mainNode.inputs[19].links[0].from_node
+                                if NormalMap.inputs[1].links[0].from_node.type == "TEX_IMAGE":
+                                    NormalMapTex = NormalMap.inputs[1].links[0].from_node.image
+                                    if NormalMapTex.size[0] > int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution):
+                                        row = layout.label(text="A connected normal map is larger than lightmap resolution")
+                                    if NormalMapTex.size[0] < int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution):
+                                        row = layout.label(text="A connected normal map is smaller than lightmap resolution")
+
+                        #ADD ERROR CHECKING HERE! (ELSE)
 
                 row = layout.row()
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_unwrap_mode")
