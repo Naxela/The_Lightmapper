@@ -730,7 +730,7 @@ def denoise_lightmaps(scene):
                         bpy.data.images[image.name].file_format = "HDR"
                         bpy.data.images[image.name].save()
 
-def filter_lightmaps(scene):
+def filter_lightmaps(self, scene):
     filepath = bpy.data.filepath
     dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_lightmap_savedir)
 
@@ -803,7 +803,7 @@ def filter_lightmaps(scene):
 
                     else:
                        print("Module missing: OpenCV. Filtering skipped")
-                       self.report({'INFO'}, "Missing OpenCV module")
+                       self.report({'INFO'}, "Missing OpenCV module - If you just installed it, please restart")
 
 def encode_lightmaps(scene):
     filepath = bpy.data.filepath
@@ -1414,7 +1414,7 @@ def bake_ordered(self, context, process):
 
     #Filter lightmaps
     print("////////////////////////////// FILTERING LIGHTMAPS")
-    filter_lightmaps(scene)
+    filter_lightmaps(self, scene)
 
     #Encode lightmaps
     print("////////////////////////////// ENCODING LIGHTMAPS")
