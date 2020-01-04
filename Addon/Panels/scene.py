@@ -115,6 +115,8 @@ class TLM_PT_Filtering(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = "TLM_PT_Panel"
 
+    _module_installed = False
+
     def draw_header(self, context):
         scene = context.scene
         sceneProperties = scene.TLM_SceneProperties
@@ -129,21 +131,29 @@ class TLM_PT_Filtering(bpy.types.Panel):
 
         column = layout.column()
         box = column.box()
-        # if module.checkModules():
-        #     box.label(text="OpenCV Installed", icon="INFO")
-        # else:
-        #     box.label(text="Please restart Blender after installing")
-        #     box.operator("tlm.install_opencv",icon="PREFERENCES")
 
-        # if(scene.tlm_filtering_use):
-        #     if(module.checkModules()):
-        #         layout.active = True
-        #     else:
-        #         layout.active = False
-        # else:
-        #     layout.active = False
+        try:
+            import cv2
+            module_opencv = True
+        except ImportError:
+            #pip 
+            module_opencv = False
 
-        layout.active = True
+        if module_opencv:
+            box.label(text="OpenCV Installed", icon="INFO")
+        else:
+            if self._module_installed:
+                box.label(text="Please restart Blender after installing")
+            else:
+                box.operator("tlm.install_opencv_lightmaps", icon="PREFERENCES")
+
+        if(sceneProperties.tlm_filtering_use):
+            if(module_opencv):
+                layout.active = True
+            else:
+                layout.active = False
+        else:
+            layout.active = False
 
         row = layout.row(align=True)
         row.prop(scene.TLM_SceneProperties, "tlm_filtering_mode")

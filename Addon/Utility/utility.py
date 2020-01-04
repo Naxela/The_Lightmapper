@@ -1,7 +1,22 @@
 import bpy, math, os, platform, subprocess, sys, re, shutil, webbrowser, glob, bpy_extras, site
-import cv2
 import numpy as np
 from time import time
+
+module_pip = False
+module_opencv = False
+
+try:
+    import pip
+    module_pip = True
+except ImportError:
+    module_pip = False
+
+try:
+    import cv2
+    module_opencv = True
+except ImportError:
+    pip 
+    module_opencv = False
 
 def saturate(num, floats=True):
     if num < 0:
@@ -732,8 +747,7 @@ def filter_lightmaps(scene):
                     else:
                         filter_file_input = img_name + ".hdr"
 
-                    #if all([module_pip, module_opencv]):
-                    if all([True, True]):
+                    if module_opencv:
 
                         filter_file_output = img_name + "_finalized.hdr"
                         os.chdir(os.path.dirname(bakemap_path))
@@ -788,7 +802,8 @@ def filter_lightmaps(scene):
                         bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])
 
                     else:
-                       print("Modules missing...")
+                       print("Module missing: OpenCV. Filtering skipped")
+                       self.report({'INFO'}, "Missing OpenCV module")
 
 def encode_lightmaps(scene):
     filepath = bpy.data.filepath
@@ -1357,17 +1372,6 @@ def HDRLM_Build_AO():
                     #     bpy.data.images[image.name].filepath_raw = bakemap_path + "_denoised.hdr"
                     #     bpy.data.images[image.name].file_format = "HDR"
                     #     bpy.data.images[image.name].save()
-
-
-
-
-
-
-
-
-
-
-
 
 def bake_ordered(self, context, process):
     scene = context.scene

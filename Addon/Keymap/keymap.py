@@ -1,6 +1,7 @@
 import bpy
-import TheLightmapper.Addon.Operators.build as build
-import TheLightmapper.Addon.Operators.clean as clean
+
+from ..Operators import build
+from ..Operators import clean
 
 tlm_keymaps = []
 
