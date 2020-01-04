@@ -504,10 +504,12 @@ def configure_objects(scene):
                             ainput = mainNode.inputs[0].links[0]
                             aoutput = mainNode.inputs[0].links[0].from_node
                             nodetree.links.remove(aoutput.outputs[0].links[0])
-                            mainNode.inputs[0].default_value = (10,0,0,1)
+                            mainNode.inputs[0].default_value = (1,0,0,1)
                         else:
-                            mainNode.inputs[0].default_value = (10,0,0,1)
+                            mainNode.inputs[0].default_value = (1,0,0,1)
 
+                if (mainNode.type == "PRINCIPLED_BSDF"):
+                    print("DEBUG: Principled BSDF")
                     #directional baked normal
                     if scene.TLM_SceneProperties.tlm_directional_mode == "None":
                             if not len(mainNode.inputs[20].links) == 0: #Error?
@@ -539,7 +541,7 @@ def configure_objects(scene):
 
                     for node in nodes:
                         if "LM" in node.name:
-                            nodetree.links.new(n.outputs[0], mainNode.inputs[0])
+                            nodetree.links.new(node.outputs[0], mainNode.inputs[0])
 
                     for node in nodes:
                         if "Lightmap" in node.name:
@@ -803,7 +805,7 @@ def filter_lightmaps(self, scene):
 
                     else:
                        print("Module missing: OpenCV. Filtering skipped")
-                       self.report({'INFO'}, "Missing OpenCV module - If you just installed it, please restart")
+                       self.report({'INFO'}, "Missing OpenCV module - If you just installed it, please restart Blender")
 
 def encode_lightmaps(scene):
     filepath = bpy.data.filepath
