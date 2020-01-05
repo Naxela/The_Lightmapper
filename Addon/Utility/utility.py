@@ -208,15 +208,6 @@ def check_denoiser_path(self, scene):
     else:
         return True
 
-            #return{'FINISHED'}
-            # scriptDir = os.path.dirname(os.path.realpath(__file__))
-            # if os.path.isdir(os.path.join(scriptDir,"Addon/Assets/OIDN/bin")):
-            #     scene.TLM_SceneProperties.tlm_oidn_path = os.path.join(scriptDir,"Addon/Assets/OIDN/bin")
-            #     if scene.TLM_SceneProperties.tlm_oidn_path == "":
-            #         self.report({'INFO'}, "No denoise OIDN path assigned")
-            #         print("NO DENOISE PATH")
-            #         return{'FINISHED'}
-
 def check_compatible_naming(self):
     for obj in bpy.data.objects:
         if "_" in obj.name:
@@ -492,12 +483,6 @@ def configure_objects(scene):
 
                     mainNode = outputNode.inputs[0].links[0].from_node
 
-                    #if 
-
-                    print(outputNode.name)
-                    print(mainNode.name)
-                    #MAKE ERROR CHECK HERE (if node is none)
-
                     #use albedo white
                     if scene.TLM_SceneProperties.tlm_baketime_material == "Blank":
                         if not len(mainNode.inputs[0].links) == 0:
@@ -547,7 +532,6 @@ def configure_objects(scene):
                         if "Lightmap" in node.name:
                                 nodes.remove(node)
 
-                #print("Configuring Object: " + bpy.context.view_layer.objects.active.name + " | " + str(currentIterNum) + " out of " + str(iterNum))
 
 def bake_objects(scene):
 
@@ -597,11 +581,6 @@ def bake_objects(scene):
             print("Waiting for baking...:" + str(x))
             x = x + 1
 
-    # if scene.TLM_SceneProperties.tlm_indirect_only:
-    #     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"INDIRECT"}, margin=scene.TLM_SceneProperties.tlm_dilation_margin)
-    # else:
-    #     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_SceneProperties.tlm_dilation_margin)
-
 def postmanage_materials(scene):
     for mat in bpy.data.materials:
         if mat.name.endswith('_baked'):
@@ -615,7 +594,6 @@ def postmanage_materials(scene):
 
     filepath = bpy.data.filepath
     dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_lightmap_savedir)
-    #print("Checking for: " + dirpath)
     if not os.path.isdir(dirpath):
         os.mkdir(dirpath)
 
@@ -659,11 +637,6 @@ def denoise_lightmaps(scene):
                             print("Linux for Optix is still unsupported")
 
                         denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
-
-                        #if not verbose:
-                        #    denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
-                        #else:
-                        #    denoisePipe = subprocess.Popen(pipePath, shell=True)
 
                         denoisePipe.communicate()[0]
 
@@ -850,11 +823,6 @@ def load_library(asset_name):
     for ref in data_refs:
         ref.use_fake_user = True
 
-
-            # scriptDir = os.path.dirname(os.path.realpath(__file__))
-            # if os.path.isdir(os.path.join(scriptDir,"Addon/Assets/OIDN/bin")):
-            #     scene.TLM_SceneProperties.tlm_oidn_path = os.path.join(scriptDir,"Addon/Assets/OIDN/bin")
-
 def apply_materials(scene):
     for obj in bpy.data.objects:
             if obj.type == "MESH":
@@ -968,7 +936,6 @@ def apply_materials(scene):
                             if (scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
                                 nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
                                 nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
-                                #nodetree.links.new(DecodeNode.outputs[0], mixNode.inputs[2])
                                 nodetree.links.new(DecodeNode.outputs[0], ExposureNode.inputs[0])
                                 nodetree.links.new(ExposureNode.outputs[0],  mixNode.inputs[2])
                             else:
@@ -1011,24 +978,6 @@ def HDRLM_Build_AO():
     scene.render.engine = "CYCLES"
 
     prevObjRenderset = []
-
-    #for obj in bpy.context.selected_objects:
-    #    obj.hdrlm_mesh_lightmap_use = True
-
-    #Store previous settings for hide_render
-    # for obj in bpy.data.objects:
-    #     if obj.type == "MESH":
-    #         if not obj.hide_render:
-    #             prevObjRenderset.append(obj.name)
-
-    # for obj in bpy.data.objects:
-    #     if obj.type == "MESH":
-    #         obj.hide_render = True
-
-    # #Bake AO for selection
-    # for obj in bpy.context.selected_objects:
-    #     if obj.type == "MESH":
-    #         obj.hide_render = False
 
     for obj in bpy.data.objects:
         if obj.type == "MESH":
@@ -1126,9 +1075,6 @@ def HDRLM_Build_AO():
 
                 for slot in obj.material_slots:
 
-                    #ONLY 1 MATERIAL PER OBJECT SUPPORTED FOR NOW!
-
-                    #SOMETHING WITH SELECTION????????????? THE ACTIVE OBJECT
                     nodetree = slot.material.node_tree
                     bpy.context.active_object.active_material = slot.material
 
@@ -1159,7 +1105,6 @@ def HDRLM_Build_AO():
 
                     for n in nodes:
                         if "Lightmap" in n.name:
-                                #print("Remove")
                                 nodes.remove(n)
 
                 print("Baking AO for: " + bpy.context.view_layer.objects.active.name)
@@ -1184,7 +1129,6 @@ def HDRLM_Build_AO():
 
                     outputNode = nodetree.nodes[0]
 
-                    #Some error here?
                     if len(outputNode.inputs[0].links) > 0:
                         mainNode = outputNode.inputs[0].links[0].from_node
                     else:
@@ -1229,7 +1173,6 @@ def HDRLM_Build_AO():
                     nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2])
                     nodetree.links.new(mixNode.outputs[0], mainNode.inputs[0]) 
                     nodetree.links.new(UVLightmap.outputs[0], LightmapNode.inputs[0])
-
 
                 #SAVE/DENOISE AO
 
@@ -1311,69 +1254,6 @@ def HDRLM_Build_AO():
                                 bpy.data.images[img.name].filepath_raw = bakemap_path + ".png"
                                 bpy.data.images[img.name].file_format = "PNG"
                                 bpy.data.images[img.name].save()
-
-                    #    image = bpy.data.images[img_name]
-                    #     width = image.size[0]
-                    #     height = image.size[1]
-
-                    #     image_output_array = np.zeros([width, height, 3], dtype="float32")
-                    #     image_output_array = np.array(image.pixels)
-                    #     image_output_array = image_output_array.reshape(height, width, 4)
-                    #     image_output_array = np.float32(image_output_array[:,:,:3])
-
-                    #     image_output_destination = bakemap_path + ".pfm"
-
-                    #     with open(image_output_destination, "wb") as fileWritePFM:
-                    #         save_pfm(fileWritePFM, image_output_array)
-
-                    #     denoise_output_destination = bakemap_path + "_denoised.pfm"
-
-                    #     Scene = scene
-
-                    #     verbose = Scene.TLM_SceneProperties.tlm_oidn_verbose
-                    #     affinity = Scene.TLM_SceneProperties.tlm_oidn_affinity
-
-                    #     if verbose:
-                    #         print("Denoiser search: " + os.path.join(bpy.path.abspath(scene.TLM_SceneProperties.tlm_oidn_path),"denoise.exe"))
-                    #         v = "3"
-                    #     else:
-                    #         v = "0"
-
-                    #     if affinity:
-                    #         a = "1"
-                    #     else:
-                    #         a = "0"
-
-                    #     threads = str(Scene.TLM_SceneProperties.tlm_oidn_threads)
-                    #     maxmem = str(Scene.TLM_SceneProperties.tlm_oidn_maxmem)
-
-                    #     if platform.system() == 'Windows':
-                    #         oidnPath = os.path.join(bpy.path.abspath(scene.TLM_SceneProperties.tlm_oidn_path),"denoise.exe")
-                    #         pipePath = [oidnPath, '-hdr', image_output_destination, '-o', denoise_output_destination, '-verbose', v, '-threads', threads, '-affinity', a, '-maxmem', maxmem]
-                    #     elif platform.system() == 'Darwin':
-                    #         oidnPath = os.path.join(bpy.path.abspath(scene.TLM_SceneProperties.tlm_oidn_path),"denoise")
-                    #         pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + v]
-                    #     else:
-                    #         oidnPath = os.path.join(bpy.path.abspath(scene.TLM_SceneProperties.tlm_oidn_path),"denoise")
-                    #         pipePath = [oidnPath + ' -hdr ' + image_output_destination + ' -o ' + denoise_output_destination + ' -verbose ' + v]
-                            
-                    #     if not verbose:
-                    #         denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
-                    #     else:
-                    #         denoisePipe = subprocess.Popen(pipePath, shell=True)
-
-                    #     denoisePipe.communicate()[0]
-
-                    #     with open(denoise_output_destination, "rb") as f:
-                    #         denoise_data, scale = load_pfm(f)
-
-                    #     ndata = np.array(denoise_data)
-                    #     ndata2 = np.dstack( (ndata, np.ones((width,height)) )  )
-                    #     img_array = ndata2.ravel()
-                    #     bpy.data.images[image.name].pixels = img_array
-                    #     bpy.data.images[image.name].filepath_raw = bakemap_path + "_denoised.hdr"
-                    #     bpy.data.images[image.name].file_format = "HDR"
-                    #     bpy.data.images[image.name].save()
 
 def bake_ordered(self, context, process):
     scene = context.scene
