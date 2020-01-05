@@ -237,9 +237,36 @@ class TLM_PT_Selection(bpy.types.Panel):
         scene = context.scene
         layout.use_property_split = True
         layout.use_property_decorate = False
-        layout.label(text="Enable for selection")
-        layout.label(text="Disable for selection")
-        layout.label(text="Something...")
+        sceneProperties = scene.TLM_SceneProperties
+
+        row = layout.row(align=True)
+        row.operator("tlm.enable_selection")
+        row = layout.row(align=True)
+        row.operator("tlm.disable_selection")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_override_object_settings")
+
+        if sceneProperties.tlm_override_object_settings:
+
+            row = layout.row(align=True)
+            #row = layout.row()
+            #row.prop(obj, "tlm_mesh_apply_after")
+            #row = layout.row()
+            #row.prop(obj, "tlm_mesh_emissive")
+            #row = layout.row()
+            #row.prop(obj, "tlm_mesh_emissive_shadow")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_mesh_lightmap_resolution")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_mesh_lightmap_unwrap_mode")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_mesh_unwrap_margin")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_mesh_bake_ao")
+
+
+
+
 
 class TLM_PT_Additional(bpy.types.Panel):
     bl_label = "Additional"
@@ -252,6 +279,7 @@ class TLM_PT_Additional(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+        layout.label(text="Something...")
         # layout.use_property_split = True
         # layout.use_property_decorate = False
         # layout.label(text="Enable for selection")
