@@ -367,3 +367,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Casts shadows", 
         description="TODO", 
         default=True)
+
+    tlm_play_sound : BoolProperty(
+        name="Play sound on finish", 
+        description="TODO", 
+        default=False)

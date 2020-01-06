@@ -1,4 +1,4 @@
-import bpy, math, os, platform, subprocess, sys, re, shutil, webbrowser, glob, bpy_extras, site
+import bpy, math, os, platform, subprocess, sys, re, shutil, webbrowser, glob, bpy_extras, site, aud
 import numpy as np
 from time import time
 
@@ -523,16 +523,19 @@ def configure_objects(scene):
                     nodetree = bpy.data.materials[slot.name].node_tree
                     nodes = nodetree.nodes
 
+                    #First search to get the first output material type
                     for node in nodetree.nodes:
                         if node.type == "OUTPUT_MATERIAL":
                             mainNode = node
                             break
-                    
 
-
-                    #mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
+                    #Fallback to get search
                     if not mainNode.type == "OUTPUT_MATERIAL":
                         mainNode = nodetree.nodes.get("Material Output")
+
+                    #Last resort to first node in list
+                    if not mainNode.type == "OUTPUT_MATERIAL":
+                        mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
 
                     for node in nodes:
                         if "LM" in node.name:
@@ -1332,5 +1335,14 @@ def bake_ordered(self, context, process):
     #TODO: EXPOSE AO STRENGTH AND THRESHOLD
 
     print("Baking finished in: %.3f s" % (time() - total_time))
+
+    if scene.TLM_SceneProperties.tlm_play_sound:
+
+        scriptDir = os.path.dirname(os.path.realpath(__file__))
+        sound_path = os.path.abspath(os.path.join(scriptDir, '..', 'Assets/sound.ogg'))
+
+        device = aud.Device()
+        sound = aud.Sound.file(sound_path)
+        device.play(sound)
 
     process = False
