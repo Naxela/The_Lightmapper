@@ -99,15 +99,27 @@ class TLM_PT_Denoise(bpy.types.Panel):
         sceneProperties = scene.TLM_SceneProperties
         layout.active = sceneProperties.tlm_denoise_use
         row = layout.row(align=True)
-        row.prop(sceneProperties, "tlm_oidn_path")
+
+        row.prop(sceneProperties, "tlm_denoiser", expand=True)
         row = layout.row(align=True)
-        row.prop(sceneProperties, "tlm_oidn_verbose")
-        row = layout.row(align=True)
-        row.prop(sceneProperties, "tlm_oidn_threads")
-        row = layout.row(align=True)
-        row.prop(sceneProperties, "tlm_oidn_maxmem")
-        row = layout.row(align=True)
-        row.prop(sceneProperties, "tlm_oidn_affinity")
+
+        if sceneProperties.tlm_denoiser == "OIDN":
+            row.prop(sceneProperties, "tlm_oidn_path")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_oidn_verbose")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_oidn_threads")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_oidn_maxmem")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_oidn_affinity")
+        else:
+            row.prop(sceneProperties, "tlm_optix_path")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_optix_verbose")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_optix_maxmem")
+            row = layout.row(align=True)
 
 class TLM_PT_Filtering(bpy.types.Panel):
     bl_label = "Filtering"

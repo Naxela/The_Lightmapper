@@ -133,12 +133,19 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         max=64, 
         subtype='PIXEL')
 
-    tlm_denoiser = EnumProperty(
-        items = [('OIDN', 'OIDN', 'TODO.'),
-                 ('Optix', 'Optix', 'TODO.')],
+    tlm_denoiser : EnumProperty(
+        items = [('OIDN', 'OIDN', 'TODO'),
+                    ('Optix', 'Optix', 'TODO')],
                 name = "Denoiser", 
                 description="TODO", 
                 default='OIDN')
+
+    # tlm_denoiser = EnumProperty(
+    #     items = [('OIDN', 'OIDN', 'TODO.'),
+    #              ('Optix', 'Optix', 'TODO.')],
+    #             name = "Denoiser", 
+    #             description="TODO", 
+    #             default='OIDN')
 
     tlm_delete_cache : BoolProperty(
         name="Delete cache", 
@@ -149,6 +156,23 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Enable denoising", 
         description="TODO", 
         default=False)
+
+    tlm_optix_path : StringProperty(
+        name="Optix Path", 
+        description="TODO", 
+        default="", 
+        subtype="FILE_PATH")
+
+    tlm_optix_verbose : BoolProperty(
+        name="Verbose", 
+        description="TODO")
+
+    tlm_optix_maxmem : IntProperty(
+            name="Tiling max Memory", 
+            default=0, 
+            min=512, 
+            max=32768, 
+            description="Use tiling for memory conservation. Set to 0 to disable tiling.")
 
     tlm_oidn_path : StringProperty(
         name="OIDN Path", 

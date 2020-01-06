@@ -636,6 +636,7 @@ def denoise_lightmaps(scene):
                 #Denoise here
                 if scene.TLM_SceneProperties.tlm_denoise_use:
                     
+                    #Optix
                     if scene.TLM_SceneProperties.tlm_denoiser == "Optix":
 
                         image_output_destination = bakemap_path + ".hdr"
@@ -649,11 +650,18 @@ def denoise_lightmaps(scene):
                         else:
                             print("Linux for Optix is still unsupported")
 
-                        denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
+                        if scene.TLM_SceneProperties.tlm_optix_verbose:
+                            denoisePipe = subprocess.Popen(pipePath, shell=True)
+                        else:
+                            denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
 
                         denoisePipe.communicate()[0]
+                        
+                        image = bpy.data.images[img_name]
+                        bpy.data.images[image.name].filepath_raw = bpy.data.images[image.name].filepath_raw[:-4] + "_denoised.hdr"
+                        bpy.data.images[image.name].reload()
 
-                    else:
+                    else: #OIDN
 
                         image = bpy.data.images[img_name]
                         width = image.size[0]
