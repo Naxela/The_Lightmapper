@@ -18,7 +18,7 @@ class TLM_ExploreLightmaps(bpy.types.Operator):
             return {"CANCELLED"}
 
         filepath = bpy.data.filepath
-        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.hdrlm_lightmap_savedir)
+        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_lightmap_savedir)
 
         if os.path.isdir(dirpath):
             webbrowser.open('file://' + dirpath)
