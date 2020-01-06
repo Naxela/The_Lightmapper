@@ -1,5 +1,5 @@
 from bpy.utils import register_class, unregister_class
-from . import build, clean, explore, encode, installopencv, gui, xBake, selection, environmentprobe
+from . import build, clean, explore, encode, installopencv, gui, xBake, selection
 
 classes = [
     build.TLM_BuildLightmaps,

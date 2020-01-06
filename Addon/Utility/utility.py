@@ -522,7 +522,17 @@ def configure_objects(scene):
 
                     nodetree = bpy.data.materials[slot.name].node_tree
                     nodes = nodetree.nodes
-                    mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
+
+                    for node in nodetree.nodes:
+                        if node.type == "OUTPUT_MATERIAL":
+                            mainNode = node
+                            break
+                    
+
+
+                    #mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
+                    if not mainNode.type == "OUTPUT_MATERIAL":
+                        mainNode = nodetree.nodes.get("Material Output")
 
                     for node in nodes:
                         if "LM" in node.name:
