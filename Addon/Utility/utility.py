@@ -493,30 +493,35 @@ def configure_objects(scene):
                         else:
                             mainNode.inputs[0].default_value = (1,0,0,1)
 
-                if (mainNode.type == "PRINCIPLED_BSDF"):
-                    print("DEBUG: Principled BSDF")
-                    #directional baked normal
-                    if scene.TLM_SceneProperties.tlm_directional_mode == "None":
-                            if not len(mainNode.inputs[20].links) == 0: #Error?
+                    if (mainNode.type == "BSDF_PRINCIPLED"):
+                        if scene.TLM_SceneProperties.tlm_directional_mode == "None":
+                            if not len(mainNode.inputs[20].links) == 0:
                                 ninput = mainNode.inputs[20].links[0]
                                 noutput = mainNode.inputs[20].links[0].from_node
                                 nodetree.links.remove(noutput.outputs[0].links[0])
 
-                    node = slot.material.name[:-5] + '_baked'
-                    if not node in bpy.data.materials:
-                        img_name = obj.name + '_baked'
-                        mat = bpy.data.materials.new(name=node)
-                        mat.use_nodes = True
-                        nodes = mat.node_tree.nodes
-                        img_node = nodes.new('ShaderNodeTexImage')
-                        img_node.name = "Baked Image"
-                        img_node.location = (100, 100)
-                        img_node.image = bpy.data.images[img_name]
-                        mat.node_tree.links.new(img_node.outputs[0], nodes['Principled BSDF'].inputs[0])
-                    else:
-                        mat = bpy.data.materials[node]
-                        nodes = mat.node_tree.nodes
-                        nodes['Baked Image'].image = bpy.data.images[img_name]
+                        #Clamp metallic
+                        if(mainNode.inputs[4].default_value == 1 and scene.TLM_SceneProperties.tlm_clamp_metallic):
+                            mainNode.inputs[4].default_value = 0.99
+                            
+                        node = slot.material.name[:-5] + '_baked'
+                        if not node in bpy.data.materials:
+                            img_name = obj.name + '_baked'
+                            mat = bpy.data.materials.new(name=node)
+                            mat.use_nodes = True
+                            nodes = mat.node_tree.nodes
+                            img_node = nodes.new('ShaderNodeTexImage')
+                            img_node.name = "Baked Image"
+                            img_node.location = (100, 100)
+                            img_node.image = bpy.data.images[img_name]
+                            mat.node_tree.links.new(img_node.outputs[0], nodes['Principled BSDF'].inputs[0])
+                        else:
+                            mat = bpy.data.materials[node]
+                            nodes = mat.node_tree.nodes
+                            nodes['Baked Image'].image = bpy.data.images[img_name]
+
+                    if (mainNode.type == "BSDF_DIFFUSe"):
+                        pass #Placeholder
 
                 for slot in obj.material_slots:
 

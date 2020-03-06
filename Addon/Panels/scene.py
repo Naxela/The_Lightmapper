@@ -76,6 +76,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_keep_cache_files')
         row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_clamp_metallic')
+        row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_play_sound')
 
 class TLM_PT_Denoise(bpy.types.Panel):

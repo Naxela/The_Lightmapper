@@ -396,3 +396,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Play sound on finish", 
         description="TODO", 
         default=False)
+
+    tlm_clamp_metallic : BoolProperty(
+        name="Clamp metallic", 
+        description="Clamp metallic values to be less than 1", 
+        default=True)
