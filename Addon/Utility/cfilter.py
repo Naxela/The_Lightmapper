@@ -1,4 +1,20 @@
-import bpy, cv2, os
+import bpy, os
+
+module_pip = False
+module_opencv = False
+
+try:
+    import pip
+    module_pip = True
+except ImportError:
+    module_pip = False
+
+try:
+    import cv2
+    module_opencv = True
+except ImportError:
+    pip 
+    module_opencv = False
 
 def filter_lightmaps(self, scene, module_opencv):
     filepath = bpy.data.filepath
