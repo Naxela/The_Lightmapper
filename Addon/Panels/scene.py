@@ -115,6 +115,8 @@ class TLM_PT_Denoise(bpy.types.Panel):
             row.prop(sceneProperties, "tlm_oidn_maxmem")
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_oidn_affinity")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_denoise_ao")
         else:
             row.prop(sceneProperties, "tlm_optix_path")
             row = layout.row(align=True)
@@ -122,6 +124,7 @@ class TLM_PT_Denoise(bpy.types.Panel):
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_optix_maxmem")
             row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_denoise_ao")
 
 class TLM_PT_Filtering(bpy.types.Panel):
     bl_label = "Filtering"

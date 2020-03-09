@@ -174,6 +174,10 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
             max=32768, 
             description="Use tiling for memory conservation. Set to 0 to disable tiling.")
 
+    tlm_denoise_ao : BoolProperty(
+        name="Denoise AO", 
+        description="TODO")
+
     tlm_oidn_path : StringProperty(
         name="OIDN Path", 
         description="TODO", 
