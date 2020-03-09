@@ -1,5 +1,5 @@
 import bpy, os, shutil
-from .. Utility import utility
+from .. Utility import utility, matcache
 
 class TLM_CleanLightmaps(bpy.types.Operator):
     """Cleans the lightmaps"""
@@ -34,7 +34,7 @@ class TLM_CleanLightmaps(bpy.types.Operator):
 
             for obj in selection:
                 for slot in obj.material_slots:
-                    utility.backup_material_restore(slot)
+                    matcache.backup_material_restore(slot)
 
         elif scene.TLM_SceneProperties.tlm_clean_option == "Clean cache":
             filepath = bpy.data.filepath
@@ -65,7 +65,15 @@ class TLM_CleanLightmaps(bpy.types.Operator):
                 if obj.type == "MESH":
                     if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                         for slot in obj.material_slots:
-                            utility.backup_material_restore(slot)
+                            matcache.backup_material_restore(slot)
+
+        for mat in bpy.data.materials:
+            if mat.name.endswith('_Original'):
+                bpy.data.materials.remove(mat, do_unlink=True)
+            if mat.name.endswith('.temp'):
+                bpy.data.materials.remove(mat, do_unlink=True)
+            if mat.name.endswith('_temp'):
+                bpy.data.materials.remove(mat, do_unlink=True)
 
         for mat in bpy.data.materials:
             mat.update_tag()

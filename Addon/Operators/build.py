@@ -1,5 +1,6 @@
 import bpy, os, time, blf
-from .. Utility import utility
+#from .. Utility import utility
+from .. Utility import bake_run
 
 font_info = {
     "font_id": 0,
@@ -49,7 +50,8 @@ class TLM_BuildLightmaps(bpy.types.Operator):
 
                 cycles = bpy.data.scenes[scene.name].cycles
 
-                utility.bake_ordered(self, context, None)
+                #utility.bake_ordered(self, context, None)
+                bake_run.bake_ordered(self, context, None)
 
                 if scene.TLM_SceneProperties.tlm_bake_for_selection:
                     for obj in bpy.data.objects:
