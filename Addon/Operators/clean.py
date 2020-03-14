@@ -68,10 +68,10 @@ class TLM_CleanLightmaps(bpy.types.Operator):
                             matcache.backup_material_restore(slot)
 
         for mat in bpy.data.materials:
-            if mat.name.endswith('_Original'):
-                bpy.data.materials.remove(mat, do_unlink=True)
-            if mat.name.endswith('.temp'):
-                bpy.data.materials.remove(mat, do_unlink=True)
+        #     if mat.name.endswith('_Original'):
+        #         bpy.data.materials.remove(mat, do_unlink=True)
+        #     if mat.name.endswith('.temp'):
+        #         bpy.data.materials.remove(mat, do_unlink=True)
             if mat.name.endswith('_temp'):
                 bpy.data.materials.remove(mat, do_unlink=True)
 

@@ -22,6 +22,16 @@ def configure_objects(self, scene):
 
     for obj in bpy.data.objects:
         if obj.type == "MESH":
+            for slot in obj.material_slots:
+                if slot.name + '_Original' in bpy.data.materials:
+                    print("The material: " + slot.name + " shifted to " + slot.name + '_Original')
+                    slot.material = bpy.data.materials[slot.name + '_Original']
+                    #scene.TLM_SceneProperties.shiftMaterials.append(slot.name)
+            #if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+            #    iterNum = iterNum + 1
+
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 iterNum = iterNum + 1
 

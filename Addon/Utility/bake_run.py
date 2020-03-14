@@ -25,6 +25,7 @@ def bake_ordered(self, context, process):
 
     #//////////// PRECONFIGURATION
     print("BAKING:!")
+    #scene.TLM_SceneProperties.shiftMaterials = []
 
     if not bpy.data.is_saved:
         self.report({'INFO'}, "Please save your file first")

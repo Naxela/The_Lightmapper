@@ -498,3 +498,10 @@ def apply_materials(self, scene):
         for image in bpy.data.images:
             if image.name.endswith("_baked"):
                 image.save()
+
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            for slot in obj.material_slots:
+                if slot.name.endswith('_Original'):
+                    if slot.name[:-9] in bpy.data.materials:
+                        slot.material = bpy.data.materials[slot.name[:-9]]
