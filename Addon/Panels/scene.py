@@ -164,6 +164,7 @@ class TLM_PT_Filtering(bpy.types.Panel):
             if self._module_installed:
                 box.label(text="Please restart Blender after installing")
             else:
+                box.label(text="Please install as administrator")
                 box.operator("tlm.install_opencv_lightmaps", icon="PREFERENCES")
 
         if(sceneProperties.tlm_filtering_use):
@@ -218,6 +219,9 @@ class TLM_PT_Encoding(bpy.types.Panel):
         if sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD":
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_encoding_range")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_encoding_armory_setup")
+        if sceneProperties.tlm_encoding_mode == "LogLuv":
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_encoding_armory_setup")
         row = layout.row(align=True)

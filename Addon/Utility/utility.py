@@ -337,12 +337,16 @@ def apply_materials(self, scene):
 
                             tlm_rgbm = bpy.data.node_groups.get('RGBM Decode')
                             tlm_rgbd = bpy.data.node_groups.get('RGBD Decode')
+                            tlm_logluv = bpy.data.node_groups.get('LogLuv Decode')
 
                             if tlm_rgbm == None:
                                 load_library('RGBM Decode')
 
                             if tlm_rgbd == None:
                                 load_library('RGBD Decode')
+
+                            if tlm_logluv == None:
+                                load_library('LogLuv Decode')
 
                         if(scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
                             tlm_exposure = bpy.data.node_groups.get('Exposure')
@@ -416,6 +420,10 @@ def apply_materials(self, scene):
                         LightmapNode.image = bpy.data.images[obj.name + "_baked"]
                         LightmapNode.name = "Lightmap_Image"
 
+                        if(scene.TLM_SceneProperties.tlm_encoding_armory_setup):
+                            if scene.TLM_SceneProperties.tlm_encoding_mode == 'LogLuv':
+                                LightmapNode.image.colorspace_settings.name = 'Linear'
+
                         UVLightmap = nodetree.nodes.new(type="ShaderNodeUVMap")
                         UVLightmap.uv_map = "UVMap_Lightmap"
                         UVLightmap.name = "Lightmap_UV"
@@ -433,6 +441,12 @@ def apply_materials(self, scene):
                                 DecodeNode.node_tree = bpy.data.node_groups["RGBD Decode"]
                                 DecodeNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
                                 DecodeNode.name = "Lightmap_RGBD_Decode"
+                                decoding = True
+                            if scene.TLM_SceneProperties.tlm_encoding_mode == "LogLuv":
+                                DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
+                                DecodeNode.node_tree = bpy.data.node_groups["LogLuv Decode"]
+                                DecodeNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
+                                DecodeNode.name = "Lightmap_LogLuv_Decode"
                                 decoding = True
 
                         if(scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):

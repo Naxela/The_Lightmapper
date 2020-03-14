@@ -272,7 +272,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     tlm_encoding_mode : EnumProperty(
         items = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
-                    ('RGBD', 'RGBD', '8-bit HDR encoding. Same as RGBM, but better for highlights and stylized looks.'),
+                    ('LogLuv', 'LogLuv', '8-bit HDR encoding. Different.'),
                     ('RGBE', 'RGBE', '32-bit HDR RGBE encoding. Best quality, but high memory usage and not compatible with all devices.')],
                 name = "Encoding Mode", 
                 description="TODO", 
