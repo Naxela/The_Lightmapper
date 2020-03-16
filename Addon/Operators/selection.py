@@ -36,3 +36,21 @@ class TLM_DisableSelection(bpy.types.Operator):
             obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = False
 
         return{'FINISHED'}
+
+class TLM_RemoveLightmapUV(bpy.types.Operator):
+    """Remove Lightmap UV for selection"""
+    bl_idname = "tlm.remove_uv_selection"
+    bl_label = "Remove Lightmap UV"
+    bl_description = "Remove Lightmap UV for selection"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        for obj in bpy.context.selected_objects:
+            uv_layers = obj.data.uv_layers
+
+            for uvlayer in uv_layers:
+                if uvlayer.name == "UVMap_Lightmap":
+                    uv_layers.remove(uvlayer)
+
+        return{'FINISHED'}
