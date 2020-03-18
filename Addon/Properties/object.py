@@ -2,6 +2,12 @@ import bpy
 from bpy.props import *
 
 class TLM_ObjectProperties(bpy.types.PropertyGroup):
+
+    tlm_atlas_pointer : StringProperty(
+            name = "Atlas Group",
+            description = "Atlas Lightmap Group",
+            default = "")
+
     tlm_mesh_lightmap_use : BoolProperty(
         name="Enable Lightmapping", 
         description="TODO", 
@@ -38,11 +44,22 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
 
     tlm_mesh_lightmap_unwrap_mode : EnumProperty(
         items = [('Lightmap', 'Lightmap', 'TODO'),
-                 ('Smart Project', 'Smart Project', 'TODO'),
-                 ('Copy Existing', 'Copy Existing', 'TODO')],
+                 ('SmartProject', 'Smart Project', 'TODO'),
+                 ('CopyExisting', 'Copy Existing', 'TODO'),
+                 ('Atlas Group', 'Atlas Group', 'TODO')],
+                name = "Unwrap Mode",
+                description="TODO", 
+                default='SmartProject')
+
+    tlm_mesh_lightmap_unwrap_mode_extended : EnumProperty(
+        items = [('Lightmap', 'Lightmap', 'TODO'),
+                 ('SmartProject', 'Smart Project', 'TODO'),
+                 ('CopyExisting', 'Copy Existing', 'TODO'),
+                 ('Atlas Group', 'Atlas Group', 'TODO'),
+                 ('UVPackmaster', 'UVPackmaster', 'TODO')],
                 name = "Unwrap Mode", 
                 description="TODO", 
-                default='Smart Project')
+                default='SmartProject')
 
     tlm_mesh_unwrap_margin : FloatProperty(
         name="Unwrap Margin", 

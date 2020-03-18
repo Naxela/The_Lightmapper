@@ -64,3 +64,10 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_unwrap_margin")
                 row = layout.row()
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_bake_ao")
+
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+
+                    if scene.TLM_AtlasList_index >= 0 and len(scene.TLM_AtlasList) > 0:
+                        row = layout.row()
+                        item = item = scene.TLM_AtlasList[scene.TLM_AtlasList_index]
+                        row.prop_search(obj.TLM_ObjectProperties, "tlm_atlas_pointer", scene, "TLM_AtlasList", text='Atlas Group')

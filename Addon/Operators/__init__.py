@@ -1,5 +1,5 @@
 from bpy.utils import register_class, unregister_class
-from . import build, clean, explore, encode, installopencv, gui, xBake, selection
+from . import build, clean, explore, encode, installopencv, gui, xBake, selection, additional
 
 classes = [
     build.TLM_BuildLightmaps,
@@ -9,6 +9,10 @@ classes = [
     installopencv.TLM_Install_OpenCV,
     selection.TLM_EnableSelection,
     selection.TLM_DisableSelection,
+    selection.TLM_RemoveLightmapUV,
+    additional.TLM_AtlasListNewItem,
+    additional.TLM_AtlastListDeleteItem,
+    additional.TLM_AtlasListMoveItem
     #xBake.XBake
 ]
 
