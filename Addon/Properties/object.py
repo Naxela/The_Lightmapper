@@ -46,7 +46,7 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
         items = [('Lightmap', 'Lightmap', 'TODO'),
                  ('SmartProject', 'Smart Project', 'TODO'),
                  ('CopyExisting', 'Copy Existing', 'TODO'),
-                 ('Atlas Group', 'Atlas Group', 'TODO')],
+                 ('AtlasGroup', 'Atlas Group', 'TODO')],
                 name = "Unwrap Mode",
                 description="TODO", 
                 default='SmartProject')
@@ -55,7 +55,7 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
         items = [('Lightmap', 'Lightmap', 'TODO'),
                  ('SmartProject', 'Smart Project', 'TODO'),
                  ('CopyExisting', 'Copy Existing', 'TODO'),
-                 ('Atlas Group', 'Atlas Group', 'TODO'),
+                 ('AtlasGroup', 'AtlasGroup', 'TODO'),
                  ('UVPackmaster', 'UVPackmaster', 'TODO')],
                 name = "Unwrap Mode", 
                 description="TODO", 

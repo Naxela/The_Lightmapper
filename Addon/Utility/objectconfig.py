@@ -36,7 +36,7 @@ def configure_objects(self, scene):
 
         for obj in bpy.data.objects:
             #if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group" and obj.TLM_ObjectProperties.tlm_atlas_pointer != "":
-            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
 
                 uv_layers = obj.data.uv_layers
                 if not "UVMap_Lightmap" in uv_layers:
@@ -98,7 +98,7 @@ def configure_objects(self, scene):
                 utility.preprocess_material(obj, scene)
 
                 #UV Layer management here
-                if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+                if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
                     uv_layers = obj.data.uv_layers
                     if not "UVMap_Lightmap" in uv_layers:
                         print("UVMap made B")
@@ -112,7 +112,7 @@ def configure_objects(self, scene):
                             bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
                         
                         #if smart project
-                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Smart Project":
+                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "SmartProject":
                             print("Smart Project B")
                             if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
                                 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
@@ -123,7 +123,7 @@ def configure_objects(self, scene):
                             bpy.ops.object.mode_set(mode='OBJECT')
                             bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
                         
-                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
 
                             print("ATLAS GROUP: " + obj.TLM_ObjectProperties.tlm_atlas_pointer)
                             

@@ -430,22 +430,22 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     tlm_mesh_lightmap_unwrap_mode : EnumProperty(
         items = [('Lightmap', 'Lightmap', 'TODO'),
-                 ('Smart Project', 'Smart Project', 'TODO'),
-                 ('Copy Existing', 'Copy Existing', 'TODO'),
-                 ('Atlas Group', 'Atlas Group', 'TODO')],
+                 ('SmartProject', 'Smart Project', 'TODO'),
+                 ('CopyExisting', 'Copy Existing', 'TODO'),
+                 ('AtlasGroup', 'Atlas Group', 'TODO')],
                 name = "Unwrap Mode", 
                 description="TODO", 
-                default='Smart Project')
+                default='SmartProject')
 
     tlm_mesh_lightmap_unwrap_mode_extended : EnumProperty(
         items = [('Lightmap', 'Lightmap', 'TODO'),
-                 ('Smart Project', 'Smart Project', 'TODO'),
-                 ('Copy Existing', 'Copy Existing', 'TODO'),
-                 ('Atlas Group', 'Atlas Group', 'TODO'),
+                 ('SmartProject', 'Smart Project', 'TODO'),
+                 ('CopyExisting', 'Copy Existing', 'TODO'),
+                 ('AtlasGroup', 'Atlas Group', 'TODO'),
                  ('UVPackmaster', 'UVPackmaster', 'TODO')],
                 name = "Unwrap Mode", 
                 description="TODO", 
-                default='Smart Project')
+                default='SmartProject')
 
     tlm_mesh_unwrap_margin : FloatProperty(
         name="Unwrap Margin", 

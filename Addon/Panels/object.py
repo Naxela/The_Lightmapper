@@ -32,7 +32,7 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_unwrap_mode")
                 row = layout.row()
 
-                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
 
                     if scene.TLM_AtlasList_index >= 0 and len(scene.TLM_AtlasList) > 0:
                         row = layout.row()

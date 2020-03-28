@@ -18,12 +18,6 @@ class TLM_BuildLightmaps(bpy.types.Operator):
     _handle = None
     _warm_up = 0
 
-    @classmethod
-    def poll(cls, context):
-
-        bpy.ops.object.mode_set(mode='EDIT')
-        return 
-
     def modal(self, context, event):
         #print("Modal...")
         context.area.tag_redraw()

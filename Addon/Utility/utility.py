@@ -209,7 +209,7 @@ def preprocess_material(obj, scene):
     img_name = obj.name + '_baked'
     #Resolution is object lightmap resolution divided by global scaler
     
-    if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
+    if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
 
         atlas_image_name = obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"
 
@@ -283,7 +283,7 @@ def postmanage_materials(scene):
     for obj in bpy.data.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
+                if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
                     atlas_image_name = obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"
                     img_name = atlas_image_name
                     bakemap_path = os.path.join(dirpath, img_name)
@@ -535,13 +535,13 @@ def apply_materials(self, scene):
 
     #bpy.ops.image.save_all_modified()
 
-    for image in bpy.data.images:
-        if image.filepath_raw.endswith('_finalized.hdr'):
-            image.filepath_raw = image.filepath[:-14] + ".hdr"
-            image.save()
-        if image.filepath_raw.endswith('_denoised.hdr'):
-            image.filepath_raw = image.filepath[:-13] + ".hdr"
-            image.save()
+    # for image in bpy.data.images:
+    #     if image.filepath_raw.endswith('_finalized.hdr'):
+    #         image.filepath_raw = image.filepath[:-14] + ".hdr"
+    #         image.save()
+    #     if image.filepath_raw.endswith('_denoised.hdr'):
+    #         image.filepath_raw = image.filepath[:-13] + ".hdr"
+    #         image.save()
 
     if not scene.TLM_SceneProperties.tlm_keep_cache_files:
         filepath = bpy.data.filepath
