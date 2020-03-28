@@ -29,8 +29,28 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
                 #row = layout.row()
                 #row.prop(obj, "tlm_mesh_emissive_shadow")
                 row = layout.row()
-                row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_resolution")
+                row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_unwrap_mode")
                 row = layout.row()
+
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+
+                    if scene.TLM_AtlasList_index >= 0 and len(scene.TLM_AtlasList) > 0:
+                        row = layout.row()
+                        item = scene.TLM_AtlasList[scene.TLM_AtlasList_index]
+                        row.prop_search(obj.TLM_ObjectProperties, "tlm_atlas_pointer", scene, "TLM_AtlasList", text='Atlas Group')
+                    else:
+                        row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
+
+                else:
+
+                    row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_resolution")
+                    row = layout.row()
+                            #ADD ERROR CHECKING HERE! (ELSE)
+
+                    row = layout.row()
+                    row.prop(obj.TLM_ObjectProperties, "tlm_mesh_unwrap_margin")
+                    row = layout.row()
+                    row.prop(obj.TLM_ObjectProperties, "tlm_mesh_bake_ao")
 
                 if not scene.TLM_SceneProperties.tlm_directional_mode == "None":
 
@@ -56,18 +76,3 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
                                     if NormalMapTex.size[0] < int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution):
                                         row = layout.label(text="A connected normal map is smaller than lightmap resolution")
 
-                        #ADD ERROR CHECKING HERE! (ELSE)
-
-                row = layout.row()
-                row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_unwrap_mode")
-                row = layout.row()
-                row.prop(obj.TLM_ObjectProperties, "tlm_mesh_unwrap_margin")
-                row = layout.row()
-                row.prop(obj.TLM_ObjectProperties, "tlm_mesh_bake_ao")
-
-                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
-
-                    if scene.TLM_AtlasList_index >= 0 and len(scene.TLM_AtlasList) > 0:
-                        row = layout.row()
-                        item = item = scene.TLM_AtlasList[scene.TLM_AtlasList_index]
-                        row.prop_search(obj.TLM_ObjectProperties, "tlm_atlas_pointer", scene, "TLM_AtlasList", text='Atlas Group')

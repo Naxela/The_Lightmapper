@@ -172,7 +172,7 @@ def preprocess_material(obj, scene):
     if scene.TLM_SceneProperties.tlm_caching_mode == "Copy":
         for slot in obj.material_slots:
             matname = slot.material.name
-            originalName = matname + "_Original"
+            originalName = "." + matname + "_Original"
             hasOriginal = False
             if originalName in bpy.data.materials:
                 hasOriginal = True
@@ -186,13 +186,15 @@ def preprocess_material(obj, scene):
     else: #Cache blend
         print("Warning: Cache blend not supported")
 
-    for mat in bpy.data.materials:
-        if mat.name.endswith('_baked'):
-            bpy.data.materials.remove(mat, do_unlink=True)
-    for img in bpy.data.images:
-        if img.name == obj.name + "_baked":
-            bpy.data.images.remove(img, do_unlink=True)
+    # for mat in bpy.data.materials:
+    #     if mat.name.endswith('_baked'):
+    #         bpy.data.materials.remove(mat, do_unlink=True)
+    # for img in bpy.data.images:
+    #     if img.name == obj.name + "_baked":
+    #         bpy.data.images.remove(img, do_unlink=True)
 
+
+    #SOME ATLAS EXCLUSION HERE?
     ob = obj
     for slot in ob.material_slots:
         #If temporary material already exists
@@ -205,27 +207,61 @@ def preprocess_material(obj, scene):
 
     #Add images for baking
     img_name = obj.name + '_baked'
-    res = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_SceneProperties.tlm_lightmap_scale)
-    if img_name not in bpy.data.images or bpy.data.images[img_name].size[0] != res or bpy.data.images[img_name].size[1] != res:
-        img = bpy.data.images.new(img_name, res, res, alpha=False, float_buffer=True)
-        img.name = img_name
-    else:
-        img = bpy.data.images[img_name]
+    #Resolution is object lightmap resolution divided by global scaler
+    
+    if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
 
-    for slot in obj.material_slots:
-        mat = slot.material
-        mat.use_nodes = True
-        nodes = mat.node_tree.nodes
+        atlas_image_name = obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"
 
-        if "Baked Image" in nodes:
-            img_node = nodes["Baked Image"]
+        res = int(scene.TLM_AtlasList[obj.TLM_ObjectProperties.tlm_atlas_pointer].tlm_atlas_lightmap_resolution) / int(scene.TLM_SceneProperties.tlm_lightmap_scale)
+
+        #If image not in bpy.data.images or if size changed, make a new image
+        if atlas_image_name not in bpy.data.images or bpy.data.images[atlas_image_name].size[0] != res or bpy.data.images[atlas_image_name].size[1] != res:
+            img = bpy.data.images.new(img_name, res, res, alpha=True, float_buffer=True)
+            img.name = atlas_image_name
         else:
-            img_node = nodes.new('ShaderNodeTexImage')
-            img_node.name = 'Baked Image'
-            img_node.location = (100, 100)
-            img_node.image = img
-        img_node.select = True
-        nodes.active = img_node
+            img = bpy.data.images[atlas_image_name]
+
+        for slot in obj.material_slots:
+            mat = slot.material
+            mat.use_nodes = True
+            nodes = mat.node_tree.nodes
+
+            if "Baked Image" in nodes:
+                img_node = nodes["Baked Image"]
+            else:
+                img_node = nodes.new('ShaderNodeTexImage')
+                img_node.name = 'Baked Image'
+                img_node.location = (100, 100)
+                img_node.image = img
+            img_node.select = True
+            nodes.active = img_node
+
+    else:
+
+        res = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_SceneProperties.tlm_lightmap_scale)
+
+        #If image not in bpy.data.images or if size changed, make a new image
+        if img_name not in bpy.data.images or bpy.data.images[img_name].size[0] != res or bpy.data.images[img_name].size[1] != res:
+            img = bpy.data.images.new(img_name, res, res, alpha=True, float_buffer=True)
+            img.name = img_name
+        else:
+            img = bpy.data.images[img_name]
+
+        for slot in obj.material_slots:
+            mat = slot.material
+            mat.use_nodes = True
+            nodes = mat.node_tree.nodes
+
+            if "Baked Image" in nodes:
+                img_node = nodes["Baked Image"]
+            else:
+                img_node = nodes.new('ShaderNodeTexImage')
+                img_node.name = 'Baked Image'
+                img_node.location = (100, 100)
+                img_node.image = img
+            img_node.select = True
+            nodes.active = img_node
 
 def postmanage_materials(scene):
     for mat in bpy.data.materials:
@@ -235,8 +271,8 @@ def postmanage_materials(scene):
                 if obj.type == 'MESH' and mat.name.endswith('_' + obj.name + '_baked'):
                     has_user = True
                     break
-            if not has_user:
-                bpy.data.materials.remove(mat, do_unlink=True)
+            # if not has_user:
+            #     bpy.data.materials.remove(mat, do_unlink=True)
 
     filepath = bpy.data.filepath
     dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_lightmap_savedir)
@@ -247,8 +283,13 @@ def postmanage_materials(scene):
     for obj in bpy.data.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                img_name = obj.name + '_baked'
-                bakemap_path = os.path.join(dirpath, img_name)
+                if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
+                    atlas_image_name = obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"
+                    img_name = atlas_image_name
+                    bakemap_path = os.path.join(dirpath, img_name)
+                else:
+                    img_name = obj.name + '_baked'
+                    bakemap_path = os.path.join(dirpath, img_name)
 
                 bpy.data.images[img_name].filepath_raw = bakemap_path + ".hdr"
                 bpy.data.images[img_name].file_format = "HDR"
@@ -326,7 +367,7 @@ def apply_materials(self, scene):
                         if mat.name.endswith('_temp'):
                             old = slot.material
                             slot.material = bpy.data.materials[old.name.split('_' + obj.name)[0]]
-                            bpy.data.materials.remove(old, do_unlink=True)
+                            #bpy.data.materials.remove(old, do_unlink=True)
 
                     uv_layers = obj.data.uv_layers
                     uv_layers.active_index = 0
@@ -417,7 +458,13 @@ def apply_materials(self, scene):
 
                         LightmapNode = nodetree.nodes.new(type="ShaderNodeTexImage")
                         LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
-                        LightmapNode.image = bpy.data.images[obj.name + "_baked"]
+
+                        if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
+                            img_name = obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"
+                        else:
+                            img_name = obj.name + '_baked'
+
+                        LightmapNode.image = bpy.data.images[img_name]
                         LightmapNode.name = "Lightmap_Image"
 
                         if(scene.TLM_SceneProperties.tlm_encoding_armory_setup):
@@ -480,7 +527,21 @@ def apply_materials(self, scene):
 
     for mat in bpy.data.materials:
         if mat.name.endswith('_baked'):
+            pass
+            #bpy.data.materials.remove(mat, do_unlink=True)
+
+        if mat.name.endswith('_temp'):
             bpy.data.materials.remove(mat, do_unlink=True)
+
+    #bpy.ops.image.save_all_modified()
+
+    for image in bpy.data.images:
+        if image.filepath_raw.endswith('_finalized.hdr'):
+            image.filepath_raw = image.filepath[:-14] + ".hdr"
+            image.save()
+        if image.filepath_raw.endswith('_denoised.hdr'):
+            image.filepath_raw = image.filepath[:-13] + ".hdr"
+            image.save()
 
     if not scene.TLM_SceneProperties.tlm_keep_cache_files:
         filepath = bpy.data.filepath
@@ -503,5 +564,5 @@ def apply_materials(self, scene):
         if obj.type == "MESH":
             for slot in obj.material_slots:
                 if slot.name.endswith('_Original'):
-                    if slot.name[:-9] in bpy.data.materials:
-                        slot.material = bpy.data.materials[slot.name[:-9]]
+                    if slot.name[1:-9] in bpy.data.materials:
+                        slot.material = bpy.data.materials[slot.name[1:-9]]

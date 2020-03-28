@@ -326,6 +326,7 @@ class TLM_PT_Additional(bpy.types.Panel):
             item = scene.TLM_AtlasList[scene.TLM_AtlasList_index]
             #layout.prop_search(item, "obj", bpy.data, "objects", text="Object")
             #layout.prop(item, "res_x")
+            layout.prop(item, "tlm_atlas_lightmap_unwrap_mode")
             layout.prop(item, "tlm_atlas_lightmap_resolution")
             layout.prop(item, "tlm_atlas_unwrap_margin")
 

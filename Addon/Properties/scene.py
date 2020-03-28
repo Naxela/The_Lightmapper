@@ -24,6 +24,23 @@ class TLM_AtlasListItem(bpy.types.PropertyGroup):
         max=1.0, 
         subtype='FACTOR')
 
+    tlm_atlas_lightmap_unwrap_mode : EnumProperty(
+        items = [('Lightmap', 'Lightmap', 'TODO'),
+                 ('SmartProject', 'Smart Project', 'TODO'),
+                 ('CopyExisting', 'Copy Existing', 'TODO')],
+                name = "Unwrap Mode", 
+                description="TODO", 
+                default='SmartProject')
+
+    tlm_atlas_lightmap_unwrap_mode_extended : EnumProperty(
+        items = [('Lightmap', 'Lightmap', 'TODO'),
+                 ('SmartProject', 'Smart Project', 'TODO'),
+                 ('CopyExisting', 'Copy Existing', 'TODO'),
+                 ('UVPackmaster', 'UVPackmaster', 'TODO')],
+                name = "Unwrap Mode", 
+                description="TODO", 
+                default='SmartProject')
+
 class TLM_UL_AtlasList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # We could write some code to decide which icon to use here...
@@ -191,7 +208,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     tlm_dilation_margin : IntProperty(
         name="Dilation margin", 
-        default=16, 
+        default=2,
         min=1, 
         max=64, 
         subtype='PIXEL')

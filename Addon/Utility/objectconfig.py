@@ -23,12 +23,58 @@ def configure_objects(self, scene):
     for obj in bpy.data.objects:
         if obj.type == "MESH":
             for slot in obj.material_slots:
-                if slot.name + '_Original' in bpy.data.materials:
-                    print("The material: " + slot.name + " shifted to " + slot.name + '_Original')
-                    slot.material = bpy.data.materials[slot.name + '_Original']
-                    #scene.TLM_SceneProperties.shiftMaterials.append(slot.name)
-            #if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-            #    iterNum = iterNum + 1
+                if "." + slot.name + '_Original' in bpy.data.materials:
+                    print("The material: " + slot.name + " shifted to " + "." + slot.name + '_Original')
+                    slot.material = bpy.data.materials["." + slot.name + '_Original']
+
+    for atlasgroup in scene.TLM_AtlasList:
+
+        atlas = atlasgroup.name
+        atlas_items = []
+
+        bpy.ops.object.select_all(action='DESELECT')
+
+        for obj in bpy.data.objects:
+            #if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group" and obj.TLM_ObjectProperties.tlm_atlas_pointer != "":
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+
+                uv_layers = obj.data.uv_layers
+                if not "UVMap_Lightmap" in uv_layers:
+                    print("UVMap made A")
+                    uvmap = uv_layers.new(name="UVMap_Lightmap")
+                    uv_layers.active_index = len(uv_layers) - 1
+                else:
+                    print("Existing found...skipping")
+                    for i in range(0, len(uv_layers)):
+                        if uv_layers[i].name == 'UVMap_Lightmap':
+                            uv_layers.active_index = i
+                            print("Lightmap shift A")
+                            break
+
+                atlas_items.append(obj)
+                obj.select_set(True)
+
+        if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
+            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+        if atlasgroup.tlm_atlas_lightmap_unwrap_mode == "SmartProject":
+            print("Smart Project A for: " + str(atlas_items))
+            for obj in atlas_items:
+                print(obj.name + ": Active UV: " + obj.data.uv_layers[obj.data.uv_layers.active_index].name)
+            bpy.context.view_layer.objects.active = atlas_items[0]
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=atlasgroup.tlm_atlas_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+        elif atlasgroup.tlm_atlas_lightmap_unwrap_mode == "Lightmap":
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=atlasgroup.tlm_atlas_unwrap_margin)
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+        else:
+            print("Copied Existing A")
+            pass #COPY EXISTING
 
     for obj in bpy.data.objects:
         if obj.type == "MESH":
@@ -51,29 +97,51 @@ def configure_objects(self, scene):
                 #Provide material if none exists
                 utility.preprocess_material(obj, scene)
 
-                if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
-                    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+                #UV Layer management here
+                if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+                    uv_layers = obj.data.uv_layers
+                    if not "UVMap_Lightmap" in uv_layers:
+                        print("UVMap made B")
+                        uvmap = uv_layers.new(name="UVMap_Lightmap")
+                        uv_layers.active_index = len(uv_layers) - 1
 
-                uv_layers = obj.data.uv_layers
-                if not "UVMap_Lightmap" in uv_layers:
-                    uvmap = uv_layers.new(name="UVMap_Lightmap")
-                    uv_layers.active_index = len(uv_layers) - 1
-                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
-                        bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
-                    elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Smart Project":
-                        bpy.ops.object.select_all(action='DESELECT')
-                        obj.select_set(True)
-                        bpy.ops.object.mode_set(mode='EDIT')
-                        bpy.ops.mesh.select_all(action='DESELECT')
-                        bpy.ops.object.mode_set(mode='OBJECT')
-                        bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+                        #if lightmap
+                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
+                            if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
+                                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+                            bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
+                        
+                        #if smart project
+                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Smart Project":
+                            print("Smart Project B")
+                            if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
+                                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+                            bpy.ops.object.select_all(action='DESELECT')
+                            obj.select_set(True)
+                            bpy.ops.object.mode_set(mode='EDIT')
+                            bpy.ops.mesh.select_all(action='DESELECT')
+                            bpy.ops.object.mode_set(mode='OBJECT')
+                            bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+                        
+                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+
+                            print("ATLAS GROUP: " + obj.TLM_ObjectProperties.tlm_atlas_pointer)
+                            
+                        else: #if copy existing
+
+                            print("Copied Existing B")
+
+                            #Here we copy an existing map
+                            pass
                     else:
-                        pass
-                else:
-                    for i in range(0, len(uv_layers)):
-                        if uv_layers[i].name == 'UVMap_Lightmap':
-                            uv_layers.active_index = i
-                            break
+                        print("Existing found...skipping")
+                        for i in range(0, len(uv_layers)):
+                            if uv_layers[i].name == 'UVMap_Lightmap':
+                                uv_layers.active_index = i
+                                print("Lightmap shift B")
+                                break
+
+                #print(x)
 
                 #Sort out nodes
                 for slot in obj.material_slots:

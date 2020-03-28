@@ -47,10 +47,11 @@ class TLM_RemoveLightmapUV(bpy.types.Operator):
     def execute(self, context):
 
         for obj in bpy.context.selected_objects:
-            uv_layers = obj.data.uv_layers
+            if obj.type == "MESH":
+                uv_layers = obj.data.uv_layers
 
-            for uvlayer in uv_layers:
-                if uvlayer.name == "UVMap_Lightmap":
-                    uv_layers.remove(uvlayer)
+                for uvlayer in uv_layers:
+                    if uvlayer.name == "UVMap_Lightmap":
+                        uv_layers.remove(uvlayer)
 
         return{'FINISHED'}

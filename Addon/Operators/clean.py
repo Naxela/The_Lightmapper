@@ -67,6 +67,10 @@ class TLM_CleanLightmaps(bpy.types.Operator):
                         for slot in obj.material_slots:
                             matcache.backup_material_restore(slot)
 
+            for image in bpy.data.images:
+                if image.name.endswith("_baked"):
+                    bpy.data.images.remove(image, do_unlink=True)
+
         for mat in bpy.data.materials:
         #     if mat.name.endswith('_Original'):
         #         bpy.data.materials.remove(mat, do_unlink=True)

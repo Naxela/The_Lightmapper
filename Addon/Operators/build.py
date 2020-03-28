@@ -18,6 +18,12 @@ class TLM_BuildLightmaps(bpy.types.Operator):
     _handle = None
     _warm_up = 0
 
+    @classmethod
+    def poll(cls, context):
+
+        bpy.ops.object.mode_set(mode='EDIT')
+        return 
+
     def modal(self, context, event):
         #print("Modal...")
         context.area.tag_redraw()
@@ -71,6 +77,9 @@ class TLM_BuildLightmaps(bpy.types.Operator):
     def invoke(self, context, event):
 
         #self._time = str(time.strftime('%X %x %Z'))
+        
+        #Clean lightmaps first?
+        bpy.ops.tlm.clean_lightmaps()
 
         font_path = bpy.path.abspath('//Zeyada.ttf')
         # Store the font indice - to use later.
