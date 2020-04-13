@@ -93,7 +93,7 @@ def set_settings(cycles, scene):
         cycles.caustics_reflective = False
         cycles.caustics_refractive = False
     elif scene.TLM_SceneProperties.tlm_quality == "Medium":
-        cycles.samples = 64
+        cycles.samples = 256
         cycles.max_bounces = 2
         cycles.diffuse_bounces = 2
         cycles.glossy_bounces = 2
@@ -103,7 +103,7 @@ def set_settings(cycles, scene):
         cycles.caustics_reflective = False
         cycles.caustics_refractive = False
     elif scene.TLM_SceneProperties.tlm_quality == "High":
-        cycles.samples = 256
+        cycles.samples = 512
         cycles.max_bounces = 128
         cycles.diffuse_bounces = 128
         cycles.glossy_bounces = 128
@@ -113,7 +113,7 @@ def set_settings(cycles, scene):
         cycles.caustics_reflective = False
         cycles.caustics_refractive = False
     elif scene.TLM_SceneProperties.tlm_quality == "Production":
-        cycles.samples = 512
+        cycles.samples = 1024
         cycles.max_bounces = 256
         cycles.diffuse_bounces = 256
         cycles.glossy_bounces = 256
@@ -218,6 +218,18 @@ def preprocess_material(obj, scene):
         #If image not in bpy.data.images or if size changed, make a new image
         if atlas_image_name not in bpy.data.images or bpy.data.images[atlas_image_name].size[0] != res or bpy.data.images[atlas_image_name].size[1] != res:
             img = bpy.data.images.new(img_name, res, res, alpha=True, float_buffer=True)
+
+            num_pixels = len(img.pixels)
+            result_pixel = list(img.pixels)
+
+            for i in range(0,num_pixels,4):
+                result_pixel[i+0] = scene.TLM_SceneProperties.tlm_default_color[0]
+                result_pixel[i+1] = scene.TLM_SceneProperties.tlm_default_color[1]
+                result_pixel[i+2] = scene.TLM_SceneProperties.tlm_default_color[2]
+                result_pixel[i+3] = 1.0
+
+            img.pixels = result_pixel
+
             img.name = atlas_image_name
         else:
             img = bpy.data.images[atlas_image_name]
@@ -244,6 +256,18 @@ def preprocess_material(obj, scene):
         #If image not in bpy.data.images or if size changed, make a new image
         if img_name not in bpy.data.images or bpy.data.images[img_name].size[0] != res or bpy.data.images[img_name].size[1] != res:
             img = bpy.data.images.new(img_name, res, res, alpha=True, float_buffer=True)
+
+            num_pixels = len(img.pixels)
+            result_pixel = list(img.pixels)
+
+            for i in range(0,num_pixels,4):
+                result_pixel[i+0] = scene.TLM_SceneProperties.tlm_default_color[0]
+                result_pixel[i+1] = scene.TLM_SceneProperties.tlm_default_color[1]
+                result_pixel[i+2] = scene.TLM_SceneProperties.tlm_default_color[2]
+                result_pixel[i+3] = 1.0
+
+            img.pixels = result_pixel
+
             img.name = img_name
         else:
             img = bpy.data.images[img_name]
@@ -459,7 +483,7 @@ def apply_materials(self, scene):
                         LightmapNode = nodetree.nodes.new(type="ShaderNodeTexImage")
                         LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
 
-                        if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
+                        if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
                             img_name = obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"
                         else:
                             img_name = obj.name + '_baked'

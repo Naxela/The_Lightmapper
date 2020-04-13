@@ -28,10 +28,7 @@ def filter_lightmaps(self, scene, module_opencv):
         bakemap_path = os.path.join(dirpath, img_name)
 
         if scene.TLM_SceneProperties.tlm_filtering_use:
-            if scene.TLM_SceneProperties.tlm_denoise_use:
-                filter_file_input = img_name + "_denoised.hdr"
-            else:
-                filter_file_input = img_name + ".hdr"
+            filter_file_input = img_name + ".hdr"
 
             if module_opencv:
 
@@ -81,34 +78,33 @@ def filter_lightmaps(self, scene, module_opencv):
                             opencv_bl_result = cv2.medianBlur(opencv_bl_result, kernel_size[0])
 
                 cv2.imwrite(filter_file_output, opencv_bl_result)
-                
                 bpy.ops.image.open(filepath=os.path.join(os.path.dirname(bakemap_path),filter_file_output))
                 bpy.data.images[atlas_name + "_baked"].name = atlas_name + "_temp"
+
+                os.remove(filter_file_input)
+
                 bpy.data.images[atlas_name + "_baked_finalized.hdr"].name = atlas_name + "_baked"
+
+                os.rename(filter_file_input[:-4] + "_finalized.hdr", filter_file_input)
+                
+                bpy.data.images[atlas_name + "_baked"].filepath_raw = bpy.data.images[atlas_name + "_baked"].filepath_raw[:-14] + ".hdr"
                 bpy.data.images.remove(bpy.data.images[atlas_name + "_temp"])
 
             else:
                 print("Module missing: OpenCV. Filtering skipped")
                 self.report({'INFO'}, "Missing OpenCV module - If you just installed it, please restart Blender")
 
-
-
-
-
     for obj in bpy.data.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
-                if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+                if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
 
                     img_name = obj.name + '_baked'
                     bakemap_path = os.path.join(dirpath, img_name)
 
                     if scene.TLM_SceneProperties.tlm_filtering_use:
-                        if scene.TLM_SceneProperties.tlm_denoise_use:
-                            filter_file_input = img_name + "_denoised.hdr"
-                        else:
-                            filter_file_input = img_name + ".hdr"
+                        filter_file_input = img_name + ".hdr"
 
                         if module_opencv:
 
@@ -160,8 +156,13 @@ def filter_lightmaps(self, scene, module_opencv):
                             cv2.imwrite(filter_file_output, opencv_bl_result)
                             
                             bpy.ops.image.open(filepath=os.path.join(os.path.dirname(bakemap_path),filter_file_output))
-                            bpy.data.images[obj.name+"_baked"].name = obj.name + "_temp"
-                            bpy.data.images[obj.name+"_baked_finalized.hdr"].name = obj.name + "_baked"
+                            bpy.data.images[obj.name +"_baked"].name = obj.name + "_temp"
+                            os.remove(filter_file_input)
+
+                            bpy.data.images[obj.name +"_baked_finalized.hdr"].name = obj.name + "_baked"
+                            os.rename(filter_file_input[:-4] + "_finalized.hdr", filter_file_input)
+
+                            bpy.data.images[obj.name + "_baked"].filepath_raw = bpy.data.images[obj.name + "_baked"].filepath_raw[:-14] + ".hdr"
                             bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])
 
                         else:

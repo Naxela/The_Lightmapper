@@ -13,7 +13,7 @@ class TLM_AtlasListNewItem(bpy.types.Operator):
         scene.TLM_AtlasList.add()
         scene.TLM_AtlasList_index = len(scene.TLM_AtlasList) - 1
 
-        scene.TLM_AtlasList[len(scene.TLM_AtlasList) - 1].name = "Atlas Group"
+        scene.TLM_AtlasList[len(scene.TLM_AtlasList) - 1].name = "AtlasGroup"
 
         return{'FINISHED'}
 

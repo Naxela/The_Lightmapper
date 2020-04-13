@@ -35,7 +35,6 @@ def configure_objects(self, scene):
         bpy.ops.object.select_all(action='DESELECT')
 
         for obj in bpy.data.objects:
-            #if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group" and obj.TLM_ObjectProperties.tlm_atlas_pointer != "":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
 
                 uv_layers = obj.data.uv_layers
@@ -191,9 +190,11 @@ def configure_objects(self, scene):
                     if (mainNode.type == "BSDF_PRINCIPLED"):
                         print("BSDF_Principled")
                         if scene.TLM_SceneProperties.tlm_directional_mode == "None":
-                            if not len(mainNode.inputs[20].links) == 0:
-                                ninput = mainNode.inputs[20].links[0]
-                                noutput = mainNode.inputs[20].links[0].from_node
+                            print("Directional mode")
+                            if not len(mainNode.inputs[19].links) == 0:
+                                print("NOT LEN 0")
+                                ninput = mainNode.inputs[19].links[0]
+                                noutput = mainNode.inputs[19].links[0].from_node
                                 nodetree.links.remove(noutput.outputs[0].links[0])
 
                         #Clamp metallic

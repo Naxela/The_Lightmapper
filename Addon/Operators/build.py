@@ -51,7 +51,10 @@ class TLM_BuildLightmaps(bpy.types.Operator):
                 cycles = bpy.data.scenes[scene.name].cycles
 
                 #utility.bake_ordered(self, context, None)
-                bake_run.bake_ordered(self, context, None)
+                if scene.TLM_SceneProperties.tlm_bake_mode == "Foreground":
+                    bake_run.bake_ordered(self, context, None)
+                elif scene.TLM_SceneProperties.tlm_bake_mode == "Background":
+                    bake_run.bake_background(self, context, None)
 
                 if scene.TLM_SceneProperties.tlm_bake_for_selection:
                     for obj in bpy.data.objects:

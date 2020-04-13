@@ -1,4 +1,4 @@
-import bpy, math, os, platform, subprocess, sys, re, shutil, webbrowser, glob, bpy_extras, site, aud
+import bpy, math, os, platform, subprocess, sys, re, shutil, webbrowser, glob, bpy_extras, site, aud, datetime
 from . import denoise, objectconfig, lightbake, cfilter, encoding, ambientbake, utility
 import numpy as np
 from time import time
@@ -18,6 +18,26 @@ try:
 except ImportError:
     pip 
     module_opencv = False
+
+def sec_to_hours(seconds):
+    a=str(seconds//3600)
+    b=str((seconds%3600)//60)
+    c=str((seconds%3600)%60)
+    d=["{} hours {} mins {} seconds".format(a, b, c)]
+    return d
+
+def bake_background(self, context, process):
+    scene = context.scene
+    cycles = scene.cycles
+
+    filepath = bpy.data.filepath
+
+    process = subprocess.Popen([sys.executable,
+        "--background",
+        filepath,
+        "--python-expr",
+        'import bpy;p=bpy.ops.tlm.build_lightmaps();'],
+        shell=False)
 
 def bake_ordered(self, context, process):
     scene = context.scene
@@ -86,8 +106,9 @@ def bake_ordered(self, context, process):
     #SAVE AO!
 
     #TODO: EXPOSE AO STRENGTH AND THRESHOLD
+    ttime = sec_to_hours((time() - total_time))
 
-    print("Baking finished in: %.3f s" % (time() - total_time))
+    print("Baking finished in: {}".format(ttime))
 
     if scene.TLM_SceneProperties.tlm_play_sound:
 

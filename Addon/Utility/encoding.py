@@ -230,6 +230,7 @@ def encodeImageRGBD(image, maxRange, outDir, quality):
 def encode_lightmaps(scene):
     filepath = bpy.data.filepath
     dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_lightmap_savedir)
+    texpath = os.path.join(os.path.dirname(bpy.data.filepath), "textures/")
 
     for atlasgroup in scene.TLM_AtlasList:
         atlas_name = atlasgroup.name
@@ -257,14 +258,15 @@ def encode_lightmaps(scene):
             bpy.data.images[atlas_name + "_baked"].name = atlas_name + "_temp"
             bpy.data.images[atlas_name + "_baked_encoded"].name = atlas_name + "_baked"
             bpy.data.images[atlas_name + "_baked"].filepath_raw = bpy.data.images[atlas_name + "_baked"].filepath_raw[:-12] + ".png"
-            #bpy.data.images[atlas_name + "_baked"].unpack(method='REMOVE')
-            #bpy.data.images[atlas_name + "_baked"].save()
+            bpy.data.images[atlas_name + "_baked"].unpack(method='WRITE_LOCAL')
+            os.rename(texpath + atlas_name + "_baked", dirpath + "/" + atlas_name + "_baked.png")
+            bpy.data.images[atlas_name + "_baked"].filepath = dirpath + "/" + atlas_name + "_baked.png"
             bpy.data.images.remove(bpy.data.images[atlas_name + "_temp"])
 
     for obj in bpy.data.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+                if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
 
                     img_name = obj.name + '_baked'
                     bakemap_path = os.path.join(dirpath, img_name)
@@ -288,6 +290,7 @@ def encode_lightmaps(scene):
                         bpy.data.images[obj.name+"_baked"].name = obj.name + "_temp"
                         bpy.data.images[obj.name+"_baked_encoded"].name = obj.name + "_baked"
                         bpy.data.images[obj.name + "_baked"].filepath_raw = bpy.data.images[obj.name + "_baked"].filepath_raw[:-12] + ".png"
-                        #bpy.data.images[obj.name + "_baked"].unpack(method='REMOVE')
-                        #bpy.data.images[obj.name + "_baked"].save()
+                        bpy.data.images[obj.name + "_baked"].unpack(method='WRITE_LOCAL')
+                        os.rename(texpath + obj.name + "_baked", dirpath + "/" + obj.name + "_baked.png")
+                        bpy.data.images[obj.name + "_baked"].filepath = dirpath + "/" + obj.name + "_baked.png"
                         bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])

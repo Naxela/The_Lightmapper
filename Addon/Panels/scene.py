@@ -67,6 +67,8 @@ class TLM_PT_Settings(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_exposure_multiplier')
         row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_default_color')
+        row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_apply_on_unwrap')
         row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_indirect_only')
@@ -279,13 +281,41 @@ class TLM_PT_Selection(bpy.types.Panel):
             #row = layout.row()
             #row.prop(obj, "tlm_mesh_emissive_shadow")
             row = layout.row()
-            row.prop(sceneProperties, "tlm_mesh_lightmap_resolution")
-            row = layout.row()
             row.prop(sceneProperties, "tlm_mesh_lightmap_unwrap_mode")
             row = layout.row()
-            row.prop(sceneProperties, "tlm_mesh_unwrap_margin")
-            row = layout.row()
-            row.prop(sceneProperties, "tlm_mesh_bake_ao")
+
+            if sceneProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+
+                if scene.TLM_AtlasList_index >= 0 and len(scene.TLM_AtlasList) > 0:
+                    row = layout.row()
+                    item = scene.TLM_AtlasList[scene.TLM_AtlasList_index]
+                    row.prop_search(sceneProperties, "tlm_atlas_pointer", scene, "TLM_AtlasList", text='Atlas Group')
+                else:
+                    row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
+
+            else:
+
+                row.prop(sceneProperties, "tlm_mesh_lightmap_resolution")
+                row = layout.row()
+                        #ADD ERROR CHECKING HERE! (ELSE)
+
+                row = layout.row()
+                row.prop(sceneProperties, "tlm_mesh_unwrap_margin")
+                row = layout.row()
+                row.prop(sceneProperties, "tlm_mesh_bake_ao")
+
+
+
+
+
+
+            # row.prop(sceneProperties, "tlm_mesh_lightmap_resolution")
+            # row = layout.row()
+            # row.prop(sceneProperties, "tlm_mesh_lightmap_unwrap_mode")
+            # row = layout.row()
+            # row.prop(sceneProperties, "tlm_mesh_unwrap_margin")
+            # row = layout.row()
+            # row.prop(sceneProperties, "tlm_mesh_bake_ao")
 
         row = layout.row(align=True)
         row.operator("tlm.remove_uv_selection")
@@ -334,7 +364,7 @@ class TLM_PT_Additional(bpy.types.Panel):
 
             for obj in bpy.data.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
                         if obj.TLM_ObjectProperties.tlm_atlas_pointer == item.name:
                             amount = amount + 1
 

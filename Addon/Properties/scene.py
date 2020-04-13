@@ -52,7 +52,7 @@ class TLM_UL_AtlasList(bpy.types.UIList):
 
             for obj in bpy.data.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
                         if obj.TLM_ObjectProperties.tlm_atlas_pointer == item.name:
                             amount = amount + 1
 
@@ -81,6 +81,11 @@ class TLM_UL_AtlasList(bpy.types.UIList):
         #     layout.label(text="", icon=custom_icon)
 
 class TLM_SceneProperties(bpy.types.PropertyGroup):
+
+    tlm_atlas_pointer : StringProperty(
+            name = "Atlas Group",
+            description = "Atlas Lightmap Group",
+            default = "")
 
     tlm_bake_for_selection : BoolProperty(
         name="Bake for selection", 
@@ -134,10 +139,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 default="CPU")
 
     tlm_bake_mode : EnumProperty(
-        items = [('Ordered', 'Foreground', 'TODO')],
+        items = [('Foreground', 'Foreground', 'TODO'),
+                ('Background', 'Background', 'TODO')],
                 name = "Baking Mode", 
                 description="TODO", 
-                default="Ordered")
+                default="Foreground")
 
     tlm_baketime_material: EnumProperty(
         items = [('Inherit', 'Inherit', 'TODO'), 
@@ -208,7 +214,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     tlm_dilation_margin : IntProperty(
         name="Dilation margin", 
-        default=2,
+        default=4,
         min=1, 
         max=64, 
         subtype='PIXEL')
@@ -492,3 +498,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Clamp metallic", 
         description="Clamp metallic values to be less than 1", 
         default=True)
+
+    tlm_default_color : FloatVectorProperty(name="Default BG Color",
+        description="Background color for HDR Maps", 
+        subtype='COLOR', 
+        default=[0.5,0.5,0.5])

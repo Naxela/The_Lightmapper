@@ -113,10 +113,10 @@ def denoise_lightmaps(scene):
                     denoise_data, scale = utility.load_pfm(f)
 
                 ndata = np.array(denoise_data)
-                ndata2 = np.dstack( (ndata, np.ones((width,height)) )  )
+                ndata2 = np.dstack((ndata, np.ones((width,height))))
                 img_array = ndata2.ravel()
                 bpy.data.images[image.name].pixels = img_array
-                bpy.data.images[image.name].filepath_raw = bakemap_path + "_denoised.hdr"
+                bpy.data.images[image.name].filepath_raw = bakemap_path + ".hdr"
                 bpy.data.images[image.name].file_format = "HDR"
                 bpy.data.images[image.name].save()
 
@@ -124,7 +124,7 @@ def denoise_lightmaps(scene):
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
-                if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Atlas Group":
+                if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
                     #IF NOT ATLAS GROUP
 
                     img_name = obj.name + '_baked'
@@ -216,10 +216,10 @@ def denoise_lightmaps(scene):
                                 denoise_data, scale = utility.load_pfm(f)
 
                             ndata = np.array(denoise_data)
-                            ndata2 = np.dstack( (ndata, np.ones((width,height)) )  )
+                            ndata2 = np.dstack((ndata, np.ones((width,height))))
                             img_array = ndata2.ravel()
                             bpy.data.images[image.name].pixels = img_array
-                            bpy.data.images[image.name].filepath_raw = bakemap_path + "_denoised.hdr"
+                            bpy.data.images[image.name].filepath_raw = bakemap_path + ".hdr"
                             bpy.data.images[image.name].file_format = "HDR"
                             bpy.data.images[image.name].save()
 
