@@ -41,6 +41,12 @@ def check_compatible_naming(self):
             obj.name = obj.name.replace("[",".")
         if "]" in obj.name:
             obj.name = obj.name.replace("]",".")
+        if "ø" in obj.name:
+            obj.name = obj.name.replace("ø","oe")
+        if "æ" in obj.name:
+            obj.name = obj.name.replace("æ","ae")
+        if "å" in obj.name:
+            obj.name = obj.name.replace("å","aa")
 
         for slot in obj.material_slots:
             if "_" in slot.material.name:
@@ -51,6 +57,12 @@ def check_compatible_naming(self):
                 slot.material.name = slot.material.name.replace("[",".")
             if "[" in slot.material.name:
                 slot.material.name = slot.material.name.replace("]",".")
+            if "ø" in slot.material.name:
+                slot.material.name = slot.material.name.replace("ø","oe")
+            if "æ" in slot.material.name:
+                slot.material.name = slot.material.name.replace("æ","ae")
+            if "å" in slot.material.name:
+                slot.material.name = slot.material.name.replace("å","aa")
 
 def store_existing(cycles, scene, context):
     
@@ -475,6 +487,10 @@ def apply_materials(self, scene):
                                 mixNode.blend_type = 'ADD'
                             else:
                                 mixNode.blend_type = 'MULTIPLY'
+
+                                offsetNode = nodetree.nodes.new(type="ShaderNodeVectorMath")
+                                offsetNode.name = "Lightmap_Offset"
+
                         else:
                             mixNode.blend_type = 'MULTIPLY'
                         
@@ -482,6 +498,14 @@ def apply_materials(self, scene):
 
                         LightmapNode = nodetree.nodes.new(type="ShaderNodeTexImage")
                         LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
+
+                        if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
+                            nodePos3 = mixNode.location
+                            nodePos4 = LightmapNode.location
+                            offsetNode.location = lerpNodePoints(nodePos3, nodePos4, 0.5)
+                            offsetNode.inputs[1].default_value[0] = 1.0
+                            offsetNode.inputs[1].default_value[1] = 1.0
+                            offsetNode.inputs[1].default_value[2] = 1.0
 
                         if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
                             img_name = obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"
@@ -531,20 +555,35 @@ def apply_materials(self, scene):
 
                         if decoding:
                             if (scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
-                                nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
-                                nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
-                                nodetree.links.new(DecodeNode.outputs[0], ExposureNode.inputs[0])
-                                nodetree.links.new(ExposureNode.outputs[0],  mixNode.inputs[2])
+                                if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
+                                    pass
+                                else:
+                                    nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
+                                    nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
+                                    nodetree.links.new(DecodeNode.outputs[0], ExposureNode.inputs[0])
+                                    nodetree.links.new(ExposureNode.outputs[0],  mixNode.inputs[2])
                             else:
-                                nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
-                                nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
-                                nodetree.links.new(DecodeNode.outputs[0], mixNode.inputs[2])
+                                if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
+                                    pass
+                                else:
+                                    nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
+                                    nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
+                                    nodetree.links.new(DecodeNode.outputs[0], mixNode.inputs[2])
                         else:
                             if(scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
-                                nodetree.links.new(LightmapNode.outputs[0], ExposureNode.inputs[0])
-                                nodetree.links.new(ExposureNode.outputs[0],  mixNode.inputs[2])
+                                if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
+                                    nodetree.links.new(LightmapNode.outputs[0], ExposureNode.inputs[0])
+                                    nodetree.links.new(ExposureNode.outputs[0],  offsetNode.inputs[0])
+                                    nodetree.links.new(offsetNode.outputs[0], mixNode.inputs[2])
+                                else:
+                                    nodetree.links.new(LightmapNode.outputs[0], ExposureNode.inputs[0])
+                                    nodetree.links.new(ExposureNode.outputs[0],  mixNode.inputs[2])
                             else:
-                                nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2])
+                                if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
+                                    nodetree.links.new(LightmapNode.outputs[0], offsetNode.inputs[0])
+                                    nodetree.links.new(offsetNode.outputs[0], mixNode.inputs[2])
+                                else:
+                                    nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2])
 
                         nodetree.links.new(mixNode.outputs[0], mainNode.inputs[0]) 
                         nodetree.links.new(UVLightmap.outputs[0], LightmapNode.inputs[0])

@@ -36,6 +36,8 @@ def filter_lightmaps(self, scene, module_opencv):
                 os.chdir(os.path.dirname(bakemap_path))
                 opencv_process_image = cv2.imread(filter_file_input, -1)
 
+                print("Filtering: " + filter_file_output)
+
                 if scene.TLM_SceneProperties.tlm_filtering_mode == "Box":
                     if scene.TLM_SceneProperties.tlm_filtering_box_strength % 2 == 0:
                         kernel_size = (scene.TLM_SceneProperties.tlm_filtering_box_strength + 1,scene.TLM_SceneProperties.tlm_filtering_box_strength + 1)
@@ -111,6 +113,8 @@ def filter_lightmaps(self, scene, module_opencv):
                             filter_file_output = img_name + "_finalized.hdr"
                             os.chdir(os.path.dirname(bakemap_path))
                             opencv_process_image = cv2.imread(filter_file_input, -1)
+
+                            print("Filtering: " + filter_file_output)
 
                             if scene.TLM_SceneProperties.tlm_filtering_mode == "Box":
                                 if scene.TLM_SceneProperties.tlm_filtering_box_strength % 2 == 0:

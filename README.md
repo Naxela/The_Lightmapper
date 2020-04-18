@@ -1,12 +1,12 @@
 # The Lightmapper
 
-![](img/Lightmap15.png)
+![](img/rd_1.jpg)
 
 ![](https://raw.githubusercontent.com/Naxela/PPM/master/img/wip_notice.jpg)
 
 # Description
 
-The Lightmapper is an addon for Blender that implements lightmapping and denoising capabilities for global illumination texture baking with support for 32-bit HDR Lightmaps.
+The Lightmapper is an addon for Blender that implements lightmapping and denoising capabilities for global illumination texture baking with support for 32-bit HDR Lightmaps. Baking is done through Cycles.
 
 Development information thread here: http://forums.armory3d.org/t/hdr-lightmaps-addon/3074/6
 
@@ -14,7 +14,8 @@ It's free and open-source.
 
 ![](img/Lightmap14.jpg)
 
-## Features [Version 0.1]:
+
+## Features :
 - Cycles-based automated lightmap baking
 
 ![](img/D1.jpg)
@@ -108,3 +109,7 @@ Experiment 3: http://laboratory.naxela.info/experiment_3/
 ![](img/Gallery.jpg)
 
 ![](img/Lightmap16.png)
+
+![](img/Lightmap15.png)
+
+![](img/rd_2.jpg)
