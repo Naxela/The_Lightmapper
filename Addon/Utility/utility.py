@@ -87,6 +87,7 @@ def store_existing(cycles, scene, context):
         bpy.context.view_layer.objects.active,
         selected
     ]
+    print(prevCyclesSettings)
     return prevCyclesSettings
 
 def set_settings(cycles, scene):
@@ -195,8 +196,14 @@ def preprocess_material(obj, scene):
                 matcache.backup_material_restore(slot)
 
             matcache.backup_material_copy(slot)
+
     else: #Cache blend
-        print("Warning: Cache blend not supported")
+        #TEST CACHE
+        filepath = bpy.data.filepath
+        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_lightmap_savedir)
+        path = dirpath + "/cache.blend"
+        bpy.ops.wm.save_as_mainfile(filepath=path, copy=True)
+        #print("Warning: Cache blend not supported")
 
     # for mat in bpy.data.materials:
     #     if mat.name.endswith('_baked'):
@@ -392,201 +399,224 @@ def save_pfm(file, image, scale=1):
     #print("PFM export took %.3f s" % (time() - start))
 
 def apply_materials(self, scene):
-    for obj in bpy.data.objects:
+
+    if not scene.TLM_SceneProperties.tlm_headless:
+        for obj in bpy.data.objects:
+                if obj.type == "MESH":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                        decoding = False
+
+                        for slot in obj.material_slots:
+                            mat = slot.material
+                            if mat.name.endswith('_temp'):
+                                old = slot.material
+                                slot.material = bpy.data.materials[old.name.split('_' + obj.name)[0]]
+                                #bpy.data.materials.remove(old, do_unlink=True)
+
+                        uv_layers = obj.data.uv_layers
+                        uv_layers.active_index = 0
+
+                        for slot in obj.material_slots:
+
+                            if(scene.TLM_SceneProperties.tlm_encoding_armory_setup):
+
+                                tlm_rgbm = bpy.data.node_groups.get('RGBM Decode')
+                                tlm_rgbd = bpy.data.node_groups.get('RGBD Decode')
+                                tlm_logluv = bpy.data.node_groups.get('LogLuv Decode')
+
+                                if tlm_rgbm == None:
+                                    load_library('RGBM Decode')
+
+                                if tlm_rgbd == None:
+                                    load_library('RGBD Decode')
+
+                                if tlm_logluv == None:
+                                    load_library('LogLuv Decode')
+
+                            if(scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
+                                tlm_exposure = bpy.data.node_groups.get('Exposure')
+
+                                if tlm_exposure == None:
+                                    load_library('Exposure')
+
+                            nodetree = bpy.data.materials[slot.name].node_tree
+
+                            outputNode = nodetree.nodes[0]
+
+                            if(outputNode.type != "OUTPUT_MATERIAL"):
+                                for node in nodetree.nodes:
+                                    if node.type == "OUTPUT_MATERIAL":
+                                        outputNode = node
+                                        break
+
+                            #TODO: Proper check
+
+                            mainNode = outputNode.inputs[0].links[0].from_node
+                            print("Mainnode: " + mainNode.name)
+
+                            if mainNode.type not in ['BSDF_PRINCIPLED','BSDF_DIFFUSE','GROUP']:
+
+                                #TODO! FIND THE PRINCIPLED PBR
+                                self.report({'INFO'}, "The primary material node is not supported. Seeking first principled.")
+
+                                if len(functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.pbr_node)) > 0: 
+                                    mainNode = functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.pbr_node)[0]
+                                else:
+                                    self.report({'INFO'}, "No principled found. Seeking diffuse")
+                                    if len(functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.diffuse)) > 0: 
+                                        mainNode = functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.diffuse)[0]
+                                    else:
+                                        self.report({'INFO'}, "No supported nodes. Continuing anyway.")
+                                        pass
+
+                            if mainNode.type == 'GROUP':
+                                if mainNode.node_tree != "Armory PBR":
+                                    print("The material group is not supported!")
+                                    pass
+
+                            if len(mainNode.inputs[0].links) == 0:
+                                baseColorValue = mainNode.inputs[0].default_value
+                                baseColorNode = nodetree.nodes.new(type="ShaderNodeRGB")
+                                baseColorNode.outputs[0].default_value = baseColorValue
+                                baseColorNode.location = ((mainNode.location[0]-500,mainNode.location[1]))
+                                baseColorNode.name = "Lightmap_BasecolorNode_A"
+                            else:
+                                baseColorNode = mainNode.inputs[0].links[0].from_node
+                                baseColorNode.name = "LM_P"
+
+                            nodePos1 = mainNode.location
+                            nodePos2 = baseColorNode.location
+
+                            mixNode = nodetree.nodes.new(type="ShaderNodeMixRGB")
+                            mixNode.name = "Lightmap_Multiplication"
+                            mixNode.location = lerpNodePoints(nodePos1, nodePos2, 0.5)
+                            if scene.TLM_SceneProperties.tlm_indirect_only:
+                                if scene.TLM_SceneProperties.tlm_indirect_mode == "Additive":
+                                    mixNode.blend_type = 'ADD'
+                                else:
+                                    mixNode.blend_type = 'MULTIPLY'
+
+                                    offsetNode = nodetree.nodes.new(type="ShaderNodeVectorMath")
+                                    offsetNode.name = "Lightmap_Offset"
+
+                            else:
+                                mixNode.blend_type = 'MULTIPLY'
+                            
+                            mixNode.inputs[0].default_value = 1.0
+
+                            LightmapNode = nodetree.nodes.new(type="ShaderNodeTexImage")
+                            LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
+
+                            if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
+                                nodePos3 = mixNode.location
+                                nodePos4 = LightmapNode.location
+                                offsetNode.location = lerpNodePoints(nodePos3, nodePos4, 0.5)
+                                offsetNode.inputs[1].default_value[0] = 1.0
+                                offsetNode.inputs[1].default_value[1] = 1.0
+                                offsetNode.inputs[1].default_value[2] = 1.0
+
+                            if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
+                                img_name = obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"
+                            else:
+                                img_name = obj.name + '_baked'
+
+                            LightmapNode.image = bpy.data.images[img_name]
+                            LightmapNode.name = "Lightmap_Image"
+
+                            if(scene.TLM_SceneProperties.tlm_encoding_armory_setup):
+                                if scene.TLM_SceneProperties.tlm_encoding_mode == 'LogLuv':
+                                    LightmapNode.image.colorspace_settings.name = 'Linear'
+
+                            UVLightmap = nodetree.nodes.new(type="ShaderNodeUVMap")
+                            UVLightmap.uv_map = "UVMap_Lightmap"
+                            UVLightmap.name = "Lightmap_UV"
+                            UVLightmap.location = ((-1000, baseColorNode.location[1] + 300))
+
+                            if(scene.TLM_SceneProperties.tlm_encoding_armory_setup):
+                                if scene.TLM_SceneProperties.tlm_encoding_mode == 'RGBM':
+                                    DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
+                                    DecodeNode.node_tree = bpy.data.node_groups["RGBM Decode"]
+                                    DecodeNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
+                                    DecodeNode.name = "Lightmap_RGBM_Decode"
+                                    decoding = True
+                                if scene.TLM_SceneProperties.tlm_encoding_mode == "RGBD":
+                                    DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
+                                    DecodeNode.node_tree = bpy.data.node_groups["RGBD Decode"]
+                                    DecodeNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
+                                    DecodeNode.name = "Lightmap_RGBD_Decode"
+                                    decoding = True
+                                if scene.TLM_SceneProperties.tlm_encoding_mode == "LogLuv":
+                                    DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
+                                    DecodeNode.node_tree = bpy.data.node_groups["LogLuv Decode"]
+                                    DecodeNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
+                                    DecodeNode.name = "Lightmap_LogLuv_Decode"
+                                    decoding = True
+
+                            if(scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
+                                ExposureNode = nodetree.nodes.new(type="ShaderNodeGroup")
+                                ExposureNode.node_tree = bpy.data.node_groups["Exposure"]
+                                ExposureNode.inputs[1].default_value = scene.TLM_SceneProperties.tlm_exposure_multiplier
+                                ExposureNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.4)
+                                ExposureNode.name = "Lightmap_Exposure"
+
+                            nodetree.links.new(baseColorNode.outputs[0], mixNode.inputs[1])   
+
+                            if decoding:
+                                if (scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
+                                    if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
+                                        pass
+                                    else:
+                                        nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
+                                        nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
+                                        nodetree.links.new(DecodeNode.outputs[0], ExposureNode.inputs[0])
+                                        nodetree.links.new(ExposureNode.outputs[0],  mixNode.inputs[2])
+                                else:
+                                    if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
+                                        pass
+                                    else:
+                                        nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
+                                        nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
+                                        nodetree.links.new(DecodeNode.outputs[0], mixNode.inputs[2])
+                            else:
+                                if(scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
+                                    if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
+                                        nodetree.links.new(LightmapNode.outputs[0], ExposureNode.inputs[0])
+                                        nodetree.links.new(ExposureNode.outputs[0],  offsetNode.inputs[0])
+                                        nodetree.links.new(offsetNode.outputs[0], mixNode.inputs[2])
+                                    else:
+                                        nodetree.links.new(LightmapNode.outputs[0], ExposureNode.inputs[0])
+                                        nodetree.links.new(ExposureNode.outputs[0],  mixNode.inputs[2])
+                                else:
+                                    if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
+                                        nodetree.links.new(LightmapNode.outputs[0], offsetNode.inputs[0])
+                                        nodetree.links.new(offsetNode.outputs[0], mixNode.inputs[2])
+                                    else:
+                                        nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2])
+
+                            nodetree.links.new(mixNode.outputs[0], mainNode.inputs[0]) 
+                            nodetree.links.new(UVLightmap.outputs[0], LightmapNode.inputs[0])
+    else:
+        for obj in bpy.data.objects:
             if obj.type == "MESH":
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
-                    decoding = False
+                    if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
+                        img_name = obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"
+                    else:
+                        img_name = obj.name + '_baked'
 
                     for slot in obj.material_slots:
                         mat = slot.material
                         if mat.name.endswith('_temp'):
                             old = slot.material
                             slot.material = bpy.data.materials[old.name.split('_' + obj.name)[0]]
-                            #bpy.data.materials.remove(old, do_unlink=True)
 
-                    uv_layers = obj.data.uv_layers
-                    uv_layers.active_index = 0
+                    Lightmapimage = bpy.data.images[img_name]
+                    obj["Lightmap"] = Lightmapimage.filepath_raw
 
                     for slot in obj.material_slots:
-
-                        if(scene.TLM_SceneProperties.tlm_encoding_armory_setup):
-
-                            tlm_rgbm = bpy.data.node_groups.get('RGBM Decode')
-                            tlm_rgbd = bpy.data.node_groups.get('RGBD Decode')
-                            tlm_logluv = bpy.data.node_groups.get('LogLuv Decode')
-
-                            if tlm_rgbm == None:
-                                load_library('RGBM Decode')
-
-                            if tlm_rgbd == None:
-                                load_library('RGBD Decode')
-
-                            if tlm_logluv == None:
-                                load_library('LogLuv Decode')
-
-                        if(scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
-                            tlm_exposure = bpy.data.node_groups.get('Exposure')
-
-                            if tlm_exposure == None:
-                                load_library('Exposure')
-
-                        nodetree = bpy.data.materials[slot.name].node_tree
-
-                        outputNode = nodetree.nodes[0]
-
-                        if(outputNode.type != "OUTPUT_MATERIAL"):
-                            for node in nodetree.nodes:
-                                if node.type == "OUTPUT_MATERIAL":
-                                    outputNode = node
-                                    break
-
-                        #TODO: Proper check
-
-                        mainNode = outputNode.inputs[0].links[0].from_node
-                        print("Mainnode: " + mainNode.name)
-
-                        if mainNode.type not in ['BSDF_PRINCIPLED','BSDF_DIFFUSE','GROUP']:
-
-                            #TODO! FIND THE PRINCIPLED PBR
-                            self.report({'INFO'}, "The primary material node is not supported. Seeking first principled.")
-
-                            if len(functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.pbr_node)) > 0: 
-                                mainNode = functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.pbr_node)[0]
-                            else:
-                                self.report({'INFO'}, "No principled found. Seeking diffuse")
-                                if len(functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.diffuse)) > 0: 
-                                    mainNode = functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.diffuse)[0]
-                                else:
-                                    self.report({'INFO'}, "No supported nodes. Continuing anyway.")
-                                    pass
-
-                        if mainNode.type == 'GROUP':
-                            if mainNode.node_tree != "Armory PBR":
-                                print("The material group is not supported!")
-                                pass
-
-                        if len(mainNode.inputs[0].links) == 0:
-                            baseColorValue = mainNode.inputs[0].default_value
-                            baseColorNode = nodetree.nodes.new(type="ShaderNodeRGB")
-                            baseColorNode.outputs[0].default_value = baseColorValue
-                            baseColorNode.location = ((mainNode.location[0]-500,mainNode.location[1]))
-                            baseColorNode.name = "Lightmap_BasecolorNode_A"
-                        else:
-                            baseColorNode = mainNode.inputs[0].links[0].from_node
-                            baseColorNode.name = "LM_P"
-
-                        nodePos1 = mainNode.location
-                        nodePos2 = baseColorNode.location
-
-                        mixNode = nodetree.nodes.new(type="ShaderNodeMixRGB")
-                        mixNode.name = "Lightmap_Multiplication"
-                        mixNode.location = lerpNodePoints(nodePos1, nodePos2, 0.5)
-                        if scene.TLM_SceneProperties.tlm_indirect_only:
-                            if scene.TLM_SceneProperties.tlm_indirect_mode == "Additive":
-                                mixNode.blend_type = 'ADD'
-                            else:
-                                mixNode.blend_type = 'MULTIPLY'
-
-                                offsetNode = nodetree.nodes.new(type="ShaderNodeVectorMath")
-                                offsetNode.name = "Lightmap_Offset"
-
-                        else:
-                            mixNode.blend_type = 'MULTIPLY'
-                        
-                        mixNode.inputs[0].default_value = 1.0
-
-                        LightmapNode = nodetree.nodes.new(type="ShaderNodeTexImage")
-                        LightmapNode.location = ((baseColorNode.location[0]-300,baseColorNode.location[1] + 300))
-
-                        if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
-                            nodePos3 = mixNode.location
-                            nodePos4 = LightmapNode.location
-                            offsetNode.location = lerpNodePoints(nodePos3, nodePos4, 0.5)
-                            offsetNode.inputs[1].default_value[0] = 1.0
-                            offsetNode.inputs[1].default_value[1] = 1.0
-                            offsetNode.inputs[1].default_value[2] = 1.0
-
-                        if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
-                            img_name = obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"
-                        else:
-                            img_name = obj.name + '_baked'
-
-                        LightmapNode.image = bpy.data.images[img_name]
-                        LightmapNode.name = "Lightmap_Image"
-
-                        if(scene.TLM_SceneProperties.tlm_encoding_armory_setup):
-                            if scene.TLM_SceneProperties.tlm_encoding_mode == 'LogLuv':
-                                LightmapNode.image.colorspace_settings.name = 'Linear'
-
-                        UVLightmap = nodetree.nodes.new(type="ShaderNodeUVMap")
-                        UVLightmap.uv_map = "UVMap_Lightmap"
-                        UVLightmap.name = "Lightmap_UV"
-                        UVLightmap.location = ((-1000, baseColorNode.location[1] + 300))
-
-                        if(scene.TLM_SceneProperties.tlm_encoding_armory_setup):
-                            if scene.TLM_SceneProperties.tlm_encoding_mode == 'RGBM':
-                                DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
-                                DecodeNode.node_tree = bpy.data.node_groups["RGBM Decode"]
-                                DecodeNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
-                                DecodeNode.name = "Lightmap_RGBM_Decode"
-                                decoding = True
-                            if scene.TLM_SceneProperties.tlm_encoding_mode == "RGBD":
-                                DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
-                                DecodeNode.node_tree = bpy.data.node_groups["RGBD Decode"]
-                                DecodeNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
-                                DecodeNode.name = "Lightmap_RGBD_Decode"
-                                decoding = True
-                            if scene.TLM_SceneProperties.tlm_encoding_mode == "LogLuv":
-                                DecodeNode = nodetree.nodes.new(type="ShaderNodeGroup")
-                                DecodeNode.node_tree = bpy.data.node_groups["LogLuv Decode"]
-                                DecodeNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.5)
-                                DecodeNode.name = "Lightmap_LogLuv_Decode"
-                                decoding = True
-
-                        if(scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
-                            ExposureNode = nodetree.nodes.new(type="ShaderNodeGroup")
-                            ExposureNode.node_tree = bpy.data.node_groups["Exposure"]
-                            ExposureNode.inputs[1].default_value = scene.TLM_SceneProperties.tlm_exposure_multiplier
-                            ExposureNode.location = lerpNodePoints(LightmapNode.location, mixNode.location, 0.4)
-                            ExposureNode.name = "Lightmap_Exposure"
-
-                        nodetree.links.new(baseColorNode.outputs[0], mixNode.inputs[1])   
-
-                        if decoding:
-                            if (scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
-                                if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
-                                    pass
-                                else:
-                                    nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
-                                    nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
-                                    nodetree.links.new(DecodeNode.outputs[0], ExposureNode.inputs[0])
-                                    nodetree.links.new(ExposureNode.outputs[0],  mixNode.inputs[2])
-                            else:
-                                if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
-                                    pass
-                                else:
-                                    nodetree.links.new(LightmapNode.outputs[0], DecodeNode.inputs[0])
-                                    nodetree.links.new(LightmapNode.outputs[1], DecodeNode.inputs[1])
-                                    nodetree.links.new(DecodeNode.outputs[0], mixNode.inputs[2])
-                        else:
-                            if(scene.TLM_SceneProperties.tlm_exposure_multiplier > 0):
-                                if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
-                                    nodetree.links.new(LightmapNode.outputs[0], ExposureNode.inputs[0])
-                                    nodetree.links.new(ExposureNode.outputs[0],  offsetNode.inputs[0])
-                                    nodetree.links.new(offsetNode.outputs[0], mixNode.inputs[2])
-                                else:
-                                    nodetree.links.new(LightmapNode.outputs[0], ExposureNode.inputs[0])
-                                    nodetree.links.new(ExposureNode.outputs[0],  mixNode.inputs[2])
-                            else:
-                                if scene.TLM_SceneProperties.tlm_indirect_only and scene.TLM_SceneProperties.tlm_indirect_mode == "Multiply":
-                                    nodetree.links.new(LightmapNode.outputs[0], offsetNode.inputs[0])
-                                    nodetree.links.new(offsetNode.outputs[0], mixNode.inputs[2])
-                                else:
-                                    nodetree.links.new(LightmapNode.outputs[0], mixNode.inputs[2])
-
-                        nodetree.links.new(mixNode.outputs[0], mainNode.inputs[0]) 
-                        nodetree.links.new(UVLightmap.outputs[0], LightmapNode.inputs[0])
+                        matcache.backup_material_restore(slot)
 
     for mat in bpy.data.materials:
         if mat.name.endswith('_baked'):

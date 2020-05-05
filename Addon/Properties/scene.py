@@ -27,7 +27,7 @@ class TLM_AtlasListItem(bpy.types.PropertyGroup):
     tlm_atlas_lightmap_unwrap_mode : EnumProperty(
         items = [('Lightmap', 'Lightmap', 'TODO'),
                  ('SmartProject', 'Smart Project', 'TODO'),
-                 ('CopyExisting', 'Copy Existing', 'TODO')],
+                 ('PackExisting', 'Pack Existing', 'TODO')],
                 name = "Unwrap Mode", 
                 description="TODO", 
                 default='SmartProject')
@@ -35,7 +35,7 @@ class TLM_AtlasListItem(bpy.types.PropertyGroup):
     tlm_atlas_lightmap_unwrap_mode_extended : EnumProperty(
         items = [('Lightmap', 'Lightmap', 'TODO'),
                  ('SmartProject', 'Smart Project', 'TODO'),
-                 ('CopyExisting', 'Copy Existing', 'TODO'),
+                 ('PackExisting', 'Pack Existing', 'TODO'),
                  ('UVPackmaster', 'UVPackmaster', 'TODO')],
                 name = "Unwrap Mode", 
                 description="TODO", 
@@ -359,7 +359,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
     tlm_encoding_mode : EnumProperty(
         items = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
                     ('LogLuv', 'LogLuv', '8-bit HDR encoding. Different.'),
-                    ('RGBE', 'RGBE', '32-bit HDR RGBE encoding. Best quality, but high memory usage and not compatible with all devices.')],
+                    ('RGBE', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.')],
                 name = "Encoding Mode", 
                 description="TODO", 
                 default='RGBE')
@@ -503,3 +503,15 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Background color for HDR Maps", 
         subtype='COLOR', 
         default=[0.5,0.5,0.5])
+
+    tlm_format : EnumProperty(
+        items = [('HDR', 'HDR', '32-bit RGBE encoded .hdr files. No compression available.'),
+                 ('EXR', 'EXR', '32-bit OpenEXR format.')],
+                name = "Format", 
+                description="TODO", 
+                default='HDR')
+
+    tlm_headless : BoolProperty(
+        name="Don't apply materials", 
+        description="Headless; Do not apply baked materials on finish.", 
+        default=False)

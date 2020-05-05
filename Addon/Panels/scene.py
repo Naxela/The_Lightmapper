@@ -81,6 +81,8 @@ class TLM_PT_Settings(bpy.types.Panel):
         row.prop(sceneProperties, 'tlm_clamp_metallic')
         row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_play_sound')
+        row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_headless')
 
 class TLM_PT_Denoise(bpy.types.Panel):
     bl_label = "Denoise"
@@ -226,6 +228,9 @@ class TLM_PT_Encoding(bpy.types.Panel):
         if sceneProperties.tlm_encoding_mode == "LogLuv":
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_encoding_armory_setup")
+        if sceneProperties.tlm_encoding_mode == "RGBE":
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_format")
         row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_encoding_colorspace")
 
@@ -244,7 +249,11 @@ class TLM_PT_Compression(bpy.types.Panel):
         layout.use_property_decorate = False
         sceneProperties = scene.TLM_SceneProperties
         if sceneProperties.tlm_encoding_mode == "RGBE":
-            layout.label(text="HDR compression not available for RGBE encoding")
+
+            if sceneProperties.tlm_format == "HDR":
+                layout.label(text="HDR compression not available for RGBE encoding")
+            else:
+                layout.label(text="EXR Compression not yet available.")
         else:
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_compression")

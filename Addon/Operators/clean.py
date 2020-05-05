@@ -18,6 +18,11 @@ class TLM_CleanLightmaps(bpy.types.Operator):
             if obj.select_get():
                 selection.append(obj)
 
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                obj["Lightmap"] = ""
+                if hasattr(obj, "Lightmap"):
+                    del(obj["Lightmap"])
+
         if scene.TLM_SceneProperties.tlm_clean_option == "Selection":
             filepath = bpy.data.filepath
             dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_lightmap_savedir)
