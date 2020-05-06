@@ -253,7 +253,9 @@ class TLM_PT_Compression(bpy.types.Panel):
             if sceneProperties.tlm_format == "HDR":
                 layout.label(text="HDR compression not available for RGBE encoding")
             else:
-                layout.label(text="EXR Compression not yet available.")
+                row = layout.row(align=True)
+                row.prop(sceneProperties, "tlm_exr_codec")
+                #layout.label(text="EXR Compression not yet available.")
         else:
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_compression")
@@ -354,12 +356,12 @@ class TLM_PT_Additional(bpy.types.Panel):
         col.operator("tlm_atlaslist.delete_item", icon='REMOVE', text="")
         #col.menu("ARM_MT_BakeListSpecials", icon='DOWNARROW_HLT', text="")
 
-        if len(scene.TLM_AtlasList) > 1:
-            col.separator()
-            op = col.operator("arm_bakelist.move_item", icon='TRIA_UP', text="")
-            op.direction = 'UP'
-            op = col.operator("arm_bakelist.move_item", icon='TRIA_DOWN', text="")
-            op.direction = 'DOWN'
+        # if len(scene.TLM_AtlasList) > 1:
+        #     col.separator()
+        #     op = col.operator("arm_bakelist.move_item", icon='TRIA_UP', text="")
+        #     op.direction = 'UP'
+        #     op = col.operator("arm_bakelist.move_item", icon='TRIA_DOWN', text="")
+        #     op.direction = 'DOWN'
 
         if scene.TLM_AtlasList_index >= 0 and len(scene.TLM_AtlasList) > 0:
             item = scene.TLM_AtlasList[scene.TLM_AtlasList_index]
