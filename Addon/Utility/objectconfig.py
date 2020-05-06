@@ -60,7 +60,10 @@ def configure_objects(self, scene):
             print("Smart Project A for: " + str(atlas_items))
             for obj in atlas_items:
                 print(obj.name + ": Active UV: " + obj.data.uv_layers[obj.data.uv_layers.active_index].name)
-            bpy.context.view_layer.objects.active = atlas_items[0]
+
+            if len(atlas_items) > 0:
+                bpy.context.view_layer.objects.active = atlas_items[0]
+
             bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=atlasgroup.tlm_atlas_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)

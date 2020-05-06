@@ -24,10 +24,19 @@ def filter_lightmaps(self, scene, module_opencv):
         atlas_name = atlasgroup.name
         atlas_items = []
 
+        amount = 0
+
+        for obj in bpy.data.objects:
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+                    if obj.TLM_ObjectProperties.tlm_atlas_pointer == atlas_name:
+                        amount = amount + 1
+
+
         img_name = atlas_name + '_baked'
         bakemap_path = os.path.join(dirpath, img_name)
 
-        if scene.TLM_SceneProperties.tlm_filtering_use:
+        if scene.TLM_SceneProperties.tlm_filtering_use and amount > 0:
             filter_file_input = img_name + ".hdr"
 
             if module_opencv:
