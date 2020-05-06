@@ -236,38 +236,52 @@ def encode_lightmaps(scene):
         atlas_name = atlasgroup.name
         atlas_items = []
 
-        img_name = atlas_name + '_baked'
-        bakemap_path = os.path.join(dirpath, img_name)
+        amount = 0
 
-        if scene.TLM_SceneProperties.tlm_encoding_mode == "RGBM":
-            encodeImageRGBM(bpy.data.images[atlas_name + "_baked"], 6.0, bakemap_path, scene.TLM_SceneProperties.tlm_compression)
-            bpy.data.images[atlas_name + "_baked"].name = atlas_name + "_temp"
-            bpy.data.images[atlas_name + "_baked_encoded"].name = atlas_name + "_baked"
-            bpy.data.images[atlas_name + "_baked"].filepath_raw = bpy.data.images[atlas_name + "_baked"].filepath_raw[:-12] + ".png"
-            bpy.data.images[atlas_name + "_baked"].save()
-            bpy.data.images.remove(bpy.data.images[atlas_name + "_temp"])
-        elif scene.TLM_SceneProperties.tlm_encoding_mode == "RGBD":
-            encodeImageRGBD(bpy.data.images[atlas_name + "_baked"], 6.0, bakemap_path, scene.TLM_SceneProperties.tlm_compression)
-            bpy.data.images[atlas_name + "_baked"].name = atlas_name + "_temp"
-            bpy.data.images[atlas_name + "_baked_encoded"].name = atlas_name + "_baked"
-            bpy.data.images[atlas_name + "_baked"].filepath_raw = bpy.data.images[atlas_name + "_baked"].filepath_raw[:-12] + ".png"
-            bpy.data.images[atlas_name + "_baked"].save()
-            bpy.data.images.remove(bpy.data.images[atlas_name + "_temp"])
-        elif scene.TLM_SceneProperties.tlm_encoding_mode == "LogLuv":
-            encodeLogLuv(bpy.data.images[atlas_name + "_baked"], bakemap_path, scene.TLM_SceneProperties.tlm_compression)
-            bpy.data.images[atlas_name + "_baked"].name = atlas_name + "_temp"
-            bpy.data.images[atlas_name + "_baked_encoded"].name = atlas_name + "_baked"
-            bpy.data.images[atlas_name + "_baked"].filepath_raw = bpy.data.images[atlas_name + "_baked"].filepath_raw[:-12] + ".png"
-            bpy.data.images[atlas_name + "_baked"].unpack(method='WRITE_LOCAL')
-            os.rename(texpath + atlas_name + "_baked", dirpath + "/" + atlas_name + "_baked.png")
-            bpy.data.images[atlas_name + "_baked"].filepath = dirpath + "/" + atlas_name + "_baked.png"
-            bpy.data.images.remove(bpy.data.images[atlas_name + "_temp"])
-        elif scene.TLM_SceneProperties.tlm_encoding_mode == "RGBE":
-            if scene.TLM_SceneProperties.tlm_format == "EXR":
-                img_hdr = bpy.data.images[atlas_name + "_baked"]
-                img_hdr.filepath_raw = img_hdr.filepath_raw[:-4] + ".exr"
-                img_hdr.file_format = "OPEN_EXR"
-                img_hdr.save()
+        for obj in bpy.data.objects:
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+                    if obj.TLM_ObjectProperties.tlm_atlas_pointer == atlas_name:
+                        amount = amount + 1
+
+        if not amount < 1:
+
+            img_name = atlas_name + '_baked'
+            bakemap_path = os.path.join(dirpath, img_name)
+
+            if scene.TLM_SceneProperties.tlm_encoding_mode == "RGBM":
+                encodeImageRGBM(bpy.data.images[atlas_name + "_baked"], 6.0, bakemap_path, scene.TLM_SceneProperties.tlm_compression)
+                bpy.data.images[atlas_name + "_baked"].name = atlas_name + "_temp"
+                bpy.data.images[atlas_name + "_baked_encoded"].name = atlas_name + "_baked"
+                bpy.data.images[atlas_name + "_baked"].filepath_raw = bpy.data.images[atlas_name + "_baked"].filepath_raw[:-12] + ".png"
+                bpy.data.images[atlas_name + "_baked"].save()
+                bpy.data.images.remove(bpy.data.images[atlas_name + "_temp"])
+            elif scene.TLM_SceneProperties.tlm_encoding_mode == "RGBD":
+                encodeImageRGBD(bpy.data.images[atlas_name + "_baked"], 6.0, bakemap_path, scene.TLM_SceneProperties.tlm_compression)
+                bpy.data.images[atlas_name + "_baked"].name = atlas_name + "_temp"
+                bpy.data.images[atlas_name + "_baked_encoded"].name = atlas_name + "_baked"
+                bpy.data.images[atlas_name + "_baked"].filepath_raw = bpy.data.images[atlas_name + "_baked"].filepath_raw[:-12] + ".png"
+                bpy.data.images[atlas_name + "_baked"].save()
+                bpy.data.images.remove(bpy.data.images[atlas_name + "_temp"])
+            elif scene.TLM_SceneProperties.tlm_encoding_mode == "LogLuv":
+                encodeLogLuv(bpy.data.images[atlas_name + "_baked"], bakemap_path, scene.TLM_SceneProperties.tlm_compression)
+                bpy.data.images[atlas_name + "_baked"].name = atlas_name + "_temp"
+                bpy.data.images[atlas_name + "_baked_encoded"].name = atlas_name + "_baked"
+                bpy.data.images[atlas_name + "_baked"].filepath_raw = bpy.data.images[atlas_name + "_baked"].filepath_raw[:-12] + ".png"
+                bpy.data.images[atlas_name + "_baked"].unpack(method='WRITE_LOCAL')
+                os.rename(texpath + atlas_name + "_baked", dirpath + "/" + atlas_name + "_baked.png")
+                bpy.data.images[atlas_name + "_baked"].filepath = dirpath + "/" + atlas_name + "_baked.png"
+                bpy.data.images.remove(bpy.data.images[atlas_name + "_temp"])
+            elif scene.TLM_SceneProperties.tlm_encoding_mode == "RGBE":
+                if scene.TLM_SceneProperties.tlm_format == "EXR":
+
+                    ren = bpy.context.scene.render
+                    ren.image_settings.file_format = "OPEN_EXR"
+                    ren.image_settings.exr_codec = scene.TLM_SceneProperties.tlm_exr_codec
+                    image = bpy.data.images[atlas_name + "_baked"]
+                    bpy.ops.file.make_paths_absolute()
+                    image.save_render(bpy.data.images[atlas_name + "_baked"].filepath_raw[:-4] + ".exr")
+                    bpy.data.images[atlas_name + "_baked"].filepath_raw = bpy.data.images[atlas_name + "_baked"].filepath_raw[:-4] + ".exr"
 
     for obj in bpy.data.objects:
         if obj.type == "MESH":
@@ -302,7 +316,11 @@ def encode_lightmaps(scene):
                         bpy.data.images.remove(bpy.data.images[obj.name+"_temp"])
                     elif scene.TLM_SceneProperties.tlm_encoding_mode == "RGBE":
                         if scene.TLM_SceneProperties.tlm_format == "EXR":
-                            img_hdr = bpy.data.images[obj.name+"_baked"]
-                            img_hdr.filepath_raw = img_hdr.filepath_raw[:-4] + ".exr"
-                            img_hdr.file_format = "OPEN_EXR"
-                            img_hdr.save()
+
+                            ren = bpy.context.scene.render
+                            ren.image_settings.file_format = "OPEN_EXR"
+                            ren.image_settings.exr_codec = scene.TLM_SceneProperties.tlm_exr_codec
+                            image = bpy.data.images[obj.name + "_baked"]
+                            bpy.ops.file.make_paths_absolute()
+                            image.save_render(bpy.data.images[obj.name + "_baked"].filepath_raw[:-4] + ".exr")
+                            bpy.data.images[obj.name + "_baked"].filepath_raw = bpy.data.images[obj.name + "_baked"].filepath_raw[:-4] + ".exr"

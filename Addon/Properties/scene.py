@@ -515,3 +515,22 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Don't apply materials", 
         description="Headless; Do not apply baked materials on finish.", 
         default=False)
+
+    tlm_exr_codec : EnumProperty(
+        items = [('NONE', 'None', 'Todo.'),
+                 ('PXR24', 'PXR24 (Lossy)', 'Todo.'),
+                 ('ZIP', 'ZIP', 'Todo.'),
+                 ('PIZ', 'PIZ', 'Todo.'),
+                 ('RLE', 'RLE', 'Todo.'),
+                 ('ZIPS', 'ZIPS', 'Todo.'),
+                 ('DWAA', 'DWAA (Lossy)', 'Todo.')],
+                name = "EXR Codec", 
+                description="TODO", 
+                default='NONE')
+
+    tlm_exr_compression : IntProperty(
+        name="PNG Compression", 
+        description="0 = No compression. 100 = Maximum compression.", 
+        default=0, 
+        min=0, 
+        max=100)
