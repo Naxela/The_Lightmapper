@@ -534,3 +534,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         default=0, 
         min=0, 
         max=100)
+
+    tlm_compile_statistics : BoolProperty(
+        name="Compile statistics", 
+        description="Todo.", 
+        default=False)

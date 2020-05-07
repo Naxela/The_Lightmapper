@@ -43,6 +43,8 @@ def bake_ordered(self, context, process):
     scene = context.scene
     cycles = scene.cycles
 
+    stats = []
+
     #//////////// PRECONFIGURATION
     print("BAKING:!")
     #scene.TLM_SceneProperties.shiftMaterials = []
@@ -68,29 +70,43 @@ def bake_ordered(self, context, process):
     print("////////////////////////////// CONFIGURING OBJECTS")
     objectconfig.configure_objects(self, scene)
 
+    preconfig_time = sec_to_hours((time() - total_time))
+
     #Baking
     print("////////////////////////////// BAKING LIGHTMAPS")
     lightbake.bake_objects(scene)
+
+    bake_time = sec_to_hours((time() - total_time))
 
     #Post configuration
     print("////////////////////////////// MANAGING LIGHTMAPS")
     utility.postmanage_materials(scene)
 
+    postconfig_time = sec_to_hours((time() - total_time))
+
     #Denoise lightmaps
     print("////////////////////////////// DENOISING LIGHTMAPS")
     denoise.denoise_lightmaps(scene)
+
+    denoise_time = sec_to_hours((time() - total_time))
 
     #Filter lightmaps
     print("////////////////////////////// FILTERING LIGHTMAPS")
     cfilter.filter_lightmaps(self, scene, module_opencv)
 
+    filter_time = sec_to_hours((time() - total_time))
+
     #Encode lightmaps
     print("////////////////////////////// ENCODING LIGHTMAPS")
     encoding.encode_lightmaps(scene)
 
+    encode_time = sec_to_hours((time() - total_time))
+
     #Apply lightmaps
     print("////////////////////////////// Apply LIGHTMAPS")
     utility.apply_materials(self, scene)
+
+    utility_time = sec_to_hours((time() - total_time))
     
     #//////////// POSTCONFIGURATION
     utility.restore_settings(cycles, scene, prevSettings)
@@ -103,12 +119,44 @@ def bake_ordered(self, context, process):
     #BEGIN AO Baking here...
     ambientbake.TLM_Build_AO()
 
+    ao_time = sec_to_hours((time() - total_time))
+
     #SAVE AO!
 
     #TODO: EXPOSE AO STRENGTH AND THRESHOLD
     ttime = sec_to_hours((time() - total_time))
 
+    stats.extend([preconfig_time, bake_time, postconfig_time, denoise_time, filter_time, encode_time, utility_time, ao_time, ttime])
+
+    scene.TLM_SceneProperties["stats"] = stats
+
+
     print("Baking finished in: {}".format(ttime))
+
+    dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_lightmap_savedir)
+
+    if scene.TLM_SceneProperties.tlm_compile_statistics:
+        f = open(dirpath + "/stats.txt", "w")
+        f.write("Preconfig time after: " + str(preconfig_time) + "\n")
+        f.write("Bake time after: " + str(bake_time) + "\n")
+        f.write("Postconfig time after: " + str(postconfig_time) + "\n")
+        f.write("Denoise time after: " + str(denoise_time) + "\n")
+        f.write("Filter time after: " + str(filter_time) + "\n")
+        f.write("Encode time after: " + str(encode_time) + "\n")
+        f.write("Utility time after: " + str(utility_time) + "\n")
+        f.write("AO time after: " + str(ao_time) + "\n")
+        f.write("Total time: " + str(ttime) + "\n")
+        f.close()
+
+    # print("Preconfig time after: " + str(preconfig_time))
+    # print("Bake time after: " + str(bake_time))
+    # print("Postconfig time after: " + str(postconfig_time))
+    # print("Denoise time after: " + str(denoise_time))
+    # print("Filter time after: " + str(filter_time))
+    # print("Encode time after: " + str(encode_time))
+    # print("Utility time after: " + str(utility_time))
+    # print("AO time after: " + str(ao_time))
+    # print("Total time: " + str(ttime))
 
     if scene.TLM_SceneProperties.tlm_play_sound:
 

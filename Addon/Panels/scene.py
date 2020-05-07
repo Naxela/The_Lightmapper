@@ -83,6 +83,8 @@ class TLM_PT_Settings(bpy.types.Panel):
         row.prop(sceneProperties, 'tlm_play_sound')
         row = layout.row(align=True)
         row.prop(sceneProperties, 'tlm_headless')
+        row = layout.row(align=True)
+        row.prop(sceneProperties, 'tlm_compile_statistics')
 
 class TLM_PT_Denoise(bpy.types.Panel):
     bl_label = "Denoise"
