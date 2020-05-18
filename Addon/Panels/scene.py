@@ -348,43 +348,51 @@ class TLM_PT_Additional(bpy.types.Panel):
         sceneProperties = scene.TLM_SceneProperties
         layout.label(text="Atlas Groups")
 
-        rows = 2
-        if len(scene.TLM_AtlasList) > 1:
-            rows = 4
         row = layout.row()
-        row.template_list("TLM_UL_AtlasList", "The_List", scene, "TLM_AtlasList", scene, "TLM_AtlasList_index", rows=rows)
-        col = row.column(align=True)
-        col.operator("tlm_atlaslist.new_item", icon='ADD', text="")
-        col.operator("tlm_atlaslist.delete_item", icon='REMOVE', text="")
-        #col.menu("ARM_MT_BakeListSpecials", icon='DOWNARROW_HLT', text="")
+        row.prop(sceneProperties, "tlm_atlas_mode", expand=True)
 
-        # if len(scene.TLM_AtlasList) > 1:
-        #     col.separator()
-        #     op = col.operator("arm_bakelist.move_item", icon='TRIA_UP', text="")
-        #     op.direction = 'UP'
-        #     op = col.operator("arm_bakelist.move_item", icon='TRIA_DOWN', text="")
-        #     op.direction = 'DOWN'
+        if sceneProperties.tlm_atlas_mode == "Prepack":
 
-        if scene.TLM_AtlasList_index >= 0 and len(scene.TLM_AtlasList) > 0:
-            item = scene.TLM_AtlasList[scene.TLM_AtlasList_index]
-            #layout.prop_search(item, "obj", bpy.data, "objects", text="Object")
-            #layout.prop(item, "res_x")
-            layout.prop(item, "tlm_atlas_lightmap_unwrap_mode")
-            layout.prop(item, "tlm_atlas_lightmap_resolution")
-            layout.prop(item, "tlm_atlas_unwrap_margin")
+            rows = 2
+            if len(scene.TLM_AtlasList) > 1:
+                rows = 4
+            row = layout.row()
+            row.template_list("TLM_UL_AtlasList", "The_List", scene, "TLM_AtlasList", scene, "TLM_AtlasList_index", rows=rows)
+            col = row.column(align=True)
+            col.operator("tlm_atlaslist.new_item", icon='ADD', text="")
+            col.operator("tlm_atlaslist.delete_item", icon='REMOVE', text="")
+            #col.menu("ARM_MT_BakeListSpecials", icon='DOWNARROW_HLT', text="")
 
-            amount = 0
+            # if len(scene.TLM_AtlasList) > 1:
+            #     col.separator()
+            #     op = col.operator("arm_bakelist.move_item", icon='TRIA_UP', text="")
+            #     op.direction = 'UP'
+            #     op = col.operator("arm_bakelist.move_item", icon='TRIA_DOWN', text="")
+            #     op.direction = 'DOWN'
 
-            for obj in bpy.data.objects:
-                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
-                        if obj.TLM_ObjectProperties.tlm_atlas_pointer == item.name:
-                            amount = amount + 1
+            if scene.TLM_AtlasList_index >= 0 and len(scene.TLM_AtlasList) > 0:
+                item = scene.TLM_AtlasList[scene.TLM_AtlasList_index]
+                #layout.prop_search(item, "obj", bpy.data, "objects", text="Object")
+                #layout.prop(item, "res_x")
+                layout.prop(item, "tlm_atlas_lightmap_unwrap_mode")
+                layout.prop(item, "tlm_atlas_lightmap_resolution")
+                layout.prop(item, "tlm_atlas_unwrap_margin")
 
-            layout.label(text="Objects: " + str(amount))
-        
-        # layout.use_property_split = True
-        # layout.use_property_decorate = False
-        # layout.label(text="Enable for selection")
-        # layout.label(text="Disable for selection")
-        # layout.label(text="Something...")
+                amount = 0
+
+                for obj in bpy.data.objects:
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+                            if obj.TLM_ObjectProperties.tlm_atlas_pointer == item.name:
+                                amount = amount + 1
+
+                layout.label(text="Objects: " + str(amount))
+            
+            # layout.use_property_split = True
+            # layout.use_property_decorate = False
+            # layout.label(text="Enable for selection")
+            # layout.label(text="Disable for selection")
+            # layout.label(text="Something...")
+
+        else:
+            layout.label(text="Postpacking not yet available.")

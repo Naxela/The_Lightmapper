@@ -106,7 +106,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 default='Clean and restore')
 
     tlm_quality : EnumProperty(
-        items = [('Preview', 'Preview', 'TODO'),
+        items = [('Preview', 'Preview Exterior', 'TODO'),
+                ('Preview2', 'Preview Interior', 'TODO'),
                     ('Medium', 'Medium', 'TODO'),
                     ('High', 'High', 'TODO'),
                     ('Production', 'Production', 'TODO'),
@@ -539,3 +540,10 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Compile statistics", 
         description="Todo.", 
         default=False)
+
+    tlm_atlas_mode : EnumProperty(
+        items = [('Prepack', 'Pre-packaging', 'Todo.'),
+                 ('Postpack', 'Post-packaging', 'Todo.')],
+                name = "Atlas mode", 
+                description="TODO", 
+                default='Prepack')

@@ -105,8 +105,18 @@ def set_settings(cycles, scene):
         cycles.volume_bounces = 1
         cycles.caustics_reflective = False
         cycles.caustics_refractive = False
+    elif scene.TLM_SceneProperties.tlm_quality == "Preview2":
+        cycles.samples = 64
+        cycles.max_bounces = 2
+        cycles.diffuse_bounces = 2
+        cycles.glossy_bounces = 2
+        cycles.transparent_max_bounces = 2
+        cycles.transmission_bounces = 2
+        cycles.volume_bounces = 2
+        cycles.caustics_reflective = False
+        cycles.caustics_refractive = False
     elif scene.TLM_SceneProperties.tlm_quality == "Medium":
-        cycles.samples = 256
+        cycles.samples = 512
         cycles.max_bounces = 2
         cycles.diffuse_bounces = 2
         cycles.glossy_bounces = 2
@@ -116,16 +126,6 @@ def set_settings(cycles, scene):
         cycles.caustics_reflective = False
         cycles.caustics_refractive = False
     elif scene.TLM_SceneProperties.tlm_quality == "High":
-        cycles.samples = 512
-        cycles.max_bounces = 128
-        cycles.diffuse_bounces = 128
-        cycles.glossy_bounces = 128
-        cycles.transparent_max_bounces = 128
-        cycles.transmission_bounces = 128
-        cycles.volume_bounces = 128
-        cycles.caustics_reflective = False
-        cycles.caustics_refractive = False
-    elif scene.TLM_SceneProperties.tlm_quality == "Production":
         cycles.samples = 1024
         cycles.max_bounces = 256
         cycles.diffuse_bounces = 256
@@ -133,6 +133,16 @@ def set_settings(cycles, scene):
         cycles.transparent_max_bounces = 256
         cycles.transmission_bounces = 256
         cycles.volume_bounces = 256
+        cycles.caustics_reflective = False
+        cycles.caustics_refractive = False
+    elif scene.TLM_SceneProperties.tlm_quality == "Production":
+        cycles.samples = 2048
+        cycles.max_bounces = 512
+        cycles.diffuse_bounces = 512
+        cycles.glossy_bounces = 512
+        cycles.transparent_max_bounces = 512
+        cycles.transmission_bounces = 512
+        cycles.volume_bounces = 512
         cycles.caustics_reflective = True
         cycles.caustics_refractive = True
     else: #Custom

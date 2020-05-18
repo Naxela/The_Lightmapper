@@ -1,4 +1,4 @@
-import bpy, math, os, cv2
+import bpy, math, os
 from bpy.app.handlers import persistent
 
 def Log2(x): 

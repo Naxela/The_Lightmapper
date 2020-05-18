@@ -5,15 +5,19 @@ def configure_world():
     pass
 
 def configure_lights():
-    for obj in bpy.data.objects:
-        if obj.type == "LIGHT":
-            if obj.TLM_ObjectProperties.tlm_light_lightmap_use:
-                if obj.TLM_ObjectProperties.tlm_light_casts_shadows:
-                    bpy.data.lights[obj.name].cycles.cast_shadow = True
-                else:
-                    bpy.data.lights[obj.name].cycles.cast_shadow = False
+    pass
+    #Changed way lights are adjusted. Baked hidden with python property instead.
 
-                bpy.data.lights[obj.name].energy = bpy.data.lights[obj.name].energy * obj.TLM_ObjectProperties.tlm_light_intensity_scale
+
+    # for obj in bpy.data.objects:
+    #     if obj.type == "LIGHT":
+    #         if obj.TLM_ObjectProperties.tlm_light_lightmap_use:
+    #             if obj.TLM_ObjectProperties.tlm_light_casts_shadows:
+    #                 bpy.data.lights[obj.name].cycles.cast_shadow = True
+    #             else:
+    #                 bpy.data.lights[obj.name].cycles.cast_shadow = False
+
+    #             bpy.data.lights[obj.name].energy = bpy.data.lights[obj.name].energy * obj.TLM_ObjectProperties.tlm_light_intensity_scale
 
 def configure_objects(self, scene):
 
