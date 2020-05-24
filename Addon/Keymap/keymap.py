@@ -1,7 +1,7 @@
 import bpy
 
-from ..Operators import build
-from ..Operators import clean
+#from .. operators import build
+#from .. operators import clean
 
 tlm_keymaps = []
 
