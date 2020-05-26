@@ -73,7 +73,7 @@ class TLM_PT_Settings(bpy.types.Panel):
             row = layout.row(align=True)
             row.prop(engineProperties, "tlm_exposure_multiplier")
 
-        else:
+        elif sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
             #LUXCORE SETTINGS HERE
             luxcore_available = False
@@ -89,6 +89,14 @@ class TLM_PT_Settings(bpy.types.Panel):
                 row.label(text="Please install BlendLuxCore.")
             else:
                 row.label(text="LuxCoreRender not yet available.")
+
+        elif sceneProperties.tlm_lightmap_engine == "OctaneRender":
+
+            #LUXCORE SETTINGS HERE
+            octane_available = False
+
+            row = layout.row(align=True)
+            row.label(text="Octane Render not yet available.")
 
 class TLM_PT_Denoise(bpy.types.Panel):
     bl_label = "Denoise"

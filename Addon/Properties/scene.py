@@ -5,7 +5,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     tlm_lightmap_engine : EnumProperty(
         items = [('Cycles', 'Cycles', 'Use Cycles for lightmapping'),
-                ('LuxCoreRender', 'LuxCoreRender', 'Use LuxCoreRender for lightmapping')],
+                ('LuxCoreRender', 'LuxCoreRender', 'Use LuxCoreRender for lightmapping'),
+                ('OctaneRender', 'Octane Render', 'Use Octane Render for lightmapping')],
                 name = "Lightmap Engine", 
                 description="Select which lightmap engine to use.", 
                 default='Cycles')
