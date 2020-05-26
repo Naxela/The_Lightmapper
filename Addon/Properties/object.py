@@ -21,3 +21,19 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
                 name = "Lightmap Resolution", 
                 description="TODO", 
                 default='256')
+
+    tlm_mesh_lightmap_unwrap_mode : EnumProperty(
+        items = [('Lightmap', 'Lightmap', 'TODO'),
+                 ('SmartProject', 'Smart Project', 'TODO'),
+                 ('CopyExisting', 'Copy Existing', 'TODO'),
+                 ('AtlasGroup', 'Atlas Group', 'TODO')],
+                name = "Unwrap Mode",
+                description="TODO", 
+                default='SmartProject')
+
+    tlm_mesh_unwrap_margin : FloatProperty(
+        name="Unwrap Margin", 
+        default=0.1, 
+        min=0.0, 
+        max=1.0, 
+        subtype='FACTOR')

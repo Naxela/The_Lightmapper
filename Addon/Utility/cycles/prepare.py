@@ -23,6 +23,8 @@ def configure_meshes():
     iterNum = 0
     currentIterNum = 0
 
+    scene = bpy.context.scene
+
     for obj in bpy.data.objects:
         if obj.type == "MESH":
             for slot in obj.material_slots:
@@ -49,7 +51,7 @@ def configure_meshes():
                 active = obs.active
 
                 #Provide material if none exists
-                utility.preprocess_material(obj, scene)
+                preprocess_material(obj, scene)
 
                 #UV Layer management here
                 if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
@@ -130,19 +132,9 @@ def configure_meshes():
                             print("The material group is not supported!")
                             pass
 
-                    #use albedo white
-                    if scene.TLM_SceneProperties.tlm_baketime_material == "Blank":
-                        if not len(mainNode.inputs[0].links) == 0:
-                            ainput = mainNode.inputs[0].links[0]
-                            aoutput = mainNode.inputs[0].links[0].from_node
-                            nodetree.links.remove(aoutput.outputs[0].links[0])
-                            mainNode.inputs[0].default_value = (1,0,0,1)
-                        else:
-                            mainNode.inputs[0].default_value = (1,0,0,1)
-
                     if (mainNode.type == "BSDF_PRINCIPLED"):
                         print("BSDF_Principled")
-                        if scene.TLM_SceneProperties.tlm_directional_mode == "None":
+                        if scene.TLM_EngineProperties.tlm_directional_mode == "None":
                             print("Directional mode")
                             if not len(mainNode.inputs[19].links) == 0:
                                 print("NOT LEN 0")
@@ -183,6 +175,114 @@ def configure_meshes():
                     for node in nodes:
                         if "Lightmap" in node.name:
                                 nodes.remove(node)
+
+def preprocess_material(obj, scene):
+    if len(obj.material_slots) == 0:
+        single = False
+        number = 0
+        while single == False:
+            matname = obj.name + ".00" + str(number)
+            if matname in bpy.data.materials:
+                single = False
+                number = number + 1
+            else:
+                mat = bpy.data.materials.new(name=matname)
+                mat.use_nodes = True
+                obj.data.materials.append(mat)
+                single = True
+
+    #Make the materials unique if multiple users (Prevent baking over existing)
+    for slot in obj.material_slots:
+        mat = slot.material
+        if mat.users > 1:
+                copymat = mat.copy()
+                slot.material = copymat 
+
+    #Make a material backup and restore original if exists
+    # if scene.TLM_SceneProperties.tlm_caching_mode == "Copy":
+    #     for slot in obj.material_slots:
+    #         matname = slot.material.name
+    #         originalName = "." + matname + "_Original"
+    #         hasOriginal = False
+    #         if originalName in bpy.data.materials:
+    #             hasOriginal = True
+    #         else:
+    #             hasOriginal = False
+
+    #         if hasOriginal:
+    #             matcache.backup_material_restore(slot)
+
+    #         matcache.backup_material_copy(slot)
+
+    # else: #Cache blend
+    #     #TEST CACHE
+    #     filepath = bpy.data.filepath
+    #     dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_lightmap_savedir)
+    #     path = dirpath + "/cache.blend"
+    #     bpy.ops.wm.save_as_mainfile(filepath=path, copy=True)
+        #print("Warning: Cache blend not supported")
+
+    # for mat in bpy.data.materials:
+    #     if mat.name.endswith('_baked'):
+    #         bpy.data.materials.remove(mat, do_unlink=True)
+    # for img in bpy.data.images:
+    #     if img.name == obj.name + "_baked":
+    #         bpy.data.images.remove(img, do_unlink=True)
+
+
+    #SOME ATLAS EXCLUSION HERE?
+    ob = obj
+    for slot in ob.material_slots:
+        #If temporary material already exists
+        if slot.material.name.endswith('_temp'):
+            continue
+        n = slot.material.name + '_' + ob.name + '_temp'
+        if not n in bpy.data.materials:
+            slot.material = slot.material.copy()
+        slot.material.name = n
+
+    #Add images for baking
+    img_name = obj.name + '_baked'
+    #Resolution is object lightmap resolution divided by global scaler
+
+    res = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale)
+
+    #If image not in bpy.data.images or if size changed, make a new image
+    if img_name not in bpy.data.images or bpy.data.images[img_name].size[0] != res or bpy.data.images[img_name].size[1] != res:
+        img = bpy.data.images.new(img_name, res, res, alpha=True, float_buffer=True)
+
+        num_pixels = len(img.pixels)
+        result_pixel = list(img.pixels)
+
+        for i in range(0,num_pixels,4):
+            # result_pixel[i+0] = scene.TLM_SceneProperties.tlm_default_color[0]
+            # result_pixel[i+1] = scene.TLM_SceneProperties.tlm_default_color[1]
+            # result_pixel[i+2] = scene.TLM_SceneProperties.tlm_default_color[2]
+            result_pixel[i+0] = 0.0
+            result_pixel[i+1] = 0.0
+            result_pixel[i+2] = 0.0
+            result_pixel[i+3] = 1.0
+
+        img.pixels = result_pixel
+
+        img.name = img_name
+    else:
+        img = bpy.data.images[img_name]
+
+    for slot in obj.material_slots:
+        mat = slot.material
+        mat.use_nodes = True
+        nodes = mat.node_tree.nodes
+
+        if "Baked Image" in nodes:
+            img_node = nodes["Baked Image"]
+        else:
+            img_node = nodes.new('ShaderNodeTexImage')
+            img_node.name = 'Baked Image'
+            img_node.location = (100, 100)
+            img_node.image = img
+        img_node.select = True
+        nodes.active = img_node
 
 def set_settings():
 

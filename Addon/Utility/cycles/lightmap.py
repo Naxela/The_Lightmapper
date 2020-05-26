@@ -25,8 +25,9 @@ def bake():
 
     for image in bpy.data.images:
         if image.is_dirty:
+            print("Dirty: " + image.name)
             filepath, filepath_ext = os.path.splitext(image.filepath_raw)
-            saveDir = "C:/Users/akg/Desktop/"
+            saveDir = "C:/Users/Alexander/Desktop/Prep"
             filepath_ext = ".hdr"
             image.filepath_raw = saveDir + filepath + "_bake" + filepath_ext
             image.save()

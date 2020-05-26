@@ -50,6 +50,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             row.operator("tlm.clean_lightmaps")
             row = layout.row(align=True)
             row.operator("tlm.explore_lightmaps")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_apply_on_unwrap")
 
             row = layout.row(align=True)
             row.label(text="Cycles Settings")

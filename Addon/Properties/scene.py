@@ -67,4 +67,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Compile time statistics in the lightmap folder.", 
         default=True)
 
-    
+    tlm_apply_on_unwrap : BoolProperty(
+        name="Apply scale", 
+        description="TODO", 
+        default=False)

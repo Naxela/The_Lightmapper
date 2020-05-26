@@ -45,10 +45,13 @@ def prepare_build(self=0):
 
 def begin_build():
 
-    #if cycles
-    lightmap.bake()
+    scene = bpy.context.scene
+    sceneProperties = scene.TLM_SceneProperties
 
-    #
+    if sceneProperties.tlm_lightmap_engine == "Cycles":
+
+        #if cycles
+        lightmap.bake()
 
     pass
 
@@ -59,7 +62,7 @@ def manage_build():
     #if cycles
     #apply materials
     
-    print(previous_settings["Settings"])
+    #print(previous_settings["settings"])
 
     pass
 
