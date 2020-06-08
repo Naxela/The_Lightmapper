@@ -1,5 +1,8 @@
-import bpy
-from . cycles import lightmap, prepare
+import bpy, os
+from . cycles import lightmap, prepare, nodes
+from . denoiser import integrated
+from os import listdir
+from os.path import isfile, join
 
 previous_settings = {}
 
@@ -17,6 +20,14 @@ def prepare_build(self=0):
     if check_denoiser():
         self.report({'INFO'}, "No denoise OIDN path assigned")
         return{'FINISHED'}
+
+    if check_materials():
+        self.report({'INFO'}, "Error with material")
+        return{'FINISHED'}
+
+    dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+    if not os.path.isdir(dirpath):
+        os.mkdir(dirpath)
 
     #Naming check
     naming_check()
@@ -45,6 +56,8 @@ def prepare_build(self=0):
 
 def begin_build():
 
+    dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+
     scene = bpy.context.scene
     sceneProperties = scene.TLM_SceneProperties
 
@@ -53,35 +66,59 @@ def begin_build():
         #if cycles
         lightmap.bake()
 
-    pass
+    #Denoiser
+
+    if sceneProperties.tlm_denoise_use:
+
+        if sceneProperties.tlm_denoise_engine == "Integrated":
+
+            baked_image_array = []
+
+            dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+            for file in dirfiles:
+                if file.endswith("_baked.hdr"):
+                    baked_image_array.append(file)
+
+            print(baked_image_array)
+
+            denoiser = integrated.TLM_Integrated_Denoise()
+
+            denoiser.load(baked_image_array)
+
+            denoiser.setOutputDir(dirpath)
+
+            denoiser.cull_undefined()
+
+            denoiser.setup()
+
+            #denoiser.setOutputDir()
+
+        elif sceneProperties.tlm_denoise_engine == "OIDN":
+            pass
+        else:
+            pass
+
+    #Filtering
 
     manage_build()
 
 def manage_build():
 
-    #if cycles
-    #apply materials
-    
-    #print(previous_settings["settings"])
+    scene = bpy.context.scene
+    sceneProperties = scene.TLM_SceneProperties
 
-    pass
+    if sceneProperties.tlm_lightmap_engine == "Cycles":
 
+        nodes.apply_materials()
 
+    if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
+        pass
 
+    if sceneProperties.tlm_lightmap_engine == "OctaneRender":
 
-
-
-
-
-
-
-
-
-
-
-
-
+        pass
 
 def naming_check():
 
@@ -137,6 +174,8 @@ def check_denoiser():
 
     return 0
 
+    #TODO FINISH DENOISE CHECK
+
     # if scene.TLM_SceneProperties.tlm_denoise_use:
     #     if scene.TLM_SceneProperties.tlm_oidn_path == "":
     #         print("NO DENOISE PATH")
@@ -145,3 +184,14 @@ def check_denoiser():
     #         return True
     # else:
     #     return True
+
+def check_materials():
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                for slot in obj.material_slots:
+                    mat = slot.material
+
+                    nodes = mat.node_tree.nodes
+
+                    #TODO FINISH MATERIAL CHECK

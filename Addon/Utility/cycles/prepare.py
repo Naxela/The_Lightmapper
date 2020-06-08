@@ -1,5 +1,7 @@
 import bpy
 
+from . import cache
+
 def init(prev_container):
 
     store_existing(prev_container)
@@ -198,6 +200,20 @@ def preprocess_material(obj, scene):
                 copymat = mat.copy()
                 slot.material = copymat 
 
+    for slot in obj.material_slots:
+        matname = slot.material.name
+        originalName = "." + matname + "_Original"
+        hasOriginal = False
+        if originalName in bpy.data.materials:
+            hasOriginal = True
+        else:
+            hasOriginal = False
+
+        if hasOriginal:
+            cache.backup_material_restore(slot)
+
+        cache.backup_material_copy(slot)
+
     #Make a material backup and restore original if exists
     # if scene.TLM_SceneProperties.tlm_caching_mode == "Copy":
     #     for slot in obj.material_slots:
@@ -231,15 +247,15 @@ def preprocess_material(obj, scene):
 
 
     #SOME ATLAS EXCLUSION HERE?
-    ob = obj
-    for slot in ob.material_slots:
-        #If temporary material already exists
-        if slot.material.name.endswith('_temp'):
-            continue
-        n = slot.material.name + '_' + ob.name + '_temp'
-        if not n in bpy.data.materials:
-            slot.material = slot.material.copy()
-        slot.material.name = n
+    # ob = obj
+    # for slot in ob.material_slots:
+    #     #If temporary material already exists
+    #     if slot.material.name.endswith('_temp'):
+    #         continue
+    #     n = slot.material.name + '_' + ob.name + '_temp'
+    #     if not n in bpy.data.materials:
+    #         slot.material = slot.material.copy()
+    #     slot.material.name = n
 
     #Add images for baking
     img_name = obj.name + '_baked'

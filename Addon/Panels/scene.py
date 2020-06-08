@@ -2,6 +2,7 @@ import bpy
 from bpy.props import *
 from bpy.types import Menu, Panel
 from .. utility import icon
+from .. properties.denoiser import oidn, optix
 
 class TLM_PT_Panel(bpy.types.Panel):
     bl_label = "The Lightmapper"
@@ -111,7 +112,7 @@ class TLM_PT_Denoise(bpy.types.Panel):
     def draw_header(self, context):
         scene = context.scene
         sceneProperties = scene.TLM_SceneProperties
-        #self.layout.prop(sceneProperties, "tlm_denoise_use", text="")
+        self.layout.prop(sceneProperties, "tlm_denoise_use", text="")
 
     def draw(self, context):
         layout = self.layout
@@ -119,7 +120,33 @@ class TLM_PT_Denoise(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
         sceneProperties = scene.TLM_SceneProperties
-        #layout.active = sceneProperties.tlm_denoise_use
+        layout.active = sceneProperties.tlm_denoise_use
+
+        row = layout.row(align=True)
+
+        #row.prop(sceneProperties, "tlm_denoiser", expand=True)
+        #row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_denoise_engine", expand=True)
+        row = layout.row(align=True)
+
+        if sceneProperties.tlm_denoise_engine == "Integrated":
+            row.label(text="No options for Integrated.")
+        elif sceneProperties.tlm_denoise_engine == "OIDN":
+            engineProperties = scene.TLM_OIDNEngineProperties
+            row.prop(engineProperties, "tlm_oidn_path")
+            row = layout.row(align=True)
+            row.prop(engineProperties, "tlm_oidn_verbose")
+            row = layout.row(align=True)
+            row.prop(engineProperties, "tlm_oidn_threads")
+            row = layout.row(align=True)
+            row.prop(engineProperties, "tlm_oidn_maxmem")
+            row = layout.row(align=True)
+            row.prop(engineProperties, "tlm_oidn_affinity")
+            row = layout.row(align=True)
+            row.prop(engineProperties, "tlm_denoise_ao")
+        elif sceneProperties.tlm_denoise_engine == "Optix":
+            sceneProperties = scene.TLM_SceneProperties
+            row.label(text="Optix Settings")
 
 class TLM_PT_Filtering(bpy.types.Panel):
     bl_label = "Filtering"

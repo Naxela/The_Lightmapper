@@ -71,3 +71,18 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Apply scale", 
         description="TODO", 
         default=False)
+
+    #SETTINGS GROUP
+
+    tlm_denoise_use : BoolProperty(
+        name="Enable denoising", 
+        description="Enable denoising for lightmaps", 
+        default=False)
+
+    tlm_denoise_engine : EnumProperty(
+        items = [('Integrated', 'Integrated', 'Use the Blender native denoiser (Compositor; Slow)'),
+                ('OIDN', 'Intel Denoiser', 'Use Intel denoiser (CPU powered)'),
+                ('Optix', 'Optix Denoiser', 'Use Nvidia Optix denoiser (GPU powered)')],
+                name = "Denoiser", 
+                description="Select which denoising engine to use.", 
+                default='Integrated')
