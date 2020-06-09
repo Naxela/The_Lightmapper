@@ -34,7 +34,7 @@ class TLM_CyclesSceneProperties(bpy.types.PropertyGroup):
                     ('Foreground', 'Foreground', 'Direct in-session bake')],
                 name = "Baking mode", 
                 description="Select bake mode", 
-                default="Background")
+                default="Foreground")
 
     tlm_caching_mode : EnumProperty(
         items = [('Copy', 'Copy', 'More overhead; allows for network.'),

@@ -34,7 +34,7 @@ def apply_materials():
                     #Find output node
                     outputNode = nodes[0]
                     if(outputNode.type != "OUTPUT_MATERIAL"):
-                        for node in nodetree.nodes:
+                        for node in node_tree.nodes:
                             if node.type == "OUTPUT_MATERIAL":
                                 outputNode = node
                                 break
@@ -71,3 +71,22 @@ def apply_materials():
                     mat.node_tree.links.new(baseColorNode.outputs[0], mixNode.inputs[2]) #Connect basecolor to pbr node
                     mat.node_tree.links.new(mixNode.outputs[0], mainNode.inputs[0]) #Connect mixnode to pbr node
                     mat.node_tree.links.new(UVLightmap.outputs[0], lightmapNode.inputs[0]) #Connect uvnode to lightmapnode
+
+
+def exchangeLightmapsToPostfix(ext_postfix, new_postfix):
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                for slot in obj.material_slots:
+                    mat = slot.material
+                    node_tree = mat.node_tree
+                    nodes = mat.node_tree.nodes
+
+                    for node in nodes:
+                        if node.name == "Baked Image" or node.name == "TLM_Lightmap":
+                            img_name = node.image.filepath_raw
+                            cutLen = len(ext_postfix + ".hdr")
+                            node.image.filepath_raw = img_name[:-cutLen] + new_postfix + ".hdr"
+
+    for image in bpy.data.images:
+        image.reload()

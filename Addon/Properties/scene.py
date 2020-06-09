@@ -12,7 +12,6 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 default='Cycles')
 
     #SETTINGS GROUP
-
     tlm_setting_clean_option : EnumProperty(
         items = [('Clean', 'Full Clean', 'Clean lightmap directory and revert all materials'),
                 ('CleanMarked', 'Clean marked', 'Clean only the objects marked for lightmapping')],
@@ -72,8 +71,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="TODO", 
         default=False)
 
-    #SETTINGS GROUP
-
+    #DENOISE SETTINGS GROUP
     tlm_denoise_use : BoolProperty(
         name="Enable denoising", 
         description="Enable denoising for lightmaps", 
@@ -86,3 +84,68 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 name = "Denoiser", 
                 description="Select which denoising engine to use.", 
                 default='Integrated')
+
+    #FILTERING SETTINGS GROUP
+    tlm_filtering_use : BoolProperty(
+        name="Enable denoising", 
+        description="Enable denoising for lightmaps", 
+        default=False)
+
+    tlm_filtering_engine : EnumProperty(
+        items = [('OpenCV', 'OpenCV', 'Make use of OpenCV based image filtering (Requires it to be installed first in the preferences panel)'),
+                ('Numpy', 'Numpy', 'Make use of Numpy based image filtering (Integrated)')],
+                name = "Filtering library", 
+                description="Select which filtering library to use.", 
+                default='OpenCV')
+
+    #OpenCV Filtering options
+    tlm_filtering_mode : EnumProperty(
+        items = [('Box', 'Box', 'TODO'),
+                    ('Gaussian', 'Gaussian', 'TODO'),
+                    ('Bilateral', 'Bilateral', 'TODO'),
+                    ('Median', 'Median', 'TODO')],
+                name = "Filter", 
+                description="TODO", 
+                default='Median')
+
+    tlm_filtering_gaussian_strength : IntProperty(
+        name="Gaussian Strength", 
+        default=3, 
+        min=1, 
+        max=50)
+
+    tlm_filtering_iterations : IntProperty(
+        name="Filter Iterations", 
+        default=5, 
+        min=1, 
+        max=50)
+
+    tlm_filtering_box_strength : IntProperty(
+        name="Box Strength", 
+        default=1, 
+        min=1, 
+        max=50)
+
+    tlm_filtering_bilateral_diameter : IntProperty(
+        name="Pixel diameter", 
+        default=3, 
+        min=1, 
+        max=50)
+
+    tlm_filtering_bilateral_color_deviation : IntProperty(
+        name="Color deviation", 
+        default=75, 
+        min=1, 
+        max=100)
+
+    tlm_filtering_bilateral_coordinate_deviation : IntProperty(
+        name="Color deviation", 
+        default=75, 
+        min=1, 
+        max=100)
+
+    tlm_filtering_median_kernel : IntProperty(
+        name="Median kernel", 
+        default=3, 
+        min=1, 
+        max=5)

@@ -156,12 +156,10 @@ class TLM_PT_Filtering(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = "TLM_PT_Panel"
 
-    _module_installed = False
-
     def draw_header(self, context):
         scene = context.scene
         sceneProperties = scene.TLM_SceneProperties
-        #self.layout.prop(sceneProperties, "tlm_filtering_use", text="")
+        self.layout.prop(sceneProperties, "tlm_filtering_use", text="")
 
     def draw(self, context):
         layout = self.layout
@@ -169,6 +167,41 @@ class TLM_PT_Filtering(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
         sceneProperties = scene.TLM_SceneProperties
+        layout.active = sceneProperties.tlm_filtering_use
+        #row = layout.row(align=True)
+        #row.label(text="TODO MAKE CHECK")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_filtering_engine", expand=True)
+        row = layout.row(align=True)
+
+        if sceneProperties.tlm_filtering_engine == "OpenCV":
+            row = layout.row(align=True)
+            row.prop(scene.TLM_SceneProperties, "tlm_filtering_mode")
+            row = layout.row(align=True)
+            if scene.TLM_SceneProperties.tlm_filtering_mode == "Gaussian":
+                row.prop(scene.TLM_SceneProperties, "tlm_filtering_gaussian_strength")
+                row = layout.row(align=True)
+                row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
+            elif scene.TLM_SceneProperties.tlm_filtering_mode == "Box":
+                row.prop(scene.TLM_SceneProperties, "tlm_filtering_box_strength")
+                row = layout.row(align=True)
+                row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
+
+            elif scene.TLM_SceneProperties.tlm_filtering_mode == "Bilateral":
+                row.prop(scene.TLM_SceneProperties, "tlm_filtering_bilateral_diameter")
+                row = layout.row(align=True)
+                row.prop(scene.TLM_SceneProperties, "tlm_filtering_bilateral_color_deviation")
+                row = layout.row(align=True)
+                row.prop(scene.TLM_SceneProperties, "tlm_filtering_bilateral_coordinate_deviation")
+                row = layout.row(align=True)
+                row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
+            else:
+                row.prop(scene.TLM_SceneProperties, "tlm_filtering_median_kernel", expand=True)
+                row = layout.row(align=True)
+                row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
+        else:
+            row.label(text="Numpy not yet available")
+
 
 class TLM_PT_Encoding(bpy.types.Panel):
     bl_label = "Encoding"

@@ -1,6 +1,7 @@
-import bpy, os
+import bpy, os, importlib
 from . cycles import lightmap, prepare, nodes
 from . denoiser import integrated
+from . filtering import opencv
 from os import listdir
 from os.path import isfile, join
 
@@ -10,6 +11,20 @@ def prepare_build(self=0):
 
     scene = bpy.context.scene
     sceneProperties = scene.TLM_SceneProperties
+
+    #We dynamically load the renderer and denoiser, instead of loading something we don't use
+
+    if sceneProperties.tlm_lightmap_engine == "Cycles":
+
+        pass
+
+    if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
+
+        pass
+
+    if sceneProperties.tlm_lightmap_engine == "OctaneRender":
+
+        pass
 
     #Timer start here bound to global
 
@@ -63,8 +78,13 @@ def begin_build():
 
     if sceneProperties.tlm_lightmap_engine == "Cycles":
 
-        #if cycles
         lightmap.bake()
+
+    if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
+        pass
+
+    if sceneProperties.tlm_lightmap_engine == "OctaneRender":
+        pass
 
     #Denoiser
 
@@ -88,11 +108,7 @@ def begin_build():
 
             denoiser.setOutputDir(dirpath)
 
-            denoiser.cull_undefined()
-
-            denoiser.setup()
-
-            #denoiser.setOutputDir()
+            denoiser.denoise()
 
         elif sceneProperties.tlm_denoise_engine == "OIDN":
             pass
@@ -100,6 +116,16 @@ def begin_build():
             pass
 
     #Filtering
+    if sceneProperties.tlm_filtering_use:
+
+        if sceneProperties.tlm_denoise_use:
+            useDenoise = True
+        else:
+            useDenoise = False
+
+        filter = opencv.TLM_CV_Filtering
+
+        filter.init(dirpath, useDenoise)
 
     manage_build()
 
@@ -111,6 +137,7 @@ def manage_build():
     if sceneProperties.tlm_lightmap_engine == "Cycles":
 
         nodes.apply_materials()
+        nodes.exchangeLightmapsToPostfix("_baked","_denoised")
 
     if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
@@ -119,6 +146,8 @@ def manage_build():
     if sceneProperties.tlm_lightmap_engine == "OctaneRender":
 
         pass
+
+    bpy.ops.wm.save_as_mainfile()
 
 def naming_check():
 

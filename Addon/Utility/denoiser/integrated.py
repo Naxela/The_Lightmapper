@@ -1,4 +1,4 @@
-import bpy
+import bpy, os
 
 class TLM_Integrated_Denoise:
 
@@ -8,28 +8,35 @@ class TLM_Integrated_Denoise:
     def load(self, images):
         self.image_array = images
 
+        self.cull_undefined()
+
     def setOutputDir(self, dir):
         self.image_output_destination = dir
 
     def cull_undefined(self):
+        
         #Do a validation check before denoising
-        pass
 
         cam = bpy.context.scene.camera
         if not cam:
             bpy.ops.object.camera_add()
 
-    def setup(self):
+            #Just select the first camera we find, needed for the compositor
+            for obj in bpy.data.objects:
+                if obj.type == "CAMERA":
+                    bpy.context.scene.camera = obj
+                    return
+
+    def denoise(self):
 
         if not bpy.context.scene.use_nodes:
             bpy.context.scene.use_nodes = True
 
         tree = bpy.context.scene.node_tree
 
-        #Only noisy result so far, as denoiser expects a screen-space normal;
-        #Blender uses object-space. Maybe tangent space could work.
-
         for image in self.image_array:
+
+            print("Image...")
 
             img = bpy.data.images.load(self.image_output_destination + "/" + image)
 
@@ -54,26 +61,18 @@ class TLM_Integrated_Denoise:
             filePath = bpy.data.filepath
             path = os.path.dirname(filePath)
 
-            # bpy.data.scenes["Scene"].render.filepath = image_output_destination
+            base = os.path.basename(image)
+            filename, file_extension = os.path.splitext(image)
+            filename = filename[:-6]
 
-            # denoised_image_path = bpy.data.scenes["Scene"].render.filepath + "." + \
-            #     bpy.data.scenes["Scene"].render.image_settings.file_format.lower()
+            bpy.data.scenes["Scene"].render.filepath = self.image_output_destination + "/" + filename + "_denoised" + file_extension
 
-            # bpy.ops.render.render(write_still=True)
+            denoised_image_path = self.image_output_destination
+            bpy.data.scenes["Scene"].render.image_settings.file_format = "HDR"
 
-            # #Cleanup
-            # comp_nodes = [image_node,nrm_image_node,color_image_node,denoise_node,comp_node]
-            # for node in comp_nodes:
-            #     tree.nodes.remove(node)
+            bpy.ops.render.render(write_still=True)
 
-
-    def denoise():
-
-        bpy.ops.render.render(write_still=True)
-
-        #Cleanup
-        comp_nodes = [image_node,nrm_image_node,color_image_node,denoise_node,comp_node]
-        for node in comp_nodes:
-            tree.nodes.remove(node)
-
-        pass
+            #Cleanup
+            comp_nodes = [image_node, denoise_node, comp_node]
+            for node in comp_nodes:
+                tree.nodes.remove(node)

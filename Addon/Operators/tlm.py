@@ -9,16 +9,27 @@ class TLM_BuildLightmaps(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def modal(self, context, event):
+
+        #build.prepare_build(self)
         print("MODAL")
+
         return {'PASS_THROUGH'}
+
+    def execute(self, context):
+
+        print("Execute")
+
+        build.prepare_build(self)
+        
+        return {'FINISHED'}
 
     def invoke(self, context, event):
 
         #Decide which engine to bake with here
 
-        build.prepare_build(self)
+        print("Invoke")
 
-        print("INVOKE")
+        build.prepare_build(self)
 
         return {'RUNNING_MODAL'}
 
