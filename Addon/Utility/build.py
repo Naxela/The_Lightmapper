@@ -1,73 +1,96 @@
-import bpy, os, importlib
+import bpy, os, importlib, subprocess, sys
 from . cycles import lightmap, prepare, nodes
 from . denoiser import integrated
 from . filtering import opencv
 from os import listdir
 from os.path import isfile, join
+from time import time
 
 previous_settings = {}
 
-def prepare_build(self=0):
+def prepare_build(self=0, background_mode=False):
 
-    scene = bpy.context.scene
-    sceneProperties = scene.TLM_SceneProperties
+    if bpy.context.scene.TLM_EngineProperties.tlm_bake_mode == "Foreground" or background_mode==True:
 
-    #We dynamically load the renderer and denoiser, instead of loading something we don't use
+        global start_time
+        start_time = time()
 
-    if sceneProperties.tlm_lightmap_engine == "Cycles":
+        scene = bpy.context.scene
+        sceneProperties = scene.TLM_SceneProperties
 
-        pass
+        #We dynamically load the renderer and denoiser, instead of loading something we don't use
 
-    if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
+        if sceneProperties.tlm_lightmap_engine == "Cycles":
 
-        pass
+            pass
 
-    if sceneProperties.tlm_lightmap_engine == "OctaneRender":
+        if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
-        pass
+            pass
 
-    #Timer start here bound to global
+        if sceneProperties.tlm_lightmap_engine == "OctaneRender":
 
-    if check_save():
-        self.report({'INFO'}, "Please save your file first")
-        return{'FINISHED'}
+            pass
 
-    if check_denoiser():
-        self.report({'INFO'}, "No denoise OIDN path assigned")
-        return{'FINISHED'}
+        #Timer start here bound to global
 
-    if check_materials():
-        self.report({'INFO'}, "Error with material")
-        return{'FINISHED'}
+        if check_save():
+            self.report({'INFO'}, "Please save your file first")
+            return{'FINISHED'}
 
-    dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
-    if not os.path.isdir(dirpath):
-        os.mkdir(dirpath)
+        if check_denoiser():
+            self.report({'INFO'}, "No denoise OIDN path assigned")
+            return{'FINISHED'}
 
-    #Naming check
-    naming_check()
+        if check_materials():
+            self.report({'INFO'}, "Error with material")
+            return{'FINISHED'}
 
-    ## RENDER DEPENDENCY FROM HERE
+        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+        if not os.path.isdir(dirpath):
+            os.mkdir(dirpath)
 
-    if sceneProperties.tlm_lightmap_engine == "Cycles":
+        #Naming check
+        naming_check()
 
-        prepare.init(previous_settings)
+        ## RENDER DEPENDENCY FROM HERE
 
-    if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
+        if sceneProperties.tlm_lightmap_engine == "Cycles":
 
-        pass
+            prepare.init(previous_settings)
 
-    if sceneProperties.tlm_lightmap_engine == "OctaneRender":
+        if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
-        pass
+            pass
 
-    #Renderer - Store settings
+        if sceneProperties.tlm_lightmap_engine == "OctaneRender":
 
-    #Renderer - Set settings
+            pass
 
-    #Renderer - Config objects, lights, world
+        #Renderer - Store settings
 
-    begin_build()
+        #Renderer - Set settings
+
+        #Renderer - Config objects, lights, world
+
+        begin_build()
+
+    else:
+
+        print("BG_CALL")
+
+        filepath = bpy.data.filepath
+
+        process = subprocess.Popen([sys.executable,
+                                    "-b",
+                                    filepath,
+                                    "--python-expr",
+                                    'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'],
+                                    shell=False)
+
+        bpy.ops.wm.revert_mainfile()
+
+        #begin_build()
 
 def begin_build():
 
@@ -137,7 +160,18 @@ def manage_build():
     if sceneProperties.tlm_lightmap_engine == "Cycles":
 
         nodes.apply_materials()
-        nodes.exchangeLightmapsToPostfix("_baked","_denoised")
+
+        end = "_baked"
+
+        if sceneProperties.tlm_denoise_use:
+
+            end = "_denoised"
+
+        if sceneProperties.tlm_filtering_use:
+
+            end = "_filtered"
+        
+        nodes.exchangeLightmapsToPostfix("_baked",end)
 
     if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
@@ -148,6 +182,9 @@ def manage_build():
         pass
 
     bpy.ops.wm.save_as_mainfile()
+
+    total_time = sec_to_hours((time() - start_time))
+    print(total_time)
 
 def naming_check():
 
@@ -224,3 +261,10 @@ def check_materials():
                     nodes = mat.node_tree.nodes
 
                     #TODO FINISH MATERIAL CHECK
+
+def sec_to_hours(seconds):
+    a=str(seconds//3600)
+    b=str((seconds%3600)//60)
+    c=str((seconds%3600)%60)
+    d=["{} hours {} mins {} seconds".format(a, b, c)]
+    return d

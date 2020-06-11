@@ -15,21 +15,21 @@ class TLM_BuildLightmaps(bpy.types.Operator):
 
         return {'PASS_THROUGH'}
 
-    def execute(self, context):
-
-        print("Execute")
-
-        build.prepare_build(self)
-        
-        return {'FINISHED'}
-
     def invoke(self, context, event):
 
         #Decide which engine to bake with here
 
-        print("Invoke")
+        if not bpy.app.background:
 
-        build.prepare_build(self)
+            print("Invoke")
+
+            build.prepare_build(self, False)
+
+        else:
+
+            print("BACKGROUND")
+            
+            #build.prepare_build(self, True)
 
         return {'RUNNING_MODAL'}
 
