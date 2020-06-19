@@ -98,6 +98,13 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 description="Select which filtering library to use.", 
                 default='OpenCV')
 
+    #Numpy Filtering options
+    tlm_numpy_filtering_mode : EnumProperty(
+        items = [('None', 'None', 'No filtering.')],
+                name = "Filter", 
+                description="TODO", 
+                default='None')
+
     #OpenCV Filtering options
     tlm_filtering_mode : EnumProperty(
         items = [('Box', 'Box', 'TODO'),
@@ -149,3 +156,54 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         default=3, 
         min=1, 
         max=5)
+
+    #Encoding properties
+    tlm_encoding_use : BoolProperty(
+        name="Enable encoding", 
+        description="Enable encoding for lightmaps", 
+        default=False)
+
+    tlm_encoding_mode : EnumProperty(
+        items = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
+                    ('LogLuv', 'LogLuv', '8-bit HDR encoding. Different.'),
+                    ('RGBE', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.')],
+                name = "Encoding Mode", 
+                description="TODO", 
+                default='RGBE')
+
+    tlm_encoding_range : IntProperty(
+        name="Encoding range", 
+        description="Higher gives a larger HDR range, but also gives more banding.", 
+        default=6, 
+        min=1, 
+        max=10)
+
+    tlm_encoding_armory_setup : BoolProperty(
+        name="Use Armory decoder", 
+        description="TODO", 
+        default=False)
+
+    tlm_encoding_colorspace : EnumProperty(
+        items = [('XYZ', 'XYZ', 'TODO'),
+                ('sRGB', 'sRGB', 'TODO'),
+                ('NonColor', 'Non-Color', 'TODO'),
+                ('ACES', 'Linear ACES', 'TODO'),
+                ('Linear', 'Linear', 'TODO'),
+                ('FilmicLog', 'Filmic Log', 'TODO')],
+            name = "Color Space", 
+            description="TODO", 
+            default='Linear')
+
+    tlm_compression : IntProperty(
+        name="PNG Compression", 
+        description="0 = No compression. 100 = Maximum compression.", 
+        default=0, 
+        min=0, 
+        max=100)
+    
+    tlm_format : EnumProperty(
+        items = [('HDR', 'HDR', '32-bit RGBE encoded .hdr files. No compression available.'),
+                 ('EXR', 'EXR', '32-bit OpenEXR format.')],
+                name = "Format", 
+                description="TODO", 
+                default='HDR')

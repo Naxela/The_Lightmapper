@@ -81,14 +81,14 @@ def prepare_build(self=0, background_mode=False):
 
         filepath = bpy.data.filepath
 
-        process = subprocess.Popen([sys.executable,
+        process = subprocess.call([sys.executable,
                                     "-b",
                                     filepath,
                                     "--python-expr",
                                     'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'],
                                     shell=False)
 
-        bpy.ops.wm.revert_mainfile()
+        #bpy.ops.wm.revert_mainfile()
 
         #begin_build()
 
@@ -150,6 +150,9 @@ def begin_build():
 
         filter.init(dirpath, useDenoise)
 
+    if sceneProperties.tlm_encoding_use:
+        pass
+
     manage_build()
 
 def manage_build():
@@ -181,7 +184,11 @@ def manage_build():
 
         pass
 
-    bpy.ops.wm.save_as_mainfile()
+    #bpy.ops.wm.save_as_mainfile()
+
+    for image in bpy.data.images:
+        if image.users < 1:
+            bpy.data.images.remove(image)
 
     total_time = sec_to_hours((time() - start_time))
     print(total_time)
@@ -258,9 +265,16 @@ def check_materials():
                 for slot in obj.material_slots:
                     mat = slot.material
 
+                    if mat is None:
+                        print("MatNone")
+                        mat = bpy.data.materials.new(name="Material")
+                        mat.use_nodes = True
+                        slot.material = mat
+
                     nodes = mat.node_tree.nodes
 
-                    #TODO FINISH MATERIAL CHECK
+                    #TODO FINISH MATERIAL CHECK -> Nodes check
+                    #Afterwards, redo build/utility
 
 def sec_to_hours(seconds):
     a=str(seconds//3600)

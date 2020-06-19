@@ -22,6 +22,29 @@ def configure_lights():
 
 def configure_meshes():
 
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                cache.backup_material_restore(obj)
+
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                cache.backup_material_rename(obj)
+
+    for mat in bpy.data.materials:
+        if mat.users < 1:
+            bpy.data.materials.remove(mat)
+
+    for mat in bpy.data.materials:
+        if mat.name.startswith("."):
+            if "_Original" in mat.name:
+                bpy.data.materials.remove(mat)
+
+    for image in bpy.data.images:
+        if image.name.endswith("_baked"):
+            bpy.data.images.remove(image, do_unlink=True)
+
     iterNum = 0
     currentIterNum = 0
 
@@ -193,26 +216,37 @@ def preprocess_material(obj, scene):
                 obj.data.materials.append(mat)
                 single = True
 
-    #Make the materials unique if multiple users (Prevent baking over existing)
+    #We copy the existing material slots to an ordered array, which corresponds to the slot index
+    matArray = []
     for slot in obj.material_slots:
+        matArray.append(slot.name)
+    
+    obj["TLM_PrevMatArray"] = matArray
+
+    for slot in obj.material_slots:
+
+        cache.backup_material_copy(slot)
+
         mat = slot.material
         if mat.users > 1:
                 copymat = mat.copy()
-                slot.material = copymat 
+                slot.material = copymat
 
-    for slot in obj.material_slots:
-        matname = slot.material.name
-        originalName = "." + matname + "_Original"
-        hasOriginal = False
-        if originalName in bpy.data.materials:
-            hasOriginal = True
-        else:
-            hasOriginal = False
+    # for slot in obj.material_slots:
+    #     matname = slot.material.name
+    #     originalName = "." + matname + "_Original"
+    #     hasOriginal = False
+    #     if originalName in bpy.data.materials:
+    #         hasOriginal = True
+    #     else:
+    #         hasOriginal = False
 
-        if hasOriginal:
-            cache.backup_material_restore(slot)
+    #     if hasOriginal:
+    #         cache.backup_material_restore(slot)
 
-        cache.backup_material_copy(slot)
+    #     cache.backup_material_copy(slot)
+
+    ############################
 
     #Make a material backup and restore original if exists
     # if scene.TLM_SceneProperties.tlm_caching_mode == "Copy":

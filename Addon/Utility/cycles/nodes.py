@@ -86,7 +86,10 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix):
                         if node.name == "Baked Image" or node.name == "TLM_Lightmap":
                             img_name = node.image.filepath_raw
                             cutLen = len(ext_postfix + ".hdr")
-                            node.image.filepath_raw = img_name[:-cutLen] + new_postfix + ".hdr"
+
+                            #Simple way to sort out objects with multiple materials
+                            if not new_postfix in img_name:
+                                node.image.filepath_raw = img_name[:-cutLen] + new_postfix + ".hdr"
 
     for image in bpy.data.images:
         image.reload()

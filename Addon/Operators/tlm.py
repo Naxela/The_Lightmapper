@@ -10,14 +10,13 @@ class TLM_BuildLightmaps(bpy.types.Operator):
 
     def modal(self, context, event):
 
-        #build.prepare_build(self)
+        #Add progress bar from 0.15
+
         print("MODAL")
 
         return {'PASS_THROUGH'}
 
     def invoke(self, context, event):
-
-        #Decide which engine to bake with here
 
         if not bpy.app.background:
 
@@ -27,9 +26,7 @@ class TLM_BuildLightmaps(bpy.types.Operator):
 
         else:
 
-            print("BACKGROUND")
-            
-            #build.prepare_build(self, True)
+            print("Running in background mode. Contextual operator not available. Use command 'thelightmapper.addon.build.prepare_build()'")
 
         return {'RUNNING_MODAL'}
 
@@ -58,8 +55,21 @@ class TLM_CleanLightmaps(bpy.types.Operator):
         for obj in bpy.data.objects:
             if obj.type == "MESH":
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                    for slot in obj.material_slots:
-                        cache.backup_material_restore(slot)
+                    cache.backup_material_restore(obj)
+
+        for obj in bpy.data.objects:
+            if obj.type == "MESH":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    cache.backup_material_rename(obj)
+
+        for mat in bpy.data.materials:
+            if mat.users < 1:
+                bpy.data.materials.remove(mat)
+
+        for mat in bpy.data.materials:
+            if mat.name.startswith("."):
+                if "_Original" in mat.name:
+                    bpy.data.materials.remove(mat)
 
         for image in bpy.data.images:
             if image.name.endswith("_baked"):

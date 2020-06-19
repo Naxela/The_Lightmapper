@@ -200,7 +200,8 @@ class TLM_PT_Filtering(bpy.types.Panel):
                 row = layout.row(align=True)
                 row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
         else:
-            row.label(text="Numpy not yet available")
+            row = layout.row(align=True)
+            row.prop(scene.TLM_SceneProperties, "tlm_numpy_filtering_mode")
 
 
 class TLM_PT_Encoding(bpy.types.Panel):
@@ -211,20 +212,10 @@ class TLM_PT_Encoding(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_parent_id = "TLM_PT_Panel"
 
-    def draw(self, context):
-        layout = self.layout
+    def draw_header(self, context):
         scene = context.scene
-        layout.use_property_split = True
-        layout.use_property_decorate = False
         sceneProperties = scene.TLM_SceneProperties
-
-class TLM_PT_Compression(bpy.types.Panel):
-    bl_label = "Compression"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "render"
-    bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = "TLM_PT_Panel"
+        self.layout.prop(sceneProperties, "tlm_encoding_use", text="")
 
     def draw(self, context):
         layout = self.layout
@@ -232,6 +223,26 @@ class TLM_PT_Compression(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
         sceneProperties = scene.TLM_SceneProperties
+        layout.active = sceneProperties.tlm_encoding_use
+
+        sceneProperties = scene.TLM_SceneProperties
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_encoding_mode", expand=True)
+        if sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD":
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_encoding_range")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_encoding_armory_setup")
+        if sceneProperties.tlm_encoding_mode == "LogLuv":
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_encoding_armory_setup")
+        if sceneProperties.tlm_encoding_mode == "RGBE":
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_format")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_encoding_colorspace")
+
+
 
 class TLM_PT_Selection(bpy.types.Panel):
     bl_label = "Selection"
