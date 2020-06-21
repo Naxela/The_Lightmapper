@@ -57,6 +57,7 @@ class TLM_Integrated_Denoise:
             # set output resolution to image res
             bpy.context.scene.render.resolution_x = img.size[0]
             bpy.context.scene.render.resolution_y = img.size[1]
+            bpy.context.scene.render.resolution_percentage = 100
 
             filePath = bpy.data.filepath
             path = os.path.dirname(filePath)

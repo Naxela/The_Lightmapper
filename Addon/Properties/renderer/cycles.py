@@ -15,7 +15,8 @@ class TLM_CyclesSceneProperties(bpy.types.PropertyGroup):
                     ('1', 'Interior Preview', 'Best for fast interior previz with bounces'),
                     ('2', 'Medium', 'Best for complicated interior preview and final for isometric environments'),
                     ('3', 'High', 'Best used for final baking for 3rd person games'),
-                    ('4', 'Production', 'Best for first-person and Archviz')],
+                    ('4', 'Production', 'Best for first-person and Archviz'),
+                    ('5', 'Custom', 'Uses the cycles sample settings provided the user')],
                 name = "Quality", 
                 description="Select baking quality", 
                 default="0")

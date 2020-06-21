@@ -132,21 +132,27 @@ class TLM_PT_Denoise(bpy.types.Panel):
         if sceneProperties.tlm_denoise_engine == "Integrated":
             row.label(text="No options for Integrated.")
         elif sceneProperties.tlm_denoise_engine == "OIDN":
-            engineProperties = scene.TLM_OIDNEngineProperties
-            row.prop(engineProperties, "tlm_oidn_path")
+            denoiseProperties = scene.TLM_OIDNEngineProperties
+            row.prop(denoiseProperties, "tlm_oidn_path")
             row = layout.row(align=True)
-            row.prop(engineProperties, "tlm_oidn_verbose")
+            row.prop(denoiseProperties, "tlm_oidn_verbose")
             row = layout.row(align=True)
-            row.prop(engineProperties, "tlm_oidn_threads")
+            row.prop(denoiseProperties, "tlm_oidn_threads")
             row = layout.row(align=True)
-            row.prop(engineProperties, "tlm_oidn_maxmem")
+            row.prop(denoiseProperties, "tlm_oidn_maxmem")
             row = layout.row(align=True)
-            row.prop(engineProperties, "tlm_oidn_affinity")
-            row = layout.row(align=True)
-            row.prop(engineProperties, "tlm_denoise_ao")
+            row.prop(denoiseProperties, "tlm_oidn_affinity")
+            # row = layout.row(align=True)
+            # row.prop(denoiseProperties, "tlm_denoise_ao")
         elif sceneProperties.tlm_denoise_engine == "Optix":
-            sceneProperties = scene.TLM_SceneProperties
-            row.label(text="Optix Settings")
+            denoiseProperties = scene.TLM_OptixEngineProperties
+            row.prop(denoiseProperties, "tlm_optix_path")
+            row = layout.row(align=True)
+            row.prop(denoiseProperties, "tlm_optix_verbose")
+            row = layout.row(align=True)
+            row.prop(denoiseProperties, "tlm_optix_maxmem")
+            row = layout.row(align=True)
+            row.prop(denoiseProperties, "tlm_denoise_ao")
 
 class TLM_PT_Filtering(bpy.types.Panel):
     bl_label = "Filtering"

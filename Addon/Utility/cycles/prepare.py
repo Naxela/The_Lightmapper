@@ -343,7 +343,7 @@ def set_settings():
     cycles.device = scene.TLM_EngineProperties.tlm_mode
     scene.render.engine = "CYCLES"
     
-    if engineProperties.tlm_quality == "Preview":
+    if engineProperties.tlm_quality == 0:
         cycles.samples = 32
         cycles.max_bounces = 1
         cycles.diffuse_bounces = 1
@@ -353,7 +353,7 @@ def set_settings():
         cycles.volume_bounces = 1
         cycles.caustics_reflective = False
         cycles.caustics_refractive = False
-    elif engineProperties.tlm_quality == "Preview2":
+    elif engineProperties.tlm_quality == 1:
         cycles.samples = 64
         cycles.max_bounces = 2
         cycles.diffuse_bounces = 2
@@ -363,7 +363,7 @@ def set_settings():
         cycles.volume_bounces = 2
         cycles.caustics_reflective = False
         cycles.caustics_refractive = False
-    elif engineProperties.tlm_quality == "Medium":
+    elif engineProperties.tlm_quality == 2:
         cycles.samples = 512
         cycles.max_bounces = 2
         cycles.diffuse_bounces = 2
@@ -373,7 +373,7 @@ def set_settings():
         cycles.volume_bounces = 2
         cycles.caustics_reflective = False
         cycles.caustics_refractive = False
-    elif engineProperties.tlm_quality == "High":
+    elif engineProperties.tlm_quality == 3:
         cycles.samples = 1024
         cycles.max_bounces = 256
         cycles.diffuse_bounces = 256
@@ -383,7 +383,7 @@ def set_settings():
         cycles.volume_bounces = 256
         cycles.caustics_reflective = False
         cycles.caustics_refractive = False
-    elif engineProperties.tlm_quality == "Production":
+    elif engineProperties.tlm_quality == 4:
         cycles.samples = 2048
         cycles.max_bounces = 512
         cycles.diffuse_bounces = 512

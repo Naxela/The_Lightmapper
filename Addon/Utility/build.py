@@ -1,6 +1,6 @@
 import bpy, os, importlib, subprocess, sys
 from . cycles import lightmap, prepare, nodes
-from . denoiser import integrated
+from . denoiser import integrated, oidn
 from . filtering import opencv
 from os import listdir
 from os.path import isfile, join
@@ -134,7 +134,23 @@ def begin_build():
             denoiser.denoise()
 
         elif sceneProperties.tlm_denoise_engine == "OIDN":
-            pass
+
+            baked_image_array = []
+
+            dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+            for file in dirfiles:
+                if file.endswith("_baked.hdr"):
+                    baked_image_array.append(file)
+
+            oidnProperties = scene.TLM_OIDNEngineProperties
+
+            denoiser = oidn.TLM_OIDN_Denoise(oidnProperties, baked_image_array, dirpath)
+
+            denoiser.denoise()
+
+            
+
         else:
             pass
 
