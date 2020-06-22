@@ -149,7 +149,9 @@ def begin_build():
 
             denoiser.denoise()
 
-            
+            denoiser.clean()
+
+            del denoiser
 
         else:
             pass

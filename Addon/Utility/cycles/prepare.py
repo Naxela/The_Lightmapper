@@ -52,10 +52,11 @@ def configure_meshes():
 
     for obj in bpy.data.objects:
         if obj.type == "MESH":
-            for slot in obj.material_slots:
-                if "." + slot.name + '_Original' in bpy.data.materials:
-                    print("The material: " + slot.name + " shifted to " + "." + slot.name + '_Original')
-                    slot.material = bpy.data.materials["." + slot.name + '_Original']
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                for slot in obj.material_slots:
+                    if "." + slot.name + '_Original' in bpy.data.materials:
+                        print("The material: " + slot.name + " shifted to " + "." + slot.name + '_Original')
+                        slot.material = bpy.data.materials["." + slot.name + '_Original']
 
     for obj in bpy.data.objects:
         if obj.type == "MESH":
@@ -168,8 +169,8 @@ def configure_meshes():
                                 nodetree.links.remove(noutput.outputs[0].links[0])
 
                         #Clamp metallic
-                        if(mainNode.inputs[4].default_value == 1 and scene.TLM_SceneProperties.tlm_clamp_metallic):
-                            mainNode.inputs[4].default_value = 0.99
+                        # if(mainNode.inputs[4].default_value == 1 and scene.TLM_SceneProperties.tlm_clamp_metallic):
+                        #     mainNode.inputs[4].default_value = 0.99
 
                     if (mainNode.type == "BSDF_DIFFUSE"):
                         print("BSDF_Diffuse")

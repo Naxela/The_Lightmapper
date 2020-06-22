@@ -40,6 +40,13 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 description="Lightmap resolution scaling. Adjust for previewing.", 
                 default="1")
 
+    tlm_setting_supersample : EnumProperty(
+        items = [('2x', '2x', 'Double the sampling resolution'),
+                ('4x', '4x', 'Quadruple the sampling resolution')],
+                name = "Lightmap Supersampling", 
+                description="Supersamples the baked lightmap. Increases bake time", 
+                default="2x")
+
     tlm_setting_savedir : StringProperty(
         name="Lightmap Directory", 
         description="Your baked lightmaps will be stored here.", 

@@ -19,8 +19,6 @@ class TLM_OIDN_Denoise:
 
         self.check_binary()
 
-        self.denoise()
-
     def check_binary(self):
 
         oidnPath = self.oidnProperties.tlm_oidn_path
@@ -32,9 +30,13 @@ class TLM_OIDN_Denoise:
 
             if(file_extension == ".exe"):
 
+                #if file exists oidnDenoise or denoise
+
                 pass
 
             else:
+
+                #if file exists oidnDenoise or denoise
 
                 self.oidnProperties.tlm_oidn_path = os.path.join(self.oidnProperties.tlm_oidn_path,"oidnDenoise.exe")
 
@@ -120,6 +122,21 @@ class TLM_OIDN_Denoise:
                 self.denoised_array.append(image)
 
                 print(image_path)
+
+    def clean(self):
+
+        self.denoised_array.clear()
+        self.image_array.clear()
+
+        for file in self.image_output_destination:
+                if file.endswith("_baked.hdr"):
+                    baked_image_array.append(file)
+
+        #self.image_output_destination
+
+        #Clean temporary files here..
+        #...pfm
+        #...denoised.hdr
 
 
     def load_pfm(self, file, as_flat_list=False):
