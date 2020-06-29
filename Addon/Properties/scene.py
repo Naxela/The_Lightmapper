@@ -173,10 +173,10 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
     tlm_encoding_mode : EnumProperty(
         items = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
                     ('LogLuv', 'LogLuv', '8-bit HDR encoding. Different.'),
-                    ('RGBE', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.')],
+                    ('HDR', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.')],
                 name = "Encoding Mode", 
                 description="TODO", 
-                default='RGBE')
+                default='HDR')
 
     tlm_encoding_range : IntProperty(
         name="Encoding range", 
@@ -209,8 +209,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         max=100)
     
     tlm_format : EnumProperty(
-        items = [('HDR', 'HDR', '32-bit RGBE encoded .hdr files. No compression available.'),
+        items = [('RGBE', 'HDR', '32-bit RGBE encoded .hdr files. No compression available.'),
                  ('EXR', 'EXR', '32-bit OpenEXR format.')],
                 name = "Format", 
-                description="TODO", 
-                default='HDR')
+                description="Select default 32-bit format", 
+                default='RGBE')

@@ -73,7 +73,10 @@ def apply_materials():
                     mat.node_tree.links.new(UVLightmap.outputs[0], lightmapNode.inputs[0]) #Connect uvnode to lightmapnode
 
 
-def exchangeLightmapsToPostfix(ext_postfix, new_postfix):
+def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
+
+    print(ext_postfix, new_postfix, formatHDR)
+
     for obj in bpy.data.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
@@ -85,11 +88,14 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix):
                     for node in nodes:
                         if node.name == "Baked Image" or node.name == "TLM_Lightmap":
                             img_name = node.image.filepath_raw
-                            cutLen = len(ext_postfix + ".hdr")
+                            cutLen = len(ext_postfix + formatHDR)
 
                             #Simple way to sort out objects with multiple materials
-                            if not new_postfix in img_name:
-                                node.image.filepath_raw = img_name[:-cutLen] + new_postfix + ".hdr"
+                            if formatHDR == ".hdr" or formatHDR == ".exr":
+                                node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
+                            else:
+                                cutLen = len(ext_postfix + ".hdr")
+                                node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
 
     for image in bpy.data.images:
         image.reload()

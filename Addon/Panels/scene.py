@@ -237,16 +237,15 @@ class TLM_PT_Encoding(bpy.types.Panel):
         if sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD":
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_encoding_range")
-            row = layout.row(align=True)
-            row.prop(sceneProperties, "tlm_encoding_armory_setup")
+            #row = layout.row(align=True)
+            #row.prop(sceneProperties, "tlm_encoding_armory_setup")
         if sceneProperties.tlm_encoding_mode == "LogLuv":
-            row = layout.row(align=True)
-            row.prop(sceneProperties, "tlm_encoding_armory_setup")
-        if sceneProperties.tlm_encoding_mode == "RGBE":
+            pass
+            #row = layout.row(align=True)
+            #row.prop(sceneProperties, "tlm_encoding_armory_setup")
+        if sceneProperties.tlm_encoding_mode == "HDR":
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_format")
-        row = layout.row(align=True)
-        row.prop(sceneProperties, "tlm_encoding_colorspace")
 
 
 

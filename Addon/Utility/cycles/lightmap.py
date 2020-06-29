@@ -7,22 +7,25 @@ def bake():
         obj.select_set(False)
 
     for obj in bpy.data.objects:
-        if obj.type != 'MESH':
-            continue
 
-        scene = bpy.context.scene
+        if obj.type == 'MESH':
 
-        bpy.ops.object.select_all(action='DESELECT')
-        bpy.context.view_layer.objects.active = obj
-        obj.select_set(True)
-        obs = bpy.context.view_layer.objects
-        active = obs.active
-        obj.hide_render = False
-        scene.render.bake.use_clear = False
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
-        #bpy.ops.object.bake(type='COMBINED')
-        bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
-        bpy.ops.object.select_all(action='DESELECT')
+                scene = bpy.context.scene
+
+                bpy.ops.object.select_all(action='DESELECT')
+                bpy.context.view_layer.objects.active = obj
+                obj.select_set(True)
+                obs = bpy.context.view_layer.objects
+                active = obs.active
+                obj.hide_render = False
+                scene.render.bake.use_clear = False
+
+                print("Baking: " + obj.name)
+
+                bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
+                bpy.ops.object.select_all(action='DESELECT')
 
     for image in bpy.data.images:
         if image.name.endswith("_baked"):

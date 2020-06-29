@@ -1,4 +1,5 @@
 import bpy, os, importlib, subprocess, sys
+from . import encoding
 from . cycles import lightmap, prepare, nodes
 from . denoiser import integrated, oidn
 from . filtering import opencv
@@ -169,7 +170,79 @@ def begin_build():
         filter.init(dirpath, useDenoise)
 
     if sceneProperties.tlm_encoding_use:
-        pass
+
+        if sceneProperties.tlm_encoding_mode == "HDR":
+
+            if sceneProperties.tlm_format == "EXR":
+
+                print("EXR Format")
+
+                ren = bpy.context.scene.render
+                ren.image_settings.file_format = "OPEN_EXR"
+                #ren.image_settings.exr_codec = "scene.TLM_SceneProperties.tlm_exr_codec"
+
+                end = "_baked"
+
+                baked_image_array = []
+
+                if sceneProperties.tlm_denoise_use:
+
+                    end = "_denoised"
+
+                if sceneProperties.tlm_filtering_use:
+
+                    end = "_filtered"
+                
+                #For each image in folder ending in denoised/filtered
+                dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+                for file in dirfiles:
+                    if file.endswith(end + ".hdr"):
+
+                        img = bpy.data.images.load(os.path.join(dirpath,file))
+                        img.save_render(img.filepath_raw[:-4] + ".exr")
+
+        if sceneProperties.tlm_encoding_mode == "LogLuv":
+
+            dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+            end = "_baked"
+
+            if sceneProperties.tlm_denoise_use:
+
+                end = "_denoised"
+
+            if sceneProperties.tlm_filtering_use:
+
+                end = "_filtered"
+
+            for file in dirfiles:
+                if file.endswith(end + ".hdr"):
+
+                    img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
+                    
+                    encoding.encodeLogLuv(img, dirpath, 0)
+
+        if sceneProperties.tlm_encoding_mode == "RGBM":
+
+            dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+            end = "_baked"
+
+            if sceneProperties.tlm_denoise_use:
+
+                end = "_denoised"
+
+            if sceneProperties.tlm_filtering_use:
+
+                end = "_filtered"
+
+            for file in dirfiles:
+                if file.endswith(end + ".hdr"):
+
+                    img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
+                    
+                    encoding.encodeImageRGBM(img, sceneProperties.tlm_encoding_range, dirpath, 0)
 
     manage_build()
 
@@ -191,8 +264,26 @@ def manage_build():
         if sceneProperties.tlm_filtering_use:
 
             end = "_filtered"
+
+        formatEnc = ".hdr"
         
-        nodes.exchangeLightmapsToPostfix("_baked",end)
+        if sceneProperties.tlm_encoding_use:
+
+            if sceneProperties.tlm_encoding_mode == "HDR":
+
+                if sceneProperties.tlm_format == "EXR":
+
+                    formatEnc = ".exr"
+
+            if sceneProperties.tlm_encoding_mode == "LogLuv":
+
+                formatEnc = "_encoded.png"
+
+            if sceneProperties.tlm_encoding_mode == "RGBM":
+
+                formatEnc = "_encoded.png"
+
+        nodes.exchangeLightmapsToPostfix("_baked", end, formatEnc)
 
     if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
