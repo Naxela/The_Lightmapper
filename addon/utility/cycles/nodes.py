@@ -1,4 +1,4 @@
-import bpy
+import bpy, os
 
 def apply_materials():
     for obj in bpy.data.objects:
@@ -7,6 +7,7 @@ def apply_materials():
 
                 uv_layers = obj.data.uv_layers
                 uv_layers.active_index = 0
+                scene = bpy.context.scene
 
                 decoding = False
 
@@ -16,6 +17,12 @@ def apply_materials():
                     if mat.name.endswith('_temp'):
                         old = slot.material
                         slot.material = bpy.data.materials[old.name.split('_' + obj.name)[0]]
+
+                if(scene.TLM_EngineProperties.tlm_exposure_multiplier > 0):
+                    tlm_exposure = bpy.data.node_groups.get("Exposure")
+
+                    if tlm_exposure == None:
+                        load_library("Exposure")
 
                 #Apply materials
                 for slot in obj.material_slots:
@@ -28,7 +35,7 @@ def apply_materials():
                     for node in nodes:
                         if node.name == "Baked Image":
                             lightmapNode = node
-                            lightmapNode.location = -600, 300
+                            lightmapNode.location = -800, 300
                             lightmapNode.name = "TLM_Lightmap"
 
                     #Find output node
@@ -55,6 +62,13 @@ def apply_materials():
                     UVLightmap.name = "Lightmap_UV"
                     UVLightmap.location = -1000, 300
 
+                    if(scene.TLM_EngineProperties.tlm_exposure_multiplier > 0):
+                        ExposureNode = node_tree.nodes.new(type="ShaderNodeGroup")
+                        ExposureNode.node_tree = bpy.data.node_groups["Exposure"]
+                        ExposureNode.inputs[1].default_value = scene.TLM_EngineProperties.tlm_exposure_multiplier
+                        ExposureNode.location = -500, 300
+                        ExposureNode.name = "Lightmap_Exposure"
+
                     #Add Basecolor node
                     if len(mainNode.inputs[0].links) == 0:
                         baseColorValue = mainNode.inputs[0].default_value
@@ -67,7 +81,11 @@ def apply_materials():
                         baseColorNode.name = "LM_P"
 
                     #Linking
-                    mat.node_tree.links.new(lightmapNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
+                    if(scene.TLM_EngineProperties.tlm_exposure_multiplier > 0):
+                        mat.node_tree.links.new(lightmapNode.outputs[0], ExposureNode.inputs[0]) #Connect lightmap node to mixnode
+                        mat.node_tree.links.new(ExposureNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
+                    else:
+                        mat.node_tree.links.new(lightmapNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
                     mat.node_tree.links.new(baseColorNode.outputs[0], mixNode.inputs[2]) #Connect basecolor to pbr node
                     mat.node_tree.links.new(mixNode.outputs[0], mainNode.inputs[0]) #Connect mixnode to pbr node
                     mat.node_tree.links.new(UVLightmap.outputs[0], lightmapNode.inputs[0]) #Connect uvnode to lightmapnode
@@ -99,3 +117,21 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
 
     for image in bpy.data.images:
         image.reload()
+
+def load_library(asset_name):
+
+    scriptDir = os.path.dirname(os.path.realpath(__file__))
+
+    if bpy.data.filepath.endswith('tlm_data.blend'): # Prevent load in library itself
+        return
+
+    data_path = os.path.abspath(os.path.join(scriptDir, '..', '..', 'Assets/tlm_data.blend'))
+    data_names = [asset_name]
+
+    # Import
+    data_refs = data_names.copy()
+    with bpy.data.libraries.load(data_path, link=False) as (data_from, data_to):
+        data_to.node_groups = data_refs
+
+    for ref in data_refs:
+        ref.use_fake_user = True

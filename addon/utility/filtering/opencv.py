@@ -22,6 +22,7 @@ class TLM_CV_Filtering:
         cv2 = importlib.util.find_spec("cv2")
 
         if cv2 is None:
+            print("CV2 not found - Ignoring filtering")
             return 0
         else:
             cv2 = importlib.__import__("cv2")

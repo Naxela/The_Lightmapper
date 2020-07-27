@@ -3,6 +3,11 @@ from bpy.props import *
 
 class TLM_ObjectProperties(bpy.types.PropertyGroup):
 
+    tlm_atlas_pointer : StringProperty(
+            name = "Atlas Group",
+            description = "Atlas Lightmap Group",
+            default = "")
+
     tlm_mesh_lightmap_use : BoolProperty(
         name="Enable Lightmapping", 
         description="TODO", 
