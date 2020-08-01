@@ -1,11 +1,11 @@
-import bpy, os, importlib, subprocess, sys
+import bpy, os, importlib, subprocess, sys, threading
 from . import encoding
-from . cycles import lightmap, prepare, nodes
+from . cycles import lightmap, prepare, nodes, cache
 from . denoiser import integrated, oidn
 from . filtering import opencv
 from os import listdir
 from os.path import isfile, join
-from time import time
+from time import time, sleep
 
 previous_settings = {}
 
@@ -36,16 +36,25 @@ def prepare_build(self=0, background_mode=False):
         #Timer start here bound to global
 
         if check_save():
+            print("Please save your file first")
             self.report({'INFO'}, "Please save your file first")
             return{'FINISHED'}
 
         if check_denoiser():
+            print("No denoise OIDN path assigned")
             self.report({'INFO'}, "No denoise OIDN path assigned")
             return{'FINISHED'}
 
         if check_materials():
+            print("Error with material")
             self.report({'INFO'}, "Error with material")
             return{'FINISHED'}
+
+        if opencv_check():
+            if sceneProperties.tlm_filtering_use:
+                print("Error:Filtering - OpenCV not installed")
+                self.report({'INFO'}, "Error:Filtering - OpenCV not installed")
+                return{'FINISHED'}
 
         dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
         if not os.path.isdir(dirpath):
@@ -78,20 +87,89 @@ def prepare_build(self=0, background_mode=False):
 
     else:
 
-        print("BG_CALL")
-
         filepath = bpy.data.filepath
 
-        process = subprocess.call([sys.executable,
-                                    "-b",
-                                    filepath,
-                                    "--python-expr",
-                                    'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'],
-                                    shell=False)
+        start_time = time()
 
-        #bpy.ops.wm.revert_mainfile()
+        scene = bpy.context.scene
+        sceneProperties = scene.TLM_SceneProperties
 
-        #begin_build()
+        #We dynamically load the renderer and denoiser, instead of loading something we don't use
+
+        if sceneProperties.tlm_lightmap_engine == "Cycles":
+
+            pass
+
+        if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
+
+            pass
+
+        if sceneProperties.tlm_lightmap_engine == "OctaneRender":
+
+            pass
+
+        #Timer start here bound to global
+
+        if check_save():
+            print("Please save your file first")
+            self.report({'INFO'}, "Please save your file first")
+            return{'FINISHED'}
+
+        if check_denoiser():
+            print("No denoise OIDN path assigned")
+            self.report({'INFO'}, "No denoise OIDN path assigned")
+            return{'FINISHED'}
+
+        if check_materials():
+            print("Error with material")
+            self.report({'INFO'}, "Error with material")
+            return{'FINISHED'}
+
+        if opencv_check():
+            if sceneProperties.tlm_filtering_use:
+                print("Error:Filtering - OpenCV not installed")
+                self.report({'INFO'}, "Error:Filtering - OpenCV not installed")
+                return{'FINISHED'}
+
+        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+        if not os.path.isdir(dirpath):
+            os.mkdir(dirpath)
+
+        #Naming check
+        naming_check()
+
+        pipe_open([sys.executable,"-b",filepath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], finish_assemble)
+
+def finish_assemble():
+    #bpy.ops.wm.revert_mainfile() We cannot use this, as Blender crashes...
+    print("Background baking finished")
+
+    scene = bpy.context.scene
+    sceneProperties = scene.TLM_SceneProperties
+
+    if sceneProperties.tlm_lightmap_engine == "Cycles":
+
+        prepare.init(previous_settings)
+
+    if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
+        pass
+
+    if sceneProperties.tlm_lightmap_engine == "OctaneRender":
+        pass
+
+    manage_build(True)
+
+def pipe_open(args, callback):
+
+    def thread_process(args, callback):
+        process = subprocess.Popen(args)
+        process.wait()
+        callback()
+        return
+    
+    thread = threading.Thread(target=thread_process, args=(args, callback))
+    thread.start()
+    return thread
 
 def begin_build():
 
@@ -246,12 +324,15 @@ def begin_build():
 
     manage_build()
 
-def manage_build():
+def manage_build(background_pass=False):
 
     scene = bpy.context.scene
     sceneProperties = scene.TLM_SceneProperties
 
     if sceneProperties.tlm_lightmap_engine == "Cycles":
+
+        if background_pass:
+            nodes.apply_lightmaps()
 
         nodes.apply_materials()
 
@@ -283,7 +364,8 @@ def manage_build():
 
                 formatEnc = "_encoded.png"
 
-        nodes.exchangeLightmapsToPostfix("_baked", end, formatEnc)
+        if not background_pass:
+            nodes.exchangeLightmapsToPostfix("_baked", end, formatEnc)
 
     if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
@@ -293,11 +375,49 @@ def manage_build():
 
         pass
 
-    #bpy.ops.wm.save_as_mainfile()
+    if bpy.context.scene.TLM_EngineProperties.tlm_bake_mode == "Background":
+        pass
+        #bpy.ops.wm.save_as_mainfile() Crashes Blender
 
     for image in bpy.data.images:
         if image.users < 1:
             bpy.data.images.remove(image)
+
+    if scene.TLM_SceneProperties.tlm_headless:
+
+        filepath = bpy.data.filepath
+        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_EngineProperties.tlm_lightmap_savedir)
+
+        for obj in bpy.data.objects:
+            if obj.type == "MESH":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    cache.backup_material_restore(obj)
+
+        for obj in bpy.data.objects:
+            if obj.type == "MESH":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    cache.backup_material_rename(obj)
+
+        for mat in bpy.data.materials:
+            if mat.users < 1:
+                bpy.data.materials.remove(mat)
+
+        for mat in bpy.data.materials:
+            if mat.name.startswith("."):
+                if "_Original" in mat.name:
+                    bpy.data.materials.remove(mat)
+
+        for obj in bpy.data.objects:
+
+            if obj.type == "MESH":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    img_name = obj.name + '_baked'
+                    Lightmapimage = bpy.data.images[img_name]
+                    obj["Lightmap"] = Lightmapimage.filepath_raw
+
+        for image in bpy.data.images:
+            if image.name.endswith("_baked"):
+                bpy.data.images.remove(image, do_unlink=True)
 
     total_time = sec_to_hours((time() - start_time))
     print(total_time)
@@ -340,6 +460,15 @@ def naming_check():
                         slot.material.name = slot.material.name.replace("æ","ae")
                     if "å" in slot.material.name:
                         slot.material.name = slot.material.name.replace("å","aa")
+
+def opencv_check():
+
+    cv2 = importlib.util.find_spec("cv2")
+
+    if cv2 is not None:
+        return 0
+    else:
+        return 1
 
 def check_save():
     if not bpy.data.is_saved:

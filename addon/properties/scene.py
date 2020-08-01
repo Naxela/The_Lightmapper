@@ -103,21 +103,21 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 ('Numpy', 'Numpy', 'Make use of Numpy based image filtering (Integrated)')],
                 name = "Filtering library", 
                 description="Select which filtering library to use.", 
-                default='OpenCV')
+                default='Numpy')
 
     #Numpy Filtering options
     tlm_numpy_filtering_mode : EnumProperty(
-        items = [('None', 'None', 'No filtering.')],
+        items = [('Blur', 'Blur', 'Basic blur filtering.')],
                 name = "Filter", 
                 description="TODO", 
-                default='None')
+                default='Blur')
 
     #OpenCV Filtering options
     tlm_filtering_mode : EnumProperty(
-        items = [('Box', 'Box', 'TODO'),
-                    ('Gaussian', 'Gaussian', 'TODO'),
-                    ('Bilateral', 'Bilateral', 'TODO'),
-                    ('Median', 'Median', 'TODO')],
+        items = [('Box', 'Box', 'Basic box blur'),
+                    ('Gaussian', 'Gaussian', 'Gaussian blurring'),
+                    ('Bilateral', 'Bilateral', 'Edge-aware filtering'),
+                    ('Median', 'Median', 'Median blur')],
                 name = "Filter", 
                 description="TODO", 
                 default='Median')
@@ -214,3 +214,43 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 name = "Format", 
                 description="Select default 32-bit format", 
                 default='RGBE')
+
+    tlm_override_object_settings : BoolProperty(
+        name="Override settings", 
+        description="TODO", 
+        default=False)
+
+    tlm_mesh_lightmap_resolution : EnumProperty(
+        items = [('32', '32', 'TODO'),
+                 ('64', '64', 'TODO'),
+                 ('128', '128', 'TODO'),
+                 ('256', '256', 'TODO'),
+                 ('512', '512', 'TODO'),
+                 ('1024', '1024', 'TODO'),
+                 ('2048', '2048', 'TODO'),
+                 ('4096', '4096', 'TODO'),
+                 ('8192', '8192', 'TODO')],
+                name = "Lightmap Resolution", 
+                description="TODO", 
+                default='256')
+
+    tlm_mesh_lightmap_unwrap_mode : EnumProperty(
+        items = [('Lightmap', 'Lightmap', 'TODO'),
+                 ('SmartProject', 'Smart Project', 'TODO'),
+                 ('CopyExisting', 'Copy Existing', 'TODO'),
+                 ('AtlasGroup', 'Atlas Group', 'TODO')],
+                name = "Unwrap Mode", 
+                description="TODO", 
+                default='SmartProject')
+
+    tlm_mesh_unwrap_margin : FloatProperty(
+        name="Unwrap Margin", 
+        default=0.1, 
+        min=0.0, 
+        max=1.0, 
+        subtype='FACTOR')
+
+    tlm_headless : BoolProperty(
+        name="Don't apply materials", 
+        description="Headless; Do not apply baked materials on finish.", 
+        default=False)

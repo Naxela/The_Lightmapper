@@ -1,5 +1,36 @@
 import bpy, os
 
+def apply_lightmaps():
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                for slot in obj.material_slots:
+                    mat = slot.material
+                    node_tree = mat.node_tree
+                    nodes = mat.node_tree.nodes
+
+                    scene = bpy.context.scene
+
+                    dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_EngineProperties.tlm_lightmap_savedir)
+
+                    #Find nodes
+                    for node in nodes:
+                        if node.name == "Baked Image":
+
+                            extension = ".hdr"
+
+                            postfix = "_baked"
+
+                            if scene.TLM_SceneProperties.tlm_denoise_use:
+                               postfix = "_denoised"
+                            if scene.TLM_SceneProperties.tlm_filtering_use:
+                                postfix = "_filtered"
+
+                            node.image.source = "FILE"
+                            image_name = obj.name + postfix + extension #TODO FIX EXTENSION
+                            node.image.filepath_raw = os.path.join(dirpath, image_name)
+
+
 def apply_materials():
     for obj in bpy.data.objects:
         if obj.type == "MESH":

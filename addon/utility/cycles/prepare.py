@@ -2,6 +2,15 @@ import bpy
 
 from . import cache
 
+
+def assemble():
+
+    configure_world()
+
+    configure_lights()
+
+    configure_meshes()
+
 def init(prev_container):
 
     store_existing(prev_container)

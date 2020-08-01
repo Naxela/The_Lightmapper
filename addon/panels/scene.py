@@ -1,4 +1,4 @@
-import bpy
+import bpy, importlib
 from bpy.props import *
 from bpy.types import Menu, Panel
 from .. utility import icon
@@ -53,6 +53,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             row.operator("tlm.explore_lightmaps")
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_apply_on_unwrap")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_headless")
 
             row = layout.row(align=True)
             row.label(text="Cycles Settings")
@@ -65,6 +67,10 @@ class TLM_PT_Settings(bpy.types.Panel):
             row.prop(engineProperties, "tlm_resolution_scale")
             row = layout.row(align=True)
             row.prop(engineProperties, "tlm_bake_mode")
+
+            if scene.TLM_EngineProperties.tlm_bake_mode == "Background":
+                row = layout.row(align=True)
+                row.label(text="Warning! Background mode is currently unstable", icon_value=2)
             row = layout.row(align=True)
             row.prop(engineProperties, "tlm_caching_mode")
             row = layout.row(align=True)
@@ -181,30 +187,37 @@ class TLM_PT_Filtering(bpy.types.Panel):
         row = layout.row(align=True)
 
         if sceneProperties.tlm_filtering_engine == "OpenCV":
-            row = layout.row(align=True)
-            row.prop(scene.TLM_SceneProperties, "tlm_filtering_mode")
-            row = layout.row(align=True)
-            if scene.TLM_SceneProperties.tlm_filtering_mode == "Gaussian":
-                row.prop(scene.TLM_SceneProperties, "tlm_filtering_gaussian_strength")
-                row = layout.row(align=True)
-                row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
-            elif scene.TLM_SceneProperties.tlm_filtering_mode == "Box":
-                row.prop(scene.TLM_SceneProperties, "tlm_filtering_box_strength")
-                row = layout.row(align=True)
-                row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
 
-            elif scene.TLM_SceneProperties.tlm_filtering_mode == "Bilateral":
-                row.prop(scene.TLM_SceneProperties, "tlm_filtering_bilateral_diameter")
+            cv2 = importlib.util.find_spec("cv2")
+
+            if cv2 is None:
                 row = layout.row(align=True)
-                row.prop(scene.TLM_SceneProperties, "tlm_filtering_bilateral_color_deviation")
-                row = layout.row(align=True)
-                row.prop(scene.TLM_SceneProperties, "tlm_filtering_bilateral_coordinate_deviation")
-                row = layout.row(align=True)
-                row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
+                row.label(text="OpenCV is not installed. Install it through preferences.")
             else:
-                row.prop(scene.TLM_SceneProperties, "tlm_filtering_median_kernel", expand=True)
                 row = layout.row(align=True)
-                row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
+                row.prop(scene.TLM_SceneProperties, "tlm_filtering_mode")
+                row = layout.row(align=True)
+                if scene.TLM_SceneProperties.tlm_filtering_mode == "Gaussian":
+                    row.prop(scene.TLM_SceneProperties, "tlm_filtering_gaussian_strength")
+                    row = layout.row(align=True)
+                    row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
+                elif scene.TLM_SceneProperties.tlm_filtering_mode == "Box":
+                    row.prop(scene.TLM_SceneProperties, "tlm_filtering_box_strength")
+                    row = layout.row(align=True)
+                    row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
+
+                elif scene.TLM_SceneProperties.tlm_filtering_mode == "Bilateral":
+                    row.prop(scene.TLM_SceneProperties, "tlm_filtering_bilateral_diameter")
+                    row = layout.row(align=True)
+                    row.prop(scene.TLM_SceneProperties, "tlm_filtering_bilateral_color_deviation")
+                    row = layout.row(align=True)
+                    row.prop(scene.TLM_SceneProperties, "tlm_filtering_bilateral_coordinate_deviation")
+                    row = layout.row(align=True)
+                    row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
+                else:
+                    row.prop(scene.TLM_SceneProperties, "tlm_filtering_median_kernel", expand=True)
+                    row = layout.row(align=True)
+                    row.prop(scene.TLM_SceneProperties, "tlm_filtering_iterations")
         else:
             row = layout.row(align=True)
             row.prop(scene.TLM_SceneProperties, "tlm_numpy_filtering_mode")
@@ -237,12 +250,8 @@ class TLM_PT_Encoding(bpy.types.Panel):
         if sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD":
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_encoding_range")
-            #row = layout.row(align=True)
-            #row.prop(sceneProperties, "tlm_encoding_armory_setup")
         if sceneProperties.tlm_encoding_mode == "LogLuv":
             pass
-            #row = layout.row(align=True)
-            #row.prop(sceneProperties, "tlm_encoding_armory_setup")
         if sceneProperties.tlm_encoding_mode == "HDR":
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_format")
@@ -263,6 +272,39 @@ class TLM_PT_Selection(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
         sceneProperties = scene.TLM_SceneProperties
+
+        row = layout.row(align=True)
+        row.operator("tlm.enable_selection")
+        row = layout.row(align=True)
+        row.operator("tlm.disable_selection")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_override_object_settings")
+
+        if sceneProperties.tlm_override_object_settings:
+
+            row = layout.row(align=True)
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_mesh_lightmap_unwrap_mode")
+            row = layout.row()
+
+            if sceneProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+
+                if scene.TLM_AtlasList_index >= 0 and len(scene.TLM_AtlasList) > 0:
+                    row = layout.row()
+                    item = scene.TLM_AtlasList[scene.TLM_AtlasList_index]
+                    row.prop_search(sceneProperties, "tlm_atlas_pointer", scene, "TLM_AtlasList", text='Atlas Group')
+                else:
+                    row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
+
+            else:
+
+                row.prop(sceneProperties, "tlm_mesh_lightmap_resolution")
+                row = layout.row()
+                row.prop(sceneProperties, "tlm_mesh_unwrap_margin")
+
+        row = layout.row(align=True)
+        row.operator("tlm.remove_uv_selection")
+        row = layout.row(align=True)
 
 class TLM_PT_Additional(bpy.types.Panel):
     bl_label = "Additional"

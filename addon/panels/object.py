@@ -28,5 +28,5 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_unwrap_mode")
                 row = layout.row()
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
-                    
+                    pass
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_unwrap_margin")

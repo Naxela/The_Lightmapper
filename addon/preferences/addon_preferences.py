@@ -1,5 +1,6 @@
 from os.path import basename, dirname
 from bpy.types import AddonPreferences
+from .. operators import installopencv
 import importlib
 
 class TLM_AddonPreferences(AddonPreferences):
@@ -17,11 +18,11 @@ class TLM_AddonPreferences(AddonPreferences):
         cv2 = importlib.util.find_spec("cv2")
 
         if cv2 is not None:
-            print("OpenCV exists")
-            row.label(text="OpenCV found")
+            row.label(text="OpenCV installed")
         else:
-            print("OpenCV not exists")
-            row.label(text="OpenCV not found")
+            row.label(text="OpenCV not found - Install as administrator!", icon_value=2)
+            row = box.row()
+            row.operator("tlm.install_opencv_lightmaps", icon="PREFERENCES")
 
 
         # row = layout.row()
