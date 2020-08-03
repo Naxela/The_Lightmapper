@@ -1,4 +1,4 @@
-import bpy, os, importlib, subprocess, sys, threading
+import bpy, os, importlib, subprocess, sys, threading, platform
 from . import encoding
 from . cycles import lightmap, prepare, nodes, cache
 from . denoiser import integrated, oidn
@@ -334,7 +334,7 @@ def manage_build(background_pass=False):
         if background_pass:
             nodes.apply_lightmaps()
 
-        nodes.apply_materials()
+        nodes.apply_materials() #From here the name is changed...
 
         end = "_baked"
 
@@ -483,9 +483,17 @@ def check_denoiser():
 
     scene = bpy.context.scene
 
-    return 0
+    if scene.TLM_SceneProperties.tlm_denoise_use:
+        oidnPath = scene.TLM_OIDNEngineProperties.tlm_oidn_path
 
-    #TODO FINISH DENOISE CHECK
+        if scene.TLM_OIDNEngineProperties.tlm_oidn_path == "":
+            return 1
+
+        if platform.system() == "Windows":
+            if not scene.TLM_OIDNEngineProperties.tlm_oidn_path.endswith(".exe"):
+                return 1
+        else:
+            return 0
 
     # if scene.TLM_SceneProperties.tlm_denoise_use:
     #     if scene.TLM_SceneProperties.tlm_oidn_path == "":

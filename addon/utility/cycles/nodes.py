@@ -62,12 +62,23 @@ def apply_materials():
                     node_tree = mat.node_tree
                     nodes = mat.node_tree.nodes
 
+                    foundBakedNode = False
+
                     #Find nodes
                     for node in nodes:
                         if node.name == "Baked Image":
                             lightmapNode = node
                             lightmapNode.location = -800, 300
                             lightmapNode.name = "TLM_Lightmap"
+                            foundBakedNode = True
+                    
+                    img_name = obj.name + '_baked'
+
+                    if not foundBakedNode:
+                        lightmapNode = node_tree.nodes.new(type="ShaderNodeTexImage")
+                        lightmapNode.location = -300, 300
+                        lightmapNode.image = bpy.data.images[img_name]
+                        lightmapNode.name = "TLM_Lightmap"
 
                     #Find output node
                     outputNode = nodes[0]
@@ -121,7 +132,6 @@ def apply_materials():
                     mat.node_tree.links.new(mixNode.outputs[0], mainNode.inputs[0]) #Connect mixnode to pbr node
                     mat.node_tree.links.new(UVLightmap.outputs[0], lightmapNode.inputs[0]) #Connect uvnode to lightmapnode
 
-
 def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
 
     print(ext_postfix, new_postfix, formatHDR)
@@ -138,10 +148,12 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
                         if node.name == "Baked Image" or node.name == "TLM_Lightmap":
                             img_name = node.image.filepath_raw
                             cutLen = len(ext_postfix + formatHDR)
+                            print("Len:" + str(len(ext_postfix + formatHDR)) + "|" + ext_postfix + ".." + formatHDR)
 
                             #Simple way to sort out objects with multiple materials
                             if formatHDR == ".hdr" or formatHDR == ".exr":
-                                node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
+                                if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
+                                    node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
                             else:
                                 cutLen = len(ext_postfix + ".hdr")
                                 node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR

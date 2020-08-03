@@ -37,15 +37,19 @@ def backup_material_restore(obj):
         prevMatArray = obj["TLM_PrevMatArray"]
         slotsLength = len(prevMatArray)
 
-        for idx, slot in enumerate(obj.material_slots): #For each slot, we get the index
-            #We only need the index, corresponds to the array index
-            originalMaterial = prevMatArray[idx]
+        if len(prevMatArray) > 0:
+            for idx, slot in enumerate(obj.material_slots): #For each slot, we get the index
+                #We only need the index, corresponds to the array index
+                try:
+                    originalMaterial = prevMatArray[idx]
+                except IndexError:
+                    originalMaterial = ""
 
-            slot.material.user_clear()
+                slot.material.user_clear()
 
-            if "." + originalMaterial + "_Original" in bpy.data.materials:
-                slot.material = bpy.data.materials["." + originalMaterial + "_Original"]
-                slot.material.use_fake_user = False
+                if "." + originalMaterial + "_Original" in bpy.data.materials:
+                    slot.material = bpy.data.materials["." + originalMaterial + "_Original"]
+                    slot.material.use_fake_user = False
 
 
         #slot.material = 
