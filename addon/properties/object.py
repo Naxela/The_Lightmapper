@@ -42,3 +42,76 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
         min=0.0, 
         max=1.0, 
         subtype='FACTOR')
+
+    tlm_mesh_filter_override : BoolProperty(
+        name="Override filtering", 
+        description="Override the scene specific filtering", 
+        default=False)
+
+    #FILTERING SETTINGS GROUP
+    tlm_mesh_filtering_engine : EnumProperty(
+        items = [('OpenCV', 'OpenCV', 'Make use of OpenCV based image filtering (Requires it to be installed first in the preferences panel)'),
+                ('Numpy', 'Numpy', 'Make use of Numpy based image filtering (Integrated)')],
+                name = "Filtering library", 
+                description="Select which filtering library to use.", 
+                default='Numpy')
+
+    #Numpy Filtering options
+    tlm_mesh_numpy_filtering_mode : EnumProperty(
+        items = [('Blur', 'Blur', 'Basic blur filtering.')],
+                name = "Filter", 
+                description="TODO", 
+                default='Blur')
+
+    #OpenCV Filtering options
+    tlm_mesh_filtering_mode : EnumProperty(
+        items = [('Box', 'Box', 'Basic box blur'),
+                    ('Gaussian', 'Gaussian', 'Gaussian blurring'),
+                    ('Bilateral', 'Bilateral', 'Edge-aware filtering'),
+                    ('Median', 'Median', 'Median blur')],
+                name = "Filter", 
+                description="TODO", 
+                default='Median')
+
+    tlm_mesh_filtering_gaussian_strength : IntProperty(
+        name="Gaussian Strength", 
+        default=3, 
+        min=1, 
+        max=50)
+
+    tlm_mesh_filtering_iterations : IntProperty(
+        name="Filter Iterations", 
+        default=5, 
+        min=1, 
+        max=50)
+
+    tlm_mesh_filtering_box_strength : IntProperty(
+        name="Box Strength", 
+        default=1, 
+        min=1, 
+        max=50)
+
+    tlm_mesh_filtering_bilateral_diameter : IntProperty(
+        name="Pixel diameter", 
+        default=3, 
+        min=1, 
+        max=50)
+
+    tlm_mesh_filtering_bilateral_color_deviation : IntProperty(
+        name="Color deviation", 
+        default=75, 
+        min=1, 
+        max=100)
+
+    tlm_mesh_filtering_bilateral_coordinate_deviation : IntProperty(
+        name="Color deviation", 
+        default=75, 
+        min=1, 
+        max=100)
+
+    tlm_mesh_filtering_median_kernel : IntProperty(
+        name="Median kernel", 
+        default=3, 
+        min=1, 
+        max=5)
+    

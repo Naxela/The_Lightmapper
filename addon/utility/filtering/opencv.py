@@ -43,56 +43,117 @@ class TLM_CV_Filtering:
 
                 opencv_process_image = cv2.imread(file_input, -1)
 
-                print("Filtering: " + file_input)
+                print("Filtering: " + os.path.basename(file_input))
 
-                print(os.path.join(lightmap_dir, file))
+                obj_name = os.path.basename(file_input).split("_")[0]
 
-                if scene.TLM_SceneProperties.tlm_filtering_mode == "Box":
-                    if scene.TLM_SceneProperties.tlm_filtering_box_strength % 2 == 0:
-                        kernel_size = (scene.TLM_SceneProperties.tlm_filtering_box_strength + 1,scene.TLM_SceneProperties.tlm_filtering_box_strength + 1)
+                if bpy.data.objects[obj_name].TLM_ObjectProperties.tlm_mesh_filter_override:
+
+                    print("OVERRIDE!")
+
+                    print(os.path.join(lightmap_dir, file))
+
+                    objectProperties = bpy.data.objects[obj_name].TLM_ObjectProperties
+
+                    #TODO OVERRIDE FILTERING OPTION! REWRITE
+                    if objectProperties.tlm_mesh_filtering_mode == "Box":
+                        if objectProperties.tlm_mesh_filtering_box_strength % 2 == 0:
+                            kernel_size = (objectProperties.tlm_mesh_filtering_box_strength + 1, objectProperties.tlm_mesh_filtering_box_strength + 1)
+                        else:
+                            kernel_size = (objectProperties.tlm_mesh_filtering_box_strength, objectProperties.tlm_mesh_filtering_box_strength)
+                        opencv_bl_result = cv2.blur(opencv_process_image, kernel_size)
+                        if objectProperties.tlm_mesh_filtering_iterations > 1:
+                            for x in range(objectProperties.tlm_mesh_filtering_iterations):
+                                opencv_bl_result = cv2.blur(opencv_bl_result, kernel_size)
+
+                    elif objectProperties.tlm_mesh_filtering_mode == "Gaussian":
+                        if objectProperties.tlm_mesh_filtering_gaussian_strength % 2 == 0:
+                            kernel_size = (objectProperties.tlm_mesh_filtering_gaussian_strength + 1, objectProperties.tlm_mesh_filtering_gaussian_strength + 1)
+                        else:
+                            kernel_size = (objectProperties.tlm_mesh_filtering_gaussian_strength, objectProperties.tlm_mesh_filtering_gaussian_strength)
+                        sigma_size = 0
+                        opencv_bl_result = cv2.GaussianBlur(opencv_process_image, kernel_size, sigma_size)
+                        if objectProperties.tlm_mesh_filtering_iterations > 1:
+                            for x in range(objectProperties.tlm_mesh_filtering_iterations):
+                                opencv_bl_result = cv2.GaussianBlur(opencv_bl_result, kernel_size, sigma_size)
+
+                    elif objectProperties.tlm_mesh_filtering_mode == "Bilateral":
+                        diameter_size = objectProperties.tlm_mesh_filtering_bilateral_diameter
+                        sigma_color = objectProperties.tlm_mesh_filtering_bilateral_color_deviation
+                        sigma_space = objectProperties.tlm_mesh_filtering_bilateral_coordinate_deviation
+                        opencv_bl_result = cv2.bilateralFilter(opencv_process_image, diameter_size, sigma_color, sigma_space)
+                        if objectProperties.tlm_mesh_filtering_iterations > 1:
+                            for x in range(objectProperties.tlm_mesh_filtering_iterations):
+                                opencv_bl_result = cv2.bilateralFilter(opencv_bl_result, diameter_size, sigma_color, sigma_space)
                     else:
-                        kernel_size = (scene.TLM_SceneProperties.tlm_filtering_box_strength,scene.TLM_SceneProperties.tlm_filtering_box_strength)
-                    opencv_bl_result = cv2.blur(opencv_process_image, kernel_size)
-                    if scene.TLM_SceneProperties.tlm_filtering_iterations > 1:
-                        for x in range(scene.TLM_SceneProperties.tlm_filtering_iterations):
-                            opencv_bl_result = cv2.blur(opencv_bl_result, kernel_size)
 
-                elif scene.TLM_SceneProperties.tlm_filtering_mode == "Gaussian":
-                    if scene.TLM_SceneProperties.tlm_filtering_gaussian_strength % 2 == 0:
-                        kernel_size = (scene.TLM_SceneProperties.tlm_filtering_gaussian_strength + 1,scene.TLM_SceneProperties.tlm_filtering_gaussian_strength + 1)
-                    else:
-                        kernel_size = (scene.TLM_SceneProperties.tlm_filtering_gaussian_strength,scene.TLM_SceneProperties.tlm_filtering_gaussian_strength)
-                    sigma_size = 0
-                    opencv_bl_result = cv2.GaussianBlur(opencv_process_image, kernel_size, sigma_size)
-                    if scene.TLM_SceneProperties.tlm_filtering_iterations > 1:
-                        for x in range(scene.TLM_SceneProperties.tlm_filtering_iterations):
-                            opencv_bl_result = cv2.GaussianBlur(opencv_bl_result, kernel_size, sigma_size)
+                        if objectProperties.tlm_mesh_filtering_median_kernel % 2 == 0:
+                            kernel_size = (objectProperties.tlm_mesh_filtering_median_kernel + 1, objectProperties.tlm_mesh_filtering_median_kernel + 1)
+                        else:
+                            kernel_size = (objectProperties.tlm_mesh_filtering_median_kernel, objectProperties.tlm_mesh_filtering_median_kernel)
 
-                elif scene.TLM_SceneProperties.tlm_filtering_mode == "Bilateral":
-                    diameter_size = scene.TLM_SceneProperties.tlm_filtering_bilateral_diameter
-                    sigma_color = scene.TLM_SceneProperties.tlm_filtering_bilateral_color_deviation
-                    sigma_space = scene.TLM_SceneProperties.tlm_filtering_bilateral_coordinate_deviation
-                    opencv_bl_result = cv2.bilateralFilter(opencv_process_image, diameter_size, sigma_color, sigma_space)
-                    if scene.TLM_SceneProperties.tlm_filtering_iterations > 1:
-                        for x in range(scene.TLM_SceneProperties.tlm_filtering_iterations):
-                            opencv_bl_result = cv2.bilateralFilter(opencv_bl_result, diameter_size, sigma_color, sigma_space)
+                        opencv_bl_result = cv2.medianBlur(opencv_process_image, kernel_size[0])
+                        if objectProperties.tlm_mesh_filtering_iterations > 1:
+                            for x in range(objectProperties.tlm_mesh_filtering_iterations):
+                                opencv_bl_result = cv2.medianBlur(opencv_bl_result, kernel_size[0])
+
+                    filter_file_output = os.path.join(lightmap_dir, file[:-file_split] + "_filtered.hdr")
+
+                    cv2.imwrite(filter_file_output, opencv_bl_result)
+
+                    print("Written to: " + filter_file_output)
+
                 else:
 
-                    if scene.TLM_SceneProperties.tlm_filtering_median_kernel % 2 == 0:
-                        kernel_size = (scene.TLM_SceneProperties.tlm_filtering_median_kernel + 1 , scene.TLM_SceneProperties.tlm_filtering_median_kernel + 1)
+                    print(os.path.join(lightmap_dir, file))
+
+                    #TODO OVERRIDE FILTERING OPTION!
+                    if scene.TLM_SceneProperties.tlm_filtering_mode == "Box":
+                        if scene.TLM_SceneProperties.tlm_filtering_box_strength % 2 == 0:
+                            kernel_size = (scene.TLM_SceneProperties.tlm_filtering_box_strength + 1,scene.TLM_SceneProperties.tlm_filtering_box_strength + 1)
+                        else:
+                            kernel_size = (scene.TLM_SceneProperties.tlm_filtering_box_strength,scene.TLM_SceneProperties.tlm_filtering_box_strength)
+                        opencv_bl_result = cv2.blur(opencv_process_image, kernel_size)
+                        if scene.TLM_SceneProperties.tlm_filtering_iterations > 1:
+                            for x in range(scene.TLM_SceneProperties.tlm_filtering_iterations):
+                                opencv_bl_result = cv2.blur(opencv_bl_result, kernel_size)
+
+                    elif scene.TLM_SceneProperties.tlm_filtering_mode == "Gaussian":
+                        if scene.TLM_SceneProperties.tlm_filtering_gaussian_strength % 2 == 0:
+                            kernel_size = (scene.TLM_SceneProperties.tlm_filtering_gaussian_strength + 1,scene.TLM_SceneProperties.tlm_filtering_gaussian_strength + 1)
+                        else:
+                            kernel_size = (scene.TLM_SceneProperties.tlm_filtering_gaussian_strength,scene.TLM_SceneProperties.tlm_filtering_gaussian_strength)
+                        sigma_size = 0
+                        opencv_bl_result = cv2.GaussianBlur(opencv_process_image, kernel_size, sigma_size)
+                        if scene.TLM_SceneProperties.tlm_filtering_iterations > 1:
+                            for x in range(scene.TLM_SceneProperties.tlm_filtering_iterations):
+                                opencv_bl_result = cv2.GaussianBlur(opencv_bl_result, kernel_size, sigma_size)
+
+                    elif scene.TLM_SceneProperties.tlm_filtering_mode == "Bilateral":
+                        diameter_size = scene.TLM_SceneProperties.tlm_filtering_bilateral_diameter
+                        sigma_color = scene.TLM_SceneProperties.tlm_filtering_bilateral_color_deviation
+                        sigma_space = scene.TLM_SceneProperties.tlm_filtering_bilateral_coordinate_deviation
+                        opencv_bl_result = cv2.bilateralFilter(opencv_process_image, diameter_size, sigma_color, sigma_space)
+                        if scene.TLM_SceneProperties.tlm_filtering_iterations > 1:
+                            for x in range(scene.TLM_SceneProperties.tlm_filtering_iterations):
+                                opencv_bl_result = cv2.bilateralFilter(opencv_bl_result, diameter_size, sigma_color, sigma_space)
                     else:
-                        kernel_size = (scene.TLM_SceneProperties.tlm_filtering_median_kernel, scene.TLM_SceneProperties.tlm_filtering_median_kernel)
 
-                    opencv_bl_result = cv2.medianBlur(opencv_process_image, kernel_size[0])
-                    if scene.TLM_SceneProperties.tlm_filtering_iterations > 1:
-                        for x in range(scene.TLM_SceneProperties.tlm_filtering_iterations):
-                            opencv_bl_result = cv2.medianBlur(opencv_bl_result, kernel_size[0])
+                        if scene.TLM_SceneProperties.tlm_filtering_median_kernel % 2 == 0:
+                            kernel_size = (scene.TLM_SceneProperties.tlm_filtering_median_kernel + 1 , scene.TLM_SceneProperties.tlm_filtering_median_kernel + 1)
+                        else:
+                            kernel_size = (scene.TLM_SceneProperties.tlm_filtering_median_kernel, scene.TLM_SceneProperties.tlm_filtering_median_kernel)
 
-                filter_file_output = os.path.join(lightmap_dir, file[:-file_split] + "_filtered.hdr")
+                        opencv_bl_result = cv2.medianBlur(opencv_process_image, kernel_size[0])
+                        if scene.TLM_SceneProperties.tlm_filtering_iterations > 1:
+                            for x in range(scene.TLM_SceneProperties.tlm_filtering_iterations):
+                                opencv_bl_result = cv2.medianBlur(opencv_bl_result, kernel_size[0])
 
-                cv2.imwrite(filter_file_output, opencv_bl_result)
+                    filter_file_output = os.path.join(lightmap_dir, file[:-file_split] + "_filtered.hdr")
 
-                print("Written to: " + filter_file_output)
+                    cv2.imwrite(filter_file_output, opencv_bl_result)
+
+                    print("Written to: " + filter_file_output)
 
             # if file.endswith(file_ending):
             #     print()

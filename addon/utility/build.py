@@ -484,16 +484,19 @@ def check_denoiser():
     scene = bpy.context.scene
 
     if scene.TLM_SceneProperties.tlm_denoise_use:
-        oidnPath = scene.TLM_OIDNEngineProperties.tlm_oidn_path
 
-        if scene.TLM_OIDNEngineProperties.tlm_oidn_path == "":
-            return 1
+        if scene.TLM_SceneProperties.tlm_denoise_engine == "OIDN":
 
-        if platform.system() == "Windows":
-            if not scene.TLM_OIDNEngineProperties.tlm_oidn_path.endswith(".exe"):
+            oidnPath = scene.TLM_OIDNEngineProperties.tlm_oidn_path
+
+            if scene.TLM_OIDNEngineProperties.tlm_oidn_path == "":
                 return 1
-        else:
-            return 0
+
+            if platform.system() == "Windows":
+                if not scene.TLM_OIDNEngineProperties.tlm_oidn_path.endswith(".exe"):
+                    return 1
+            else:
+                return 0
 
     # if scene.TLM_SceneProperties.tlm_denoise_use:
     #     if scene.TLM_SceneProperties.tlm_oidn_path == "":
