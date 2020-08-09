@@ -6,8 +6,17 @@ def bake():
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(False)
 
-    for obj in bpy.data.objects:
+    iterNum = 0
+    currentIterNum = 0
 
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                iterNum = iterNum + 1
+
+    iterNum = iterNum - 1
+
+    for obj in bpy.data.objects:
         if obj.type == 'MESH':
 
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
@@ -22,10 +31,11 @@ def bake():
                 obj.hide_render = False
                 scene.render.bake.use_clear = False
 
-                print("Baking: " + obj.name)
+                print("Baking " + str(currentIterNum) + "/" + str(iterNum) + " : " + obj.name)
 
                 bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
                 bpy.ops.object.select_all(action='DESELECT')
+                currentIterNum = currentIterNum + 1
 
     for image in bpy.data.images:
         if image.name.endswith("_baked"):

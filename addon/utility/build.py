@@ -67,7 +67,7 @@ def prepare_build(self=0, background_mode=False):
 
         if sceneProperties.tlm_lightmap_engine == "Cycles":
 
-            prepare.init(previous_settings)
+            prepare.init(self, previous_settings)
 
         if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
@@ -141,6 +141,7 @@ def prepare_build(self=0, background_mode=False):
         pipe_open([sys.executable,"-b",filepath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], finish_assemble)
 
 def finish_assemble():
+    pass
     #bpy.ops.wm.revert_mainfile() We cannot use this, as Blender crashes...
     print("Background baking finished")
 
@@ -377,7 +378,8 @@ def manage_build(background_pass=False):
 
     if bpy.context.scene.TLM_EngineProperties.tlm_bake_mode == "Background":
         pass
-        #bpy.ops.wm.save_as_mainfile() Crashes Blender
+        #bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath + "baked") #Crashes Blender
+
 
     for image in bpy.data.images:
         if image.users < 1:

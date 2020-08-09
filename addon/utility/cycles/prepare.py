@@ -1,7 +1,7 @@
 import bpy
 
 from . import cache
-
+from .. utility import *
 
 def assemble():
 
@@ -11,7 +11,7 @@ def assemble():
 
     configure_meshes()
 
-def init(prev_container):
+def init(self, prev_container):
 
     store_existing(prev_container)
 
@@ -21,7 +21,7 @@ def init(prev_container):
 
     configure_lights()
 
-    configure_meshes()
+    configure_meshes(self)
 
 def configure_world():
     pass
@@ -29,7 +29,7 @@ def configure_world():
 def configure_lights():
     pass
 
-def configure_meshes():
+def configure_meshes(self):
 
     for obj in bpy.data.objects:
         if obj.type == "MESH":
@@ -152,12 +152,12 @@ def configure_meshes():
                         #TODO! FIND THE PRINCIPLED PBR
                         self.report({'INFO'}, "The primary material node is not supported. Seeking first principled.")
 
-                        if len(functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.pbr_node)) > 0: 
-                            mainNode = functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.pbr_node)[0]
+                        if len(find_node_by_type(nodetree.nodes, Node_Types.pbr_node)) > 0: 
+                            mainNode = find_node_by_type(nodetree.nodes, Node_Types.pbr_node)[0]
                         else:
                             self.report({'INFO'}, "No principled found. Seeking diffuse")
-                            if len(functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.diffuse)) > 0: 
-                                mainNode = functions.find_node_by_type(nodetree.nodes, function_constants.Node_Types.diffuse)[0]
+                            if len(find_node_by_type(nodetree.nodes, Node_Types.diffuse)) > 0: 
+                                mainNode = find_node_by_type(nodetree.nodes, Node_Types.diffuse)[0]
                             else:
                                 self.report({'INFO'}, "No supported nodes. Continuing anyway.")
                                 pass
