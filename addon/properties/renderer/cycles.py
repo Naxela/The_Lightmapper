@@ -30,6 +30,14 @@ class TLM_CyclesSceneProperties(bpy.types.PropertyGroup):
                 description="Select resolution scale", 
                 default="3")
 
+    tlm_supersampling : EnumProperty(
+        items = [('none', 'None', 'No supersampling'),
+                ('2x', '2x', 'Double supersampling'),
+                ('4x', '4x', 'Quadruple supersampling')],
+                name = "Supersampling", 
+                description="Supersampling scale", 
+                default="none")
+
     tlm_bake_mode : EnumProperty(
         items = [('Background', 'Background', 'More overhead; allows for network.'),
                     ('Foreground', 'Foreground', 'Direct in-session bake')],
@@ -69,3 +77,11 @@ class TLM_CyclesSceneProperties(bpy.types.PropertyGroup):
         name="Exposure Multiplier", 
         default=0,
         description="0 to disable. Multiplies GI value")
+
+    tlm_metallic_handling_mode : EnumProperty(
+        items = [('ignore', 'Ignore', 'No directional information'),
+                ('clamp', 'Clamp', 'Clamp to value 0.9'),
+                ('zero', 'Zero', 'Temporarily set to 0 during baking, and reapply after')],
+                name = "Metallic handling", 
+                description="Set metallic handling mode to prevent black-baking.", 
+                default="ignore")
