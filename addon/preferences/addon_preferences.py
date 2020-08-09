@@ -1,3 +1,4 @@
+import bpy
 from os.path import basename, dirname
 from bpy.types import AddonPreferences
 from .. operators import installopencv
@@ -6,6 +7,8 @@ import importlib
 class TLM_AddonPreferences(AddonPreferences):
 
     bl_idname = "thelightmapper"
+
+    addon_keys = bpy.context.preferences.addons.keys()
 
     def draw(self, context):
 
@@ -24,6 +27,28 @@ class TLM_AddonPreferences(AddonPreferences):
             row = box.row()
             row.operator("tlm.install_opencv_lightmaps", icon="PREFERENCES")
 
+        box = layout.box()
+        row = box.row()
+        row.label(text="Blender Xatlas")
+        if "blender_xatlas" in self.addon_keys:
+            row.label(text="Blender Xatlas installed and available")
+        else:
+            row.label(text="Blender Xatlas not installed", icon_value=2)
+
+        box = layout.box()
+        row = box.row()
+        row.label(text="RizomUV Bridge")
+        row.label(text="Coming soon")
+
+        box = layout.box()
+        row = box.row()
+        row.label(text="UVPackmaster")
+        row.label(text="Coming soon")
+
+        box = layout.box()
+        row = box.row()
+        row.label(text="Texel Density Checker")
+        row.label(text="Coming soon")
 
         # row = layout.row()
         # row.label(text="PIP")
