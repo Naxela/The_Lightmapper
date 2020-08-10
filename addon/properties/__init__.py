@@ -10,9 +10,6 @@ classes = [
     cycles.TLM_CyclesSceneProperties,
     oidn.TLM_OIDNEngineProperties,
     optix.TLM_OptixEngineProperties
-
-    #scene.TLM_UL_AtlasList,
-    #scene.TLM_AtlasListItem
 ]
 
 def register():
@@ -21,13 +18,9 @@ def register():
 
     bpy.types.Scene.TLM_SceneProperties = bpy.props.PointerProperty(type=scene.TLM_SceneProperties)
     bpy.types.Object.TLM_ObjectProperties = bpy.props.PointerProperty(type=object.TLM_ObjectProperties)
-    
-    #If...
     bpy.types.Scene.TLM_EngineProperties = bpy.props.PointerProperty(type=cycles.TLM_CyclesSceneProperties)
     bpy.types.Scene.TLM_OIDNEngineProperties = bpy.props.PointerProperty(type=oidn.TLM_OIDNEngineProperties)
     bpy.types.Scene.TLM_OptixEngineProperties = bpy.props.PointerProperty(type=optix.TLM_OptixEngineProperties)
-    #bpy.types.Scene.TLM_AtlasList = bpy.props.CollectionProperty(type=scene.TLM_AtlasListItem)
-    #bpy.types.Scene.TLM_AtlasList_index = bpy.props.IntProperty(name="Index for my_list", default=0)
 
 def unregister():
     for cls in classes:

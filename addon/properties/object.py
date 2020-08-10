@@ -3,6 +3,8 @@ from bpy.props import *
 
 class TLM_ObjectProperties(bpy.types.PropertyGroup):
 
+    addon_keys = bpy.context.preferences.addons.keys()
+
     tlm_atlas_pointer : StringProperty(
             name = "Atlas Group",
             description = "Atlas Lightmap Group",
@@ -27,11 +29,13 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
                 description="TODO", 
                 default='256')
 
+    unwrap_modes = [('Lightmap', 'Lightmap', 'TODO'),('SmartProject', 'Smart Project', 'TODO'),('CopyExisting', 'Copy Existing', 'TODO'),('AtlasGroup', 'Atlas Group', 'TODO')]
+
+    if "blender_xatlas" in addon_keys:
+        unwrap_modes.append(('Xatlas', 'Xatlas', 'TODO'))
+
     tlm_mesh_lightmap_unwrap_mode : EnumProperty(
-        items = [('Lightmap', 'Lightmap', 'TODO'),
-                 ('SmartProject', 'Smart Project', 'TODO'),
-                 ('CopyExisting', 'Copy Existing', 'TODO'),
-                 ('AtlasGroup', 'Atlas Group', 'TODO')],
+        items = unwrap_modes,
                 name = "Unwrap Mode",
                 description="TODO", 
                 default='SmartProject')

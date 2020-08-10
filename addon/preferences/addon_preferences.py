@@ -1,4 +1,4 @@
-import bpy
+import bpy, thelightmapper
 from os.path import basename, dirname
 from bpy.types import AddonPreferences
 from .. operators import installopencv
@@ -34,6 +34,8 @@ class TLM_AddonPreferences(AddonPreferences):
             row.label(text="Blender Xatlas installed and available")
         else:
             row.label(text="Blender Xatlas not installed", icon_value=2)
+        row = box.row()
+        row.label(text="Github: https://github.com/mattedicksoncom/blender-xatlas")
 
         box = layout.box()
         row = box.row()

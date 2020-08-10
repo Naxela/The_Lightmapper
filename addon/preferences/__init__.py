@@ -1,3 +1,4 @@
+import bpy
 from bpy.utils import register_class, unregister_class
 from . import addon_preferences
 #from . import build, clean, explore, encode, installopencv

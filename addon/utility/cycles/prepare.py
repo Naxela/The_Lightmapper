@@ -114,6 +114,17 @@ def configure_meshes(self):
                             bpy.ops.object.mode_set(mode='OBJECT')
                             bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
                         
+                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Xatlas":
+
+                            if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
+                                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+                            
+                            #import blender_xatlas
+                            #blender_xatlas.Unwrap_Lightmap_Group_Xatlas_2(bpy.context)
+
+                            #bpy.ops.object.setup_unwrap()
+                            Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj)
+
                         elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
 
                             print("ATLAS GROUP: " + obj.TLM_ObjectProperties.tlm_atlas_pointer)
