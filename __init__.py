@@ -1,5 +1,5 @@
 '''
-Copyright (c) 2018-2019 Naxela
+Copyright (c) 2018-2020 Naxela
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -22,26 +22,24 @@ bl_info = {
     'name': 'The Lightmapper',
     'description': 'The Lightmapper is a lightmapping utility addon for Blender, made specifically for making lightmaps for game engines.',
     'author': 'Alexander Kleemann @ Naxela',
-    'version': (0, 0, 2, 2),
-    'blender': (2, 80, 0),
+    'version': (0, 0, 3, 0),
+    'blender': (2, 83, 0),
     'location': 'View3D',
     'category': '3D View'
 }
 
-from . Addon import Operators, Panels, Properties, Preferences, Utility, Keymap
+from . addon import operators, panels, properties, preferences, utility, keymap
 
 def register():
-    Operators.register()
-    Properties.register()
-    Preferences.register()
-    Panels.register()
-    Keymap.register()
-    Utility.register()
+    operators.register()
+    properties.register()
+    preferences.register()
+    panels.register()
+    keymap.register()
 
 def unregister():
-    Operators.unregister()
-    Properties.unregister()
-    Preferences.unregister()
-    Panels.unregister()
-    Keymap.unregister()
-    Utility.unregister()
+    operators.unregister()
+    properties.unregister()
+    preferences.unregister()
+    panels.unregister()
+    keymap.unregister()
