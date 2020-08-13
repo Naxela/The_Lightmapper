@@ -1,115 +1,108 @@
-# The Lightmapper
+## The Lightmapper
 
-![](img/rd_1.jpg)
+![](img/A.png)
 
-![](https://raw.githubusercontent.com/Naxela/PPM/master/img/wip_notice.jpg)
+### Description
 
-# Description
+The Lightmapper is an addon for Blender that implements lightmapping and denoising capabilities for global illumination texture baking with support for 32-bit HDR Lightmaps. 
+Baking is done through Cycles, and includes automatic material setup, automatic UV setup, encoding options, format options and advanced postprocess filtering. The setup is object-centric, meaning that you can customize the settings for each individual object, providing you with the easiest and most versatile lightmapping solution for Blender.
 
-The Lightmapper is an addon for Blender that implements lightmapping and denoising capabilities for global illumination texture baking with support for 32-bit HDR Lightmaps. Baking is done through Cycles.
+![](img/I.jpg)
 
-Development information thread here: http://forums.armory3d.org/t/hdr-lightmaps-addon/3074/6
+### Features - Version 0.3
+- Automated lightmap baking
 
-It's free and open-source.
+The addon automates everything you need to bake, ranging from scaling, material setup, uv-layering, uv-unwrapping and more:
 
-![](img/Lightmap14.jpg)
+![](img/D.jpg)
 
+- Per-object settings
 
-## Features :
-- Cycles-based automated lightmap baking
+Each object can have it's own settings and be customized in terms of resolution, uv margin and unwrap mode:
 
-![](img/D1.jpg)
+![](img/J.jpg)
 
-- Per-object settings and individual resolution setting
+- Multi-material support
 
-![](img/D2.jpg)
+Add as many materials to each object as you want:
 
-- Denoising with Intel OIDN (Bundled)
+![](img/B.png)
 
-![](img/D3.jpg)
+- AI-based Denoising
 
-- Automatic CPU/GPU option and switching
+Integrated denoising as well as support for faster CPU OIDN denoising and GPU Optix denoising:
 
-- Scalable lightmapping quality and resolution
+![](img/C.jpg)
 
-- OpenCV Based filtering options for post-processing
+- Performance and speed
 
-- Automatic Installation for OpenCV
+Baking presets automatically adjusts sampling, quality and tile settings based on situation and CPU/GPU:
 
-- Direct 32-bit RGBE (.hdr) export for Armory/EEVEE/Unity
+![](img/E.jpg)
 
-- RGBM/RGBD png encoding for non-compatible engines (Godot/UE4/Etc.)
+- Postprocess filtering
 
-- Automatic node-management (Setup, backup, restoration)
+Additional filtering to give your lightmaps an extra edge and quality through OpenCV:
 
-## Upcoming/Todo features:
-- More stability
-- More documentation
-- New denoising option - NVIDIA Optix
-- Automated AO baking and node management
-- New filtering options
-- Equirectangular panoramic rendering with EEVEE
-- Cubemap panoramic rendering with EEVEE
-- Spherical Coefficient gathering
-- Additional bake-time Object/Light/World controls
-- Lightmap Adjustment Tools
-- Addon refactoring
-- Network Rendering
-- Texel Density management
-- UV/Lightmap Preparation tools
-- and more....
+![](img/f.png)
 
-# Installation
+- Background-baking
 
-Installation of the addon is straight forward. Get the latest release here, and select the zip-package: 
+Is your baking going to take a long time? Try background baking, which let's you continue working on your scene:
 
-https://github.com/Naxela/HDR_Lightmapper/releases
+![](img/g.png)
 
-### Note! - Releases are recommended, git versions are most likely unstable
+- Easy material management
 
-# Usage
+Apart from automatic material setup, resetting materials is easy and baking without material setup too for external engines:
 
-The addon consists of 2 panel for now:
+![](img/h.jpg)
 
-The main panel located under the Render context tab controls quality and general settings for the baking process, including denoising, filtering, lightmap-location and more:
+### Installation
 
-![](img/atcm1.png)
+Installation of The Lightmapper is straight forward. All you need to do is download the latest release, and install as a .zip file from inside Blender. For more information, please refer to the wiki section: COMING SOON
 
-The second panel is located under the object tab, and controls the individual baking resolution as well as specific unwrap settings for the object:
+### Usage
 
-![](img/atcm2.png)
+For more information, please refer to the wiki section: COMING SOON
 
-The easiest way to get started is:
-- Make a scene with a cube, a plane and a light
-- Select the cube and the plane
-- Click "Build Light for selected" in the main HDR Lightmapper panel
-- Baking should take a few seconds
-- Turn on Eevee with World Light for better and quick visual review:
+### Documentation
 
-![](img/atcm3.png)
+The wiki page is under construction, and documentation is in the process of being written.
 
-# Videos:
-
-Blender, Lightmapping and Armory
+### Images and Videos
 
 [![Watch the video](img/prev.jpg)](https://www.youtube.com/watch?v=RaWNQrSaymo )
 
-# Armory HTML5 examples using Baked GI w. HDR Lightmaps:
 
-Naxela's Laboratory (No quality scaling, requires decent specs):
+*HTML5 lightmap examples - Powered by Armory3D*
 
-Experiment 1: http://laboratory.naxela.info/experiment_1/
+http://laboratory.naxela.info/experiment_1/
 
-Experiment 2: http://laboratory.naxela.info/experiment_2/
+http://laboratory.naxela.info/experiment_2/
 
-Experiment 3: http://laboratory.naxela.info/experiment_3/
+http://laboratory.naxela.info/experiment_3/
 
-# Images:
+http://laboratory.naxela.info/experiment_4/
 
-![](img/Gallery.jpg)
+http://laboratory.naxela.info/experiment_5/
 
-![](img/Lightmap16.png)
+http://laboratory.naxela.info/experiment_7/
 
-![](img/Lightmap15.png)
+http://laboratory.naxela.info/experiment_8/
 
-![](img/rd_2.jpg)
+http://laboratory.naxela.info/experiment_11/
+
+http://laboratory.naxela.info/experiment_12/
+
+http://laboratory.naxela.info/experiment_13/
+
+----
+
+*3rd Party addon compatibility*
+
+- OpenCV:
+https://pypi.org/project/opencv-python/
+
+- Blender Xatlas by Mattedicksoncom:
+https://github.com/mattedicksoncom/blender-xatlas
