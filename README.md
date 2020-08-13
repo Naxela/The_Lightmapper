@@ -72,8 +72,9 @@ The wiki page is under construction, and documentation is in the process of bein
 
 ### Images and Videos
 
-[![Watch the video](img/prev.jpg)](https://www.youtube.com/watch?v=RaWNQrSaymo )
+[![Watch the video](img/prev.jpg)](https://www.youtube.com/watch?v=RaWNQrSaymo)
 
+[![Watch the video](img/k.gif)](https://vimeo.com/447551701)
 
 *HTML5 lightmap examples - Powered by Armory3D*
 
