@@ -1,44 +1,44 @@
 ## The Lightmapper
 
-![](img/A.png)
+![](img/a.png)
 
 ### Description
 
 The Lightmapper is an addon for Blender that implements lightmapping and denoising capabilities for global illumination texture baking with support for 32-bit HDR Lightmaps. 
 Baking is done through Cycles, and includes automatic material setup, automatic UV setup, encoding options, format options and advanced postprocess filtering. The setup is object-centric, meaning that you can customize the settings for each individual object, providing you with the easiest and most versatile lightmapping solution for Blender.
 
-![](img/I.jpg)
+![](img/i.jpg)
 
 ### Features - Version 0.3
 - Automated lightmap baking
 
 The addon automates everything you need to bake, ranging from scaling, material setup, uv-layering, uv-unwrapping and more:
 
-![](img/D.jpg)
+![](img/d.jpg)
 
 - Per-object settings
 
 Each object can have it's own settings and be customized in terms of resolution, uv margin and unwrap mode:
 
-![](img/J.jpg)
+![](img/j.jpg)
 
 - Multi-material support
 
 Add as many materials to each object as you want:
 
-![](img/B.png)
+![](img/b.png)
 
 - AI-based Denoising
 
 Integrated denoising as well as support for faster CPU OIDN denoising and GPU Optix denoising:
 
-![](img/C.jpg)
+![](img/c.jpg)
 
 - Performance and speed
 
 Baking presets automatically adjusts sampling, quality and tile settings based on situation and CPU/GPU:
 
-![](img/E.jpg)
+![](img/e.jpg)
 
 - Postprocess filtering
 
