@@ -58,6 +58,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         default=0,
         description="0 to disable. Multiplies GI value")
 
+    tlm_alert_on_finish : BoolProperty(
+        name="Alert on finish", 
+        description="Play a sound when the lightmaps are done.", 
+        default=False)
+
     tlm_setting_apply_scale : BoolProperty(
         name="Apply scale", 
         description="Apply the scale before unwrapping.", 

@@ -24,13 +24,13 @@ class TLM_CyclesSceneProperties(bpy.types.PropertyGroup):
     tlm_resolution_scale : EnumProperty(
         items = [('1', '1/1', '1'),
                     ('2', '1/2', '2'),
-                    ('3', '1/4', '3'),
-                    ('4', '1/8', '4')],
+                    ('4', '1/4', '4'),
+                    ('8', '1/8', '8')],
                 name = "Resolution scale", 
                 description="Select resolution scale", 
-                default="3")
+                default="2")
 
-    tlm_supersampling : EnumProperty(
+    tlm_setting_supersample : EnumProperty(
         items = [('none', 'None', 'No supersampling'),
                 ('2x', '2x', 'Double supersampling'),
                 ('4x', '4x', 'Quadruple supersampling')],

@@ -316,7 +316,14 @@ def preprocess_material(obj, scene):
     img_name = obj.name + '_baked'
     #Resolution is object lightmap resolution divided by global scaler
 
-    res = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale)
+    if scene.TLM_EngineProperties.tlm_setting_supersample == "2x":
+        supersampling_scale = 2
+    elif scene.TLM_EngineProperties.tlm_setting_supersample == "4x":
+        supersampling_scale = 4
+    else:
+        supersampling_scale = 1
+
+    res = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale)
 
     #If image not in bpy.data.images or if size changed, make a new image
     if img_name not in bpy.data.images or bpy.data.images[img_name].size[0] != res or bpy.data.images[img_name].size[1] != res:

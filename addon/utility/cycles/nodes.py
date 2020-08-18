@@ -156,7 +156,8 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
                                     node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
                             else:
                                 cutLen = len(ext_postfix + ".hdr")
-                                node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
+                                if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
+                                    node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
 
     for image in bpy.data.images:
         image.reload()

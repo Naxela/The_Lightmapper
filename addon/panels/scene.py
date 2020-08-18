@@ -81,6 +81,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             row.prop(engineProperties, "tlm_dilation_margin")
             row = layout.row(align=True)
             row.prop(engineProperties, "tlm_exposure_multiplier")
+            row = layout.row(align=True)
+            row.prop(engineProperties, "tlm_setting_supersample")
 
         elif sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 

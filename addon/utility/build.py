@@ -1,4 +1,4 @@
-import bpy, os, importlib, subprocess, sys, threading, platform
+import bpy, os, importlib, subprocess, sys, threading, platform, aud
 from . import encoding
 from . cycles import lightmap, prepare, nodes, cache
 from . denoiser import integrated, oidn
@@ -304,6 +304,8 @@ def begin_build():
 
         if sceneProperties.tlm_encoding_mode == "RGBM":
 
+            print("ENCODING RGBM")
+
             dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
 
             end = "_baked"
@@ -321,6 +323,7 @@ def begin_build():
 
                     img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
                     
+                    print("Encoding:" + str(file))
                     encoding.encodeImageRGBM(img, sceneProperties.tlm_encoding_range, dirpath, 0)
 
     manage_build()
@@ -380,6 +383,19 @@ def manage_build(background_pass=False):
         pass
         #bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath + "baked") #Crashes Blender
 
+    if scene.TLM_EngineProperties.tlm_setting_supersample == "2x":
+        supersampling_scale = 2
+    elif scene.TLM_EngineProperties.tlm_setting_supersample == "4x":
+        supersampling_scale = 4
+    else:
+        supersampling_scale = 1
+
+    # for image in bpy.data.images:
+    #     if image.name.endswith("_baked"):
+    #         resolution = image.size[0]
+    #         rescale = resolution / supersampling_scale
+    #         image.scale(rescale, rescale)
+    #         image.save()
 
     for image in bpy.data.images:
         if image.users < 1:
@@ -423,6 +439,15 @@ def manage_build(background_pass=False):
 
     total_time = sec_to_hours((time() - start_time))
     print(total_time)
+
+    if scene.TLM_SceneProperties.tlm_play_sound:
+
+        scriptDir = os.path.dirname(os.path.realpath(__file__))
+        sound_path = os.path.abspath(os.path.join(scriptDir, '..', 'assets/sound.ogg'))
+
+        device = aud.Device()
+        sound = aud.Sound.file(sound_path)
+        device.play(sound)
 
 def naming_check():
 

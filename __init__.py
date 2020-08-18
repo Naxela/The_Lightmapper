@@ -22,7 +22,7 @@ bl_info = {
     'name': 'The Lightmapper',
     'description': 'The Lightmapper is a lightmapping utility addon for Blender, made specifically for making lightmaps for game engines.',
     'author': 'Alexander Kleemann @ Naxela',
-    'version': (0, 0, 3, 0),
+    'version': (0, 3, 0, 1),
     'blender': (2, 83, 0),
     'location': 'View3D',
     'category': '3D View'
@@ -43,3 +43,14 @@ def unregister():
     preferences.unregister()
     panels.unregister()
     keymap.unregister()
+
+'''
+Changes:
+0.3.0.0 - Initial version
+0.3.0.1 - Fix for https://github.com/Naxela/The_Lightmapper/issues/38
+0.3.0.2 - Added sound alert on finish
+0.3.0.3 - Fix for resolution scale
+0.3.0.4 - Begin supersampling, only internal resizing for now
+0.3.0.5 - Fix for multiple materials while encoding
+
+'''

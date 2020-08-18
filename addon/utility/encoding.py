@@ -180,11 +180,11 @@ def encodeImageRGBM(image, maxRange, outDir, quality):
     #Save RGBM
     print(input_image.name)
     input_image.filepath_raw = outDir + "/" + input_image.name + ".png"
-    #input_image.filepath_raw = outDir + "_encoded.png"
     input_image.file_format = "PNG"
     bpy.context.scene.render.image_settings.quality = quality
-    #input_image.save_render(filepath = input_image.filepath_raw, scene = bpy.context.scene)
     input_image.save()
+
+    #input_image.save_render(filepath = input_image.filepath_raw, scene = bpy.context.scene)
     # input_image.filepath_raw = outDir + "_encoded.png"
     # input_image.file_format = "PNG"
     # bpy.context.scene.render.image_settings.quality = quality
