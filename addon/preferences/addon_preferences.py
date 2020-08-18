@@ -1,4 +1,4 @@
-import bpy, thelightmapper
+import bpy
 from os.path import basename, dirname
 from bpy.types import AddonPreferences
 from .. operators import installopencv
