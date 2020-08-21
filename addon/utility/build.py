@@ -442,7 +442,7 @@ def manage_build(background_pass=False):
 
     reset_settings(previous_settings["settings"])
 
-    if scene.TLM_SceneProperties.tlm_play_sound:
+    if scene.TLM_SceneProperties.tlm_alert_on_finish:
 
         scriptDir = os.path.dirname(os.path.realpath(__file__))
         sound_path = os.path.abspath(os.path.join(scriptDir, '..', 'assets/sound.ogg'))
@@ -450,6 +450,7 @@ def manage_build(background_pass=False):
         device = aud.Device()
         sound = aud.Sound.file(sound_path)
         device.play(sound)
+        print("ALERT!")
 
 def reset_settings(prev_settings):
     scene = bpy.context.scene
@@ -468,8 +469,8 @@ def reset_settings(prev_settings):
     scene.render.engine = prev_settings[10]
     bpy.context.view_layer.objects.active = prev_settings[11]
     
-    for obj in prev_settings[12]:
-        obj.select_set(True)
+    #for obj in prev_settings[12]:
+    #    obj.select_set(True)
 
 def naming_check():
 
