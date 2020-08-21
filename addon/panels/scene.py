@@ -55,6 +55,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             row.prop(sceneProperties, "tlm_apply_on_unwrap")
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_headless")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_alert_on_finish")
 
             row = layout.row(align=True)
             row.label(text="Cycles Settings")

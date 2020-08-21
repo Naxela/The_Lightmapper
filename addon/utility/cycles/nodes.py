@@ -79,6 +79,7 @@ def apply_materials():
                         lightmapNode.location = -300, 300
                         lightmapNode.image = bpy.data.images[img_name]
                         lightmapNode.name = "TLM_Lightmap"
+                        lightmapNode.interpolation = "Smart"
 
                     #Find output node
                     outputNode = nodes[0]

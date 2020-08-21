@@ -440,6 +440,8 @@ def manage_build(background_pass=False):
     total_time = sec_to_hours((time() - start_time))
     print(total_time)
 
+    reset_settings(previous_settings["settings"])
+
     if scene.TLM_SceneProperties.tlm_play_sound:
 
         scriptDir = os.path.dirname(os.path.realpath(__file__))
@@ -449,6 +451,26 @@ def manage_build(background_pass=False):
         sound = aud.Sound.file(sound_path)
         device.play(sound)
 
+def reset_settings(prev_settings):
+    scene = bpy.context.scene
+    cycles = scene.cycles
+
+    cycles.samples = int(prev_settings[0])
+    cycles.max_bounces = int(prev_settings[1])
+    cycles.diffuse_bounces = int(prev_settings[2])
+    cycles.glossy_bounces = int(prev_settings[3])
+    cycles.transparent_max_bounces = int(prev_settings[4])
+    cycles.transmission_bounces = int(prev_settings[5])
+    cycles.volume_bounces = int(prev_settings[6])
+    cycles.caustics_reflective = prev_settings[7]
+    cycles.caustics_refractive = prev_settings[8]
+    cycles.device = prev_settings[9]
+    scene.render.engine = prev_settings[10]
+    bpy.context.view_layer.objects.active = prev_settings[11]
+    
+    for obj in prev_settings[12]:
+        obj.select_set(True)
+
 def naming_check():
 
     for obj in bpy.data.objects:
@@ -457,36 +479,38 @@ def naming_check():
 
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
-                if "_" in obj.name:
-                    obj.name = obj.name.replace("_",".")
-                if " " in obj.name:
-                    obj.name = obj.name.replace(" ",".")
-                if "[" in obj.name:
-                    obj.name = obj.name.replace("[",".")
-                if "]" in obj.name:
-                    obj.name = obj.name.replace("]",".")
-                if "ø" in obj.name:
-                    obj.name = obj.name.replace("ø","oe")
-                if "æ" in obj.name:
-                    obj.name = obj.name.replace("æ","ae")
-                if "å" in obj.name:
-                    obj.name = obj.name.replace("å","aa")
+                if obj.name != "":
 
-                for slot in obj.material_slots:
-                    if "_" in slot.material.name:
-                        slot.material.name = slot.material.name.replace("_",".")
-                    if " " in slot.material.name:
-                        slot.material.name = slot.material.name.replace(" ",".")
-                    if "[" in slot.material.name:
-                        slot.material.name = slot.material.name.replace("[",".")
-                    if "[" in slot.material.name:
-                        slot.material.name = slot.material.name.replace("]",".")
-                    if "ø" in slot.material.name:
-                        slot.material.name = slot.material.name.replace("ø","oe")
-                    if "æ" in slot.material.name:
-                        slot.material.name = slot.material.name.replace("æ","ae")
-                    if "å" in slot.material.name:
-                        slot.material.name = slot.material.name.replace("å","aa")
+                    if "_" in obj.name:
+                        obj.name = obj.name.replace("_",".")
+                    if " " in obj.name:
+                        obj.name = obj.name.replace(" ",".")
+                    if "[" in obj.name:
+                        obj.name = obj.name.replace("[",".")
+                    if "]" in obj.name:
+                        obj.name = obj.name.replace("]",".")
+                    if "ø" in obj.name:
+                        obj.name = obj.name.replace("ø","oe")
+                    if "æ" in obj.name:
+                        obj.name = obj.name.replace("æ","ae")
+                    if "å" in obj.name:
+                        obj.name = obj.name.replace("å","aa")
+
+                    for slot in obj.material_slots:
+                        if "_" in slot.material.name:
+                            slot.material.name = slot.material.name.replace("_",".")
+                        if " " in slot.material.name:
+                            slot.material.name = slot.material.name.replace(" ",".")
+                        if "[" in slot.material.name:
+                            slot.material.name = slot.material.name.replace("[",".")
+                        if "[" in slot.material.name:
+                            slot.material.name = slot.material.name.replace("]",".")
+                        if "ø" in slot.material.name:
+                            slot.material.name = slot.material.name.replace("ø","oe")
+                        if "æ" in slot.material.name:
+                            slot.material.name = slot.material.name.replace("æ","ae")
+                        if "å" in slot.material.name:
+                            slot.material.name = slot.material.name.replace("å","aa")
 
 def opencv_check():
 

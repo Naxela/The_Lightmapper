@@ -52,6 +52,16 @@ class TLM_AddonPreferences(AddonPreferences):
         row.label(text="Texel Density Checker")
         row.label(text="Coming soon")
 
+        box = layout.box()
+        row = box.row()
+        row.label(text="LuxCoreRender")
+        row.label(text="Coming soon")
+
+        box = layout.box()
+        row = box.row()
+        row.label(text="OctaneRender")
+        row.label(text="Coming soon")
+
         # row = layout.row()
         # row.label(text="PIP")
         # row = layout.row()

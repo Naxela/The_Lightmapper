@@ -11,7 +11,7 @@ from typing import List
 ###########################################################
 # This set of utility functions are courtesy of LorenzWieseke
 #
-# Modified by Naxel
+# Modified by Naxela
 #   
 # https://github.com/Naxela/The_Lightmapper/tree/Lightmap-to-GLB
 ###########################################################
@@ -312,7 +312,7 @@ def lightmap_to_ao(material,lightmap_node):
 # thus allowing blender_xatlas to pack from background.
 ###########################################################
 # Code is courtesy of mattedicksoncom
-# Modified by Naxel
+# Modified by Naxela
 #
 # https://github.com/mattedicksoncom/blender-xatlas/
 ###########################################################

@@ -31,7 +31,7 @@ def bake():
                 obj.hide_render = False
                 scene.render.bake.use_clear = False
 
-                print("Baking " + str(currentIterNum) + "/" + str(iterNum) + " : " + obj.name)
+                print("Baking " + str(currentIterNum) + "/" + str(iterNum) + " (" + str(round(currentIterNum/iterNum*100, 2)) + "%) : " + obj.name)
 
                 bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
                 bpy.ops.object.select_all(action='DESELECT')

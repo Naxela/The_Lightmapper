@@ -22,7 +22,7 @@ bl_info = {
     'name': 'The Lightmapper',
     'description': 'The Lightmapper is a lightmapping utility addon for Blender, made specifically for making lightmaps for game engines.',
     'author': 'Alexander Kleemann @ Naxela',
-    'version': (0, 3, 0, 1),
+    'version': (0, 3, 1, 1),
     'blender': (2, 83, 0),
     'location': 'View3D',
     'category': '3D View'
@@ -46,11 +46,18 @@ def unregister():
 
 '''
 Changes:
+- 18.08.2020
 0.3.0.0 - Initial version
 0.3.0.1 - Fix for https://github.com/Naxela/The_Lightmapper/issues/38
 0.3.0.2 - Added sound alert on finish
 0.3.0.3 - Fix for resolution scale
 0.3.0.4 - Begin supersampling, only internal resizing for now
 0.3.0.5 - Fix for multiple materials while encoding
-
+- 21.08.2020
+0.3.0.6 - Expose sound alert
+0.3.0.7 - Hide undetected engines, and display in preferences
+0.3.0.8 - Smart Filtering for lightmaps
+0.3.0.9 - Possible fix for https://github.com/Naxela/The_Lightmapper/issues/33
+0.3.1.0 - Display baking process as percentage
+0.3.1.1 - Revert render engine after baking is finished
 '''
