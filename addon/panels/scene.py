@@ -161,8 +161,8 @@ class TLM_PT_Denoise(bpy.types.Panel):
             row.prop(denoiseProperties, "tlm_optix_verbose")
             row = layout.row(align=True)
             row.prop(denoiseProperties, "tlm_optix_maxmem")
-            row = layout.row(align=True)
-            row.prop(denoiseProperties, "tlm_denoise_ao")
+            #row = layout.row(align=True)
+            #row.prop(denoiseProperties, "tlm_denoise_ao")
 
 class TLM_PT_Filtering(bpy.types.Panel):
     bl_label = "Filtering"
@@ -186,8 +186,8 @@ class TLM_PT_Filtering(bpy.types.Panel):
         layout.active = sceneProperties.tlm_filtering_use
         #row = layout.row(align=True)
         #row.label(text="TODO MAKE CHECK")
-        row = layout.row(align=True)
-        row.prop(sceneProperties, "tlm_filtering_engine", expand=True)
+        #row = layout.row(align=True)
+        #row.prop(sceneProperties, "tlm_filtering_engine", expand=True)
         row = layout.row(align=True)
 
         if sceneProperties.tlm_filtering_engine == "OpenCV":

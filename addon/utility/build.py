@@ -1,7 +1,7 @@
 import bpy, os, importlib, subprocess, sys, threading, platform, aud
 from . import encoding
 from . cycles import lightmap, prepare, nodes, cache
-from . denoiser import integrated, oidn
+from . denoiser import integrated, oidn, optix
 from . filtering import opencv
 from os import listdir
 from os.path import isfile, join
@@ -234,7 +234,24 @@ def begin_build():
             del denoiser
 
         else:
-            pass
+
+            baked_image_array = []
+
+            dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+            for file in dirfiles:
+                if file.endswith("_baked.hdr"):
+                    baked_image_array.append(file)
+
+            optixProperties = scene.TLM_OptixEngineProperties
+
+            denoiser = optix.TLM_Optix_Denoise(optixProperties, baked_image_array, dirpath)
+
+            denoiser.denoise()
+
+            denoiser.clean()
+
+            del denoiser
 
     #Filtering
     if sceneProperties.tlm_filtering_use:
@@ -468,6 +485,8 @@ def reset_settings(prev_settings):
     cycles.device = prev_settings[9]
     scene.render.engine = prev_settings[10]
     bpy.context.view_layer.objects.active = prev_settings[11]
+    scene.render.resolution_x = prev_settings[13][0]
+    scene.render.resolution_y = prev_settings[13][1]
     
     #for obj in prev_settings[12]:
     #    obj.select_set(True)

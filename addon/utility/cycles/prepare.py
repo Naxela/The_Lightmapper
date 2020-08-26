@@ -448,5 +448,6 @@ def store_existing(prev_container):
         cycles.device,
         scene.render.engine,
         bpy.context.view_layer.objects.active,
-        selected
+        selected,
+        [scene.render.resolution_x, scene.render.resolution_y]
     ]

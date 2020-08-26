@@ -108,10 +108,10 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     tlm_filtering_engine : EnumProperty(
         items = [('OpenCV', 'OpenCV', 'Make use of OpenCV based image filtering (Requires it to be installed first in the preferences panel)'),
-                ('Numpy', 'Numpy', 'Make use of Numpy based image filtering (Integrated)')],
+                ('Shader', 'Shader', 'Make use of GPU offscreen shader to filter')],
                 name = "Filtering library", 
                 description="Select which filtering library to use.", 
-                default='Numpy')
+                default='OpenCV')
 
     #Numpy Filtering options
     tlm_numpy_filtering_mode : EnumProperty(
