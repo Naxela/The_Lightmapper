@@ -45,6 +45,7 @@ class TLM_Optix_Denoise:
 
     def denoise(self):
 
+        print("Optix: Denoising")
         for image in self.image_array:
 
             if image not in self.denoised_array:
