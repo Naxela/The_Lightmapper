@@ -56,6 +56,8 @@ def prepare_build(self=0, background_mode=False):
                 self.report({'INFO'}, "Error:Filtering - OpenCV not installed")
                 return{'FINISHED'}
 
+        setMode()
+
         dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
         if not os.path.isdir(dirpath):
             os.mkdir(dirpath)
@@ -602,3 +604,8 @@ def sec_to_hours(seconds):
     c=str((seconds%3600)%60)
     d=["{} hours {} mins {} seconds".format(a, b, c)]
     return d
+
+def setMode():
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    #TODO Make some checks that returns to previous selection

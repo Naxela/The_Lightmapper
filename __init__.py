@@ -60,4 +60,17 @@ Changes:
 0.3.0.9 - Possible fix for https://github.com/Naxela/The_Lightmapper/issues/33
 0.3.1.0 - Display baking process as percentage
 0.3.1.1 - Revert render engine after baking is finished
+- 26.08.2020
+0.3.1.2 - Revert resolution after integrated denoiser is used
+0.3.1.3 - Temporarily hide shader based filtering until it’s ready
+0.3.1.4 - Fix for https://github.com/Naxela/The_Lightmapper/issues/40
+0.3.1.5 - Reimplement Optix AI denoising
+- 27.08.2020
+0.3.1.6 - Safeguard against unassigned material slots
+0.3.1.7 - Unhide objects before unwrapping (Possibly due to Blender bug regarding SmartUV projection)
+0.3.1.8 - Fix for lightmaps won’t bake either due to hidden objects
+0.3.1.9 - Use nodes for unassigned materials
+0.3.2.0 - Fix for restoring unassigned materials (causing NoneType error)
+- 29.08.2020
+0.3.2.1 - Fix for context error when in Edit mode
 '''
