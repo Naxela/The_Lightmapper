@@ -29,7 +29,10 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
                 description="TODO", 
                 default='256')
 
-    unwrap_modes = [('Lightmap', 'Lightmap', 'TODO'),('SmartProject', 'Smart Project', 'TODO'),('CopyExisting', 'Copy Existing', 'TODO'),('AtlasGroup', 'Atlas Group', 'TODO')]
+    unwrap_modes = [('Lightmap', 'Lightmap', 'TODO'),
+                ('SmartProject', 'Smart Project', 'TODO'),
+                ('CopyExisting', 'Copy Existing', 'TODO'),
+                ('AtlasGroup', 'Atlas Group', 'TODO')]
 
     if "blender_xatlas" in addon_keys:
         unwrap_modes.append(('Xatlas', 'Xatlas', 'TODO'))

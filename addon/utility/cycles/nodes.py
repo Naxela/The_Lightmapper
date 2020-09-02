@@ -79,9 +79,13 @@ def apply_materials():
                     if not foundBakedNode:
                         lightmapNode = node_tree.nodes.new(type="ShaderNodeTexImage")
                         lightmapNode.location = -300, 300
-                        lightmapNode.image = bpy.data.images[img_name]
                         lightmapNode.name = "TLM_Lightmap"
                         lightmapNode.interpolation = "Smart"
+
+                        if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
+                            lightmapNode.image = bpy.data.images[obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"]
+                        else:
+                            lightmapNode.image = bpy.data.images[img_name]
 
                     #Find output node
                     outputNode = nodes[0]

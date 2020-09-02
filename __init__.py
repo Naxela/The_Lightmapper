@@ -22,8 +22,8 @@ bl_info = {
     'name': 'The Lightmapper',
     'description': 'The Lightmapper is a lightmapping utility addon for Blender, made specifically for making lightmaps for game engines.',
     'author': 'Alexander Kleemann @ Naxela',
-    'version': (0, 3, 1, 1),
-    'blender': (2, 83, 0),
+    'version': (0, 4, 0, 6),
+    'blender': (2, 90, 0),
     'location': 'View3D',
     'category': '3D View'
 }
@@ -73,4 +73,14 @@ Changes:
 0.3.2.0 - Fix for restoring unassigned materials (causing NoneType error)
 - 29.08.2020
 0.3.2.1 - Fix for context error when in Edit mode
+0.3.2.2 - Fix for audio, additional alert sounds
+
+- 02.09.2020
+0.4.0.0 - Reimplement keymaps to F6 (Build) and F7 (Clean)
+0.4.0.1 - Ignore keymapping in background mode
+0.4.0.2 - Removed filtering file
+0.4.0.3 - Reimplement atlas group classes
+0.4.0.4 - Reimplement atlas group pointer
+0.4.0.5 - Reimplement atlas group process
+0.4.0.6 - Fix for filter override with atlas groups
 '''

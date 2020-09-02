@@ -47,9 +47,12 @@ class TLM_CV_Filtering:
 
                 obj_name = os.path.basename(file_input).split("_")[0]
 
-                if bpy.data.objects[obj_name].TLM_ObjectProperties.tlm_mesh_filter_override:
+                if obj_name in bpy.data.objects:
+                    override = bpy.data.objects[obj_name].TLM_ObjectProperties.tlm_mesh_filter_override
+                elif obj_name in scene.TLM_AtlasList:
+                    override = False
 
-                    print("OVERRIDE!")
+                if override:
 
                     print(os.path.join(lightmap_dir, file))
 
@@ -154,7 +157,3 @@ class TLM_CV_Filtering:
                     cv2.imwrite(filter_file_output, opencv_bl_result)
 
                     print("Written to: " + filter_file_output)
-
-            # if file.endswith(file_ending):
-            #     print()
-            #     baked_image_array.append(file)

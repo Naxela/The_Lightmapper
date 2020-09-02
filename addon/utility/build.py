@@ -463,13 +463,23 @@ def manage_build(background_pass=False):
 
     if scene.TLM_SceneProperties.tlm_alert_on_finish:
 
+        alertSelect = scene.TLM_SceneProperties.tlm_alert_sound
+
+        if alertSelect == "dash":
+            soundfile = "dash.ogg"
+        elif alertSelect == "pingping":
+            soundfile = "pingping.ogg"  
+        elif alertSelect == "gentle":
+            soundfile = "gentle.ogg"
+        else:
+            soundfile = "noot.ogg"
+
         scriptDir = os.path.dirname(os.path.realpath(__file__))
-        sound_path = os.path.abspath(os.path.join(scriptDir, '..', 'assets/sound.ogg'))
+        sound_path = os.path.abspath(os.path.join(scriptDir, '..', 'assets/'+soundfile))
 
         device = aud.Device()
         sound = aud.Sound.file(sound_path)
         device.play(sound)
-        print("ALERT!")
 
 def reset_settings(prev_settings):
     scene = bpy.context.scene

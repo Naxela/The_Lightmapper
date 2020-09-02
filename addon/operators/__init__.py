@@ -9,7 +9,10 @@ classes = [
     tlm.TLM_EnableSelection,
     tlm.TLM_DisableSelection,
     tlm.TLM_RemoveLightmapUV,
-    installopencv.TLM_Install_OpenCV
+    installopencv.TLM_Install_OpenCV,
+    tlm.TLM_AtlasListNewItem,
+    tlm.TLM_AtlastListDeleteItem,
+    tlm.TLM_AtlasListMoveItem
 ]
 
 def register():

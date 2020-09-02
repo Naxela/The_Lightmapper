@@ -67,6 +67,82 @@ def configure_meshes(self):
                         print("The material: " + slot.name + " shifted to " + "." + slot.name + '_Original')
                         slot.material = bpy.data.materials["." + slot.name + '_Original']
 
+
+    #ATLAS
+
+    for atlasgroup in scene.TLM_AtlasList:
+
+        atlas = atlasgroup.name
+        atlas_items = []
+
+        bpy.ops.object.select_all(action='DESELECT')
+
+        for obj in bpy.data.objects:
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+
+                uv_layers = obj.data.uv_layers
+                if not "UVMap_Lightmap" in uv_layers:
+                    print("UVMap made A")
+                    uvmap = uv_layers.new(name="UVMap_Lightmap")
+                    uv_layers.active_index = len(uv_layers) - 1
+                else:
+                    print("Existing found...skipping")
+                    for i in range(0, len(uv_layers)):
+                        if uv_layers[i].name == 'UVMap_Lightmap':
+                            uv_layers.active_index = i
+                            print("Lightmap shift A")
+                            break
+
+                atlas_items.append(obj)
+                obj.select_set(True)
+
+        if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
+            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+        if atlasgroup.tlm_atlas_lightmap_unwrap_mode == "SmartProject":
+            print("Smart Project A for: " + str(atlas_items))
+            for obj in atlas_items:
+                print(obj.name + ": Active UV: " + obj.data.uv_layers[obj.data.uv_layers.active_index].name)
+
+            if len(atlas_items) > 0:
+                bpy.context.view_layer.objects.active = atlas_items[0]
+
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=atlasgroup.tlm_atlas_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+        elif atlasgroup.tlm_atlas_lightmap_unwrap_mode == "Lightmap":
+
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=atlasgroup.tlm_atlas_unwrap_margin)
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        elif atlasgroup.tlm_atlas_lightmap_unwrap_mode == "Xatlas":
+            print("Temporary skip: COPYING SMART PROJECT")
+
+            print("Smart Project A for: " + str(atlas_items))
+            for obj in atlas_items:
+                print(obj.name + ": Active UV: " + obj.data.uv_layers[obj.data.uv_layers.active_index].name)
+
+            if len(atlas_items) > 0:
+                bpy.context.view_layer.objects.active = atlas_items[0]
+
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=atlasgroup.tlm_atlas_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+            bpy.ops.mesh.select_all(action='DESELECT')
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        else:
+            print("Copied Existing A")
+
+
+
+
+
+
     for obj in bpy.data.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
@@ -290,44 +366,90 @@ def preprocess_material(obj, scene):
     else:
         supersampling_scale = 1
 
-    res = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale)
 
-    #If image not in bpy.data.images or if size changed, make a new image
-    if img_name not in bpy.data.images or bpy.data.images[img_name].size[0] != res or bpy.data.images[img_name].size[1] != res:
-        img = bpy.data.images.new(img_name, res, res, alpha=True, float_buffer=True)
+    if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
 
-        num_pixels = len(img.pixels)
-        result_pixel = list(img.pixels)
+        atlas_image_name = obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"
 
-        for i in range(0,num_pixels,4):
-            # result_pixel[i+0] = scene.TLM_SceneProperties.tlm_default_color[0]
-            # result_pixel[i+1] = scene.TLM_SceneProperties.tlm_default_color[1]
-            # result_pixel[i+2] = scene.TLM_SceneProperties.tlm_default_color[2]
-            result_pixel[i+0] = 0.0
-            result_pixel[i+1] = 0.0
-            result_pixel[i+2] = 0.0
-            result_pixel[i+3] = 1.0
+        res = int(scene.TLM_AtlasList[obj.TLM_ObjectProperties.tlm_atlas_pointer].tlm_atlas_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale)
 
-        img.pixels = result_pixel
+        #If image not in bpy.data.images or if size changed, make a new image
+        if atlas_image_name not in bpy.data.images or bpy.data.images[atlas_image_name].size[0] != res or bpy.data.images[atlas_image_name].size[1] != res:
+            img = bpy.data.images.new(img_name, res, res, alpha=True, float_buffer=True)
 
-        img.name = img_name
-    else:
-        img = bpy.data.images[img_name]
+            num_pixels = len(img.pixels)
+            result_pixel = list(img.pixels)
 
-    for slot in obj.material_slots:
-        mat = slot.material
-        mat.use_nodes = True
-        nodes = mat.node_tree.nodes
+            for i in range(0,num_pixels,4):
+                # result_pixel[i+0] = scene.TLM_SceneProperties.tlm_default_color[0]
+                # result_pixel[i+1] = scene.TLM_SceneProperties.tlm_default_color[1]
+                # result_pixel[i+2] = scene.TLM_SceneProperties.tlm_default_color[2]
+                result_pixel[i+0] = 0.0
+                result_pixel[i+1] = 0.0
+                result_pixel[i+2] = 0.0
+                result_pixel[i+3] = 1.0
 
-        if "Baked Image" in nodes:
-            img_node = nodes["Baked Image"]
+            img.pixels = result_pixel
+
+            img.name = atlas_image_name
         else:
-            img_node = nodes.new('ShaderNodeTexImage')
-            img_node.name = 'Baked Image'
-            img_node.location = (100, 100)
-            img_node.image = img
-        img_node.select = True
-        nodes.active = img_node
+            img = bpy.data.images[atlas_image_name]
+
+        for slot in obj.material_slots:
+            mat = slot.material
+            mat.use_nodes = True
+            nodes = mat.node_tree.nodes
+
+            if "Baked Image" in nodes:
+                img_node = nodes["Baked Image"]
+            else:
+                img_node = nodes.new('ShaderNodeTexImage')
+                img_node.name = 'Baked Image'
+                img_node.location = (100, 100)
+                img_node.image = img
+            img_node.select = True
+            nodes.active = img_node
+
+    else:
+
+        res = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale)
+
+        #If image not in bpy.data.images or if size changed, make a new image
+        if img_name not in bpy.data.images or bpy.data.images[img_name].size[0] != res or bpy.data.images[img_name].size[1] != res:
+            img = bpy.data.images.new(img_name, res, res, alpha=True, float_buffer=True)
+
+            num_pixels = len(img.pixels)
+            result_pixel = list(img.pixels)
+
+            for i in range(0,num_pixels,4):
+                # result_pixel[i+0] = scene.TLM_SceneProperties.tlm_default_color[0]
+                # result_pixel[i+1] = scene.TLM_SceneProperties.tlm_default_color[1]
+                # result_pixel[i+2] = scene.TLM_SceneProperties.tlm_default_color[2]
+                result_pixel[i+0] = 0.0
+                result_pixel[i+1] = 0.0
+                result_pixel[i+2] = 0.0
+                result_pixel[i+3] = 1.0
+
+            img.pixels = result_pixel
+
+            img.name = img_name
+        else:
+            img = bpy.data.images[img_name]
+
+        for slot in obj.material_slots:
+            mat = slot.material
+            mat.use_nodes = True
+            nodes = mat.node_tree.nodes
+
+            if "Baked Image" in nodes:
+                img_node = nodes["Baked Image"]
+            else:
+                img_node = nodes.new('ShaderNodeTexImage')
+                img_node.name = 'Baked Image'
+                img_node.location = (100, 100)
+                img_node.image = img
+            img_node.select = True
+            nodes.active = img_node
 
 def set_settings():
 

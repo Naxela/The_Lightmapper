@@ -262,3 +262,19 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Don't apply materials", 
         description="Headless; Do not apply baked materials on finish.", 
         default=False)
+
+    tlm_atlas_mode : EnumProperty(
+        items = [('Prepack', 'Pre-packaging', 'Todo.'),
+                 ('Postpack', 'Post-packaging', 'Todo.')],
+                name = "Atlas mode", 
+                description="TODO", 
+                default='Prepack')
+
+    tlm_alert_sound : EnumProperty(
+        items = [('dash', 'Dash', 'Dash alert'),
+                ('noot', 'Noot', 'Noot alert'),
+                ('gentle', 'Gentle', 'Gentle alert'),
+                ('pingping', 'Ping', 'Ping alert')],
+                name = "Alert sound", 
+                description="Alert sound when lightmap building finished.", 
+                default="gentle")

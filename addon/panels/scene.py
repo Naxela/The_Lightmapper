@@ -58,6 +58,10 @@ class TLM_PT_Settings(bpy.types.Panel):
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_alert_on_finish")
 
+            if sceneProperties.tlm_alert_on_finish:
+                row = layout.row(align=True)
+                row.prop(sceneProperties, "tlm_alert_sound")
+
             row = layout.row(align=True)
             row.label(text="Cycles Settings")
 
@@ -322,3 +326,56 @@ class TLM_PT_Additional(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
         sceneProperties = scene.TLM_SceneProperties
+        atlasListItem = scene.TLM_AtlasListItem
+        atlasList = scene.TLM_AtlasList
+
+        layout.label(text="Atlas Groups")
+
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_atlas_mode", expand=True)
+
+        if sceneProperties.tlm_atlas_mode == "Prepack":
+
+            rows = 2
+            if len(atlasList) > 1:
+                rows = 4
+            row = layout.row()
+            row.template_list("TLM_UL_AtlasList", "The_List", scene, "TLM_AtlasList", scene, "TLM_AtlasListItem", rows=rows)
+            col = row.column(align=True)
+            col.operator("tlm_atlaslist.new_item", icon='ADD', text="")
+            col.operator("tlm_atlaslist.delete_item", icon='REMOVE', text="")
+            #col.menu("ARM_MT_BakeListSpecials", icon='DOWNARROW_HLT', text="")
+
+            # if len(scene.TLM_AtlasList) > 1:
+            #     col.separator()
+            #     op = col.operator("arm_bakelist.move_item", icon='TRIA_UP', text="")
+            #     op.direction = 'UP'
+            #     op = col.operator("arm_bakelist.move_item", icon='TRIA_DOWN', text="")
+            #     op.direction = 'DOWN'
+
+            if atlasListItem >= 0 and len(atlasList) > 0:
+                item = atlasList[atlasListItem]
+                #layout.prop_search(item, "obj", bpy.data, "objects", text="Object")
+                #layout.prop(item, "res_x")
+                layout.prop(item, "tlm_atlas_lightmap_unwrap_mode")
+                layout.prop(item, "tlm_atlas_lightmap_resolution")
+                layout.prop(item, "tlm_atlas_unwrap_margin")
+
+                amount = 0
+
+                for obj in bpy.data.objects:
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+                            if obj.TLM_ObjectProperties.tlm_atlas_pointer == item.name:
+                                amount = amount + 1
+
+                layout.label(text="Objects: " + str(amount))
+            
+            # layout.use_property_split = True
+            # layout.use_property_decorate = False
+            # layout.label(text="Enable for selection")
+            # layout.label(text="Disable for selection")
+            # layout.label(text="Something...")
+
+        else:
+            layout.label(text="Postpacking not yet available.")
