@@ -15,6 +15,11 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
         description="TODO", 
         default=False)
 
+    tlm_material_ignore : BoolProperty(
+        name="Skip material", 
+        description="Ignore material for lightmapped object", 
+        default=False)
+
     tlm_mesh_lightmap_resolution : EnumProperty(
         items = [('32', '32', 'TODO'),
                  ('64', '64', 'TODO'),
@@ -121,4 +126,3 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
         default=3, 
         min=1, 
         max=5)
-    

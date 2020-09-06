@@ -66,3 +66,27 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
                         row.prop(obj.TLM_ObjectProperties, "tlm_mesh_filtering_median_kernel", expand=True)
                         row = layout.row(align=True)
                         row.prop(obj.TLM_ObjectProperties, "tlm_mesh_filtering_iterations")
+
+
+class TLM_PT_MaterialMenu(bpy.types.Panel):
+    bl_label = "The Lightmapper"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "material"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        obj = bpy.context.object
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        mat = bpy.context.material
+        if mat == None:
+            return
+
+        if obj.type == "MESH":
+
+            row = layout.row()
+            row.prop(mat, "TLM_ignore")

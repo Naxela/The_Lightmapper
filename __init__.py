@@ -83,4 +83,8 @@ Changes:
 0.4.0.4 - Reimplement atlas group pointer
 0.4.0.5 - Reimplement atlas group process
 0.4.0.6 - Fix for filter override with atlas groups
+0.4.0.7 - Add ability to skip materials on lightmap designated objects
+0.4.0.8 - Automatically configure tile size
+0.4.0.9 - Reset to SmartProject when AtlasGroup is deleted
+0.4.1.0 - Begin clamping for value based links
 '''

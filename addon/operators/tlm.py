@@ -155,6 +155,23 @@ class TLM_RemoveLightmapUV(bpy.types.Operator):
 
         return{'FINISHED'}
 
+class TLM_SelectLightmapped(bpy.types.Operator):
+    """Select all objects for lightmapping"""
+    bl_idname = "tlm.select_lightmapped_objects"
+    bl_label = "Select lightmap objects"
+    bl_description = "Remove Lightmap UV for selection"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        for obj in bpy.data.objects:
+            if obj.type == "MESH":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                    obj.select_set(True)
+
+        return{'FINISHED'}
+
 class TLM_AtlasListNewItem(bpy.types.Operator):
     # Add a new item to the list
     bl_idname = "tlm_atlaslist.new_item"
@@ -185,6 +202,13 @@ class TLM_AtlastListDeleteItem(bpy.types.Operator):
         scene = context.scene
         list = scene.TLM_AtlasList
         index = scene.TLM_AtlasListItem
+
+        for obj in bpy.data.objects:
+
+            atlasName = scene.TLM_AtlasList[index].name
+
+            if obj.TLM_ObjectProperties.tlm_atlas_pointer == atlasName:
+                obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode = "SmartProject"
 
         list.remove(index)
 

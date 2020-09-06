@@ -11,6 +11,7 @@ classes = [
     scene.TLM_PT_Selection,
     scene.TLM_PT_Additional,
     object.TLM_PT_ObjectMenu,
+    object.TLM_PT_MaterialMenu,
     light.TLM_PT_LightMenu,
     world.TLM_PT_WorldMenu
 ]

@@ -26,6 +26,8 @@ def register():
     bpy.types.Scene.TLM_AtlasListItem = bpy.props.IntProperty(name="Index for my_list", default=0)
     bpy.types.Scene.TLM_AtlasList = bpy.props.CollectionProperty(type=atlas.TLM_AtlasListItem)
 
+    bpy.types.Material.TLM_ignore = bpy.props.BoolProperty(name="Skip material", description="Ignore material for lightmapped object", default=False)
+
 def unregister():
     for cls in classes:
         unregister_class(cls)
@@ -37,3 +39,5 @@ def unregister():
     del bpy.types.Scene.TLM_OptixEngineProperties
     del bpy.types.Scene.TLM_AtlasListItem
     del bpy.types.Scene.TLM_AtlasList
+
+    del bpy.types.TLM_MaterialProperties

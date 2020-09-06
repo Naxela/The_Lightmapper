@@ -9,6 +9,7 @@ classes = [
     tlm.TLM_EnableSelection,
     tlm.TLM_DisableSelection,
     tlm.TLM_RemoveLightmapUV,
+    tlm.TLM_SelectLightmapped,
     installopencv.TLM_Install_OpenCV,
     tlm.TLM_AtlasListNewItem,
     tlm.TLM_AtlastListDeleteItem,

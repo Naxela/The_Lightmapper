@@ -89,6 +89,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             row.prop(engineProperties, "tlm_exposure_multiplier")
             row = layout.row(align=True)
             row.prop(engineProperties, "tlm_setting_supersample")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_metallic_clamp")
 
         elif sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
@@ -312,6 +314,8 @@ class TLM_PT_Selection(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.operator("tlm.remove_uv_selection")
+        row = layout.row(align=True)
+        row.operator("tlm.select_lightmapped_objects")
         row = layout.row(align=True)
 
 class TLM_PT_Additional(bpy.types.Panel):

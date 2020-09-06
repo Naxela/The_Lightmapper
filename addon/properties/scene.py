@@ -278,3 +278,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 name = "Alert sound", 
                 description="Alert sound when lightmap building finished.", 
                 default="gentle")
+
+    tlm_metallic_clamp : EnumProperty(
+        items = [('ignore', 'Ignore', 'Ignore clamping'),
+                ('zero', 'Zero', 'Set zero'),
+                ('limit', 'Limit', 'Clamp to 0.9')],
+                name = "Metallic clamping", 
+                description="TODO.", 
+                default="ignore")
