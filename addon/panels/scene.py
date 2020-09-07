@@ -256,6 +256,11 @@ class TLM_PT_Encoding(bpy.types.Panel):
 
         sceneProperties = scene.TLM_SceneProperties
         row = layout.row(align=True)
+
+        if scene.TLM_EngineProperties.tlm_bake_mode == "Background":
+            row.label(text="Encoding options disabled in background mode")
+            row = layout.row(align=True)
+
         row.prop(sceneProperties, "tlm_encoding_mode", expand=True)
         if sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD":
             row = layout.row(align=True)

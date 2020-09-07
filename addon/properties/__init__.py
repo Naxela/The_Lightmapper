@@ -39,5 +39,3 @@ def unregister():
     del bpy.types.Scene.TLM_OptixEngineProperties
     del bpy.types.Scene.TLM_AtlasListItem
     del bpy.types.Scene.TLM_AtlasList
-
-    del bpy.types.TLM_MaterialProperties

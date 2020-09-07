@@ -1,4 +1,4 @@
-import bpy, os, importlib, subprocess, sys, threading, platform, aud
+import bpy, os, subprocess, sys, threading, platform, aud
 from . import encoding
 from . cycles import lightmap, prepare, nodes, cache
 from . denoiser import integrated, oidn, optix
@@ -6,6 +6,7 @@ from . filtering import opencv
 from os import listdir
 from os.path import isfile, join
 from time import time, sleep
+from importlib import util
 
 previous_settings = {}
 
@@ -91,6 +92,8 @@ def prepare_build(self=0, background_mode=False):
 
         filepath = bpy.data.filepath
 
+        bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
+
         start_time = time()
 
         scene = bpy.context.scene
@@ -142,8 +145,8 @@ def prepare_build(self=0, background_mode=False):
 
         pipe_open([sys.executable,"-b",filepath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], finish_assemble)
 
-def finish_assemble():
-    pass
+def finish_assemble(self=0):
+
     #bpy.ops.wm.revert_mainfile() We cannot use this, as Blender crashes...
     print("Background baking finished")
 
@@ -152,7 +155,7 @@ def finish_assemble():
 
     if sceneProperties.tlm_lightmap_engine == "Cycles":
 
-        prepare.init(previous_settings)
+        prepare.init(self, previous_settings)
 
     if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
         pass
@@ -267,7 +270,7 @@ def begin_build():
 
         filter.init(dirpath, useDenoise)
 
-    if sceneProperties.tlm_encoding_use:
+    if sceneProperties.tlm_encoding_use and scene.TLM_EngineProperties.tlm_bake_mode != "Background":
 
         if sceneProperties.tlm_encoding_mode == "HDR":
 
@@ -371,7 +374,7 @@ def manage_build(background_pass=False):
 
         formatEnc = ".hdr"
         
-        if sceneProperties.tlm_encoding_use:
+        if sceneProperties.tlm_encoding_use and scene.TLM_EngineProperties.tlm_bake_mode != "Background":
 
             if sceneProperties.tlm_encoding_mode == "HDR":
 
@@ -546,7 +549,7 @@ def naming_check():
 
 def opencv_check():
 
-    cv2 = importlib.util.find_spec("cv2")
+    cv2 = util.find_spec("cv2")
 
     if cv2 is not None:
         return 0

@@ -87,4 +87,9 @@ Changes:
 0.4.0.8 - Automatically configure tile size
 0.4.0.9 - Reset to SmartProject when AtlasGroup is deleted
 0.4.1.0 - Begin clamping for value based links
+- 07.09.2020
+0.4.1.1 - Fix for importlib utility call
+0.4.1.2 - Fix for background bake
+0.4.1.3 - Disable GPU offscreen function for background bake
+0.4.1.4 - Fix for unregister error
 '''
