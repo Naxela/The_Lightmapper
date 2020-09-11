@@ -63,6 +63,16 @@ class TLM_PT_Settings(bpy.types.Panel):
                 row.prop(sceneProperties, "tlm_alert_sound")
 
             row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_verbose")
+            #row = layout.row(align=True)
+            #row.prop(sceneProperties, "tlm_compile_statistics")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_override_bg_color")
+            if sceneProperties.tlm_override_bg_color:
+                row = layout.row(align=True)
+                row.prop(sceneProperties, "tlm_override_color")
+
+            row = layout.row(align=True)
             row.label(text="Cycles Settings")
 
             row = layout.row(align=True)
@@ -73,6 +83,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             row.prop(engineProperties, "tlm_resolution_scale")
             row = layout.row(align=True)
             row.prop(engineProperties, "tlm_bake_mode")
+            row = layout.row(align=True)
+            row.prop(engineProperties, "tlm_lighting_mode")
 
             if scene.TLM_EngineProperties.tlm_bake_mode == "Background":
                 row = layout.row(align=True)
@@ -304,9 +316,9 @@ class TLM_PT_Selection(bpy.types.Panel):
 
             if sceneProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
 
-                if scene.TLM_AtlasList_index >= 0 and len(scene.TLM_AtlasList) > 0:
+                if scene.TLM_AtlasListItem >= 0 and len(scene.TLM_AtlasList) > 0:
                     row = layout.row()
-                    item = scene.TLM_AtlasList[scene.TLM_AtlasList_index]
+                    item = scene.TLM_AtlasList[scene.TLM_AtlasListItem]
                     row.prop_search(sceneProperties, "tlm_atlas_pointer", scene, "TLM_AtlasList", text='Atlas Group')
                 else:
                     row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")

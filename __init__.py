@@ -22,7 +22,7 @@ bl_info = {
     'name': 'The Lightmapper',
     'description': 'The Lightmapper is a lightmapping utility addon for Blender, made specifically for making lightmaps for game engines.',
     'author': 'Alexander Kleemann @ Naxela',
-    'version': (0, 4, 0, 6),
+    'version': (0, 4, 1, 5),
     'blender': (2, 90, 0),
     'location': 'View3D',
     'category': '3D View'
@@ -92,4 +92,10 @@ Changes:
 0.4.1.2 - Fix for background bake
 0.4.1.3 - Disable GPU offscreen function for background bake
 0.4.1.4 - Fix for unregister error
+- 08.09.2020
+0.4.1.5 - Fixed AtlasGroup assignments for selections
+0.4.1.6 - Implement indirect baking as an option
+0.4.1.7 - Implement AO baking as an option
+0.4.1.8 - Begin to sort verbose console output
+0.4.1.9 - Added custom BG color
 '''

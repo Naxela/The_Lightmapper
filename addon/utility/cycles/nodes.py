@@ -56,11 +56,13 @@ def apply_materials():
                         load_library("Exposure")
 
                 #Apply materials
-                print(obj.name)
+                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    print(obj.name)
                 for slot in obj.material_slots:
                     
                     mat = slot.material
-                    print(slot.material)
+                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                        print(slot.material)
 
                     if not mat.TLM_ignore:
 
@@ -160,7 +162,8 @@ def apply_materials():
 
 def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
 
-    print(ext_postfix, new_postfix, formatHDR)
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print(ext_postfix, new_postfix, formatHDR)
 
     for obj in bpy.data.objects:
         if obj.type == "MESH":
@@ -174,7 +177,8 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
                         if node.name == "Baked Image" or node.name == "TLM_Lightmap":
                             img_name = node.image.filepath_raw
                             cutLen = len(ext_postfix + formatHDR)
-                            print("Len:" + str(len(ext_postfix + formatHDR)) + "|" + ext_postfix + ".." + formatHDR)
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("Len:" + str(len(ext_postfix + formatHDR)) + "|" + ext_postfix + ".." + formatHDR)
 
                             #Simple way to sort out objects with multiple materials
                             if formatHDR == ".hdr" or formatHDR == ".exr":

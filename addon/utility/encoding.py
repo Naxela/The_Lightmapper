@@ -90,7 +90,8 @@ def encodeLogLuv(image, outDir, quality):
         image_name = image_name[:-4]
 
     target_image = bpy.data.images.get(image_name + '_encoded')
-    print(image_name + '_encoded')
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print(image_name + '_encoded')
     if not target_image:
         target_image = bpy.data.images.new(
                 name = image_name + '_encoded',
@@ -130,7 +131,8 @@ def encodeLogLuv(image, outDir, quality):
     input_image = target_image
     
     #Save LogLuv
-    print(input_image.name)
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print(input_image.name)
     input_image.filepath_raw = outDir + "/" + input_image.name + ".png"
     #input_image.filepath_raw = outDir + "_encoded.png"
     input_image.file_format = "PNG"
@@ -153,7 +155,8 @@ def encodeImageRGBM(image, maxRange, outDir, quality):
         image_name = image_name[:-4]
 
     target_image = bpy.data.images.get(image_name + '_encoded')
-    print(image_name + '_encoded')
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print(image_name + '_encoded')
     if not target_image:
         target_image = bpy.data.images.new(
                 name = image_name + '_encoded',
@@ -178,7 +181,8 @@ def encodeImageRGBM(image, maxRange, outDir, quality):
     input_image = target_image
     
     #Save RGBM
-    print(input_image.name)
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print(input_image.name)
     input_image.filepath_raw = outDir + "/" + input_image.name + ".png"
     input_image.file_format = "PNG"
     bpy.context.scene.render.image_settings.quality = quality

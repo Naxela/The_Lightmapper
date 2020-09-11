@@ -64,7 +64,8 @@ def configure_meshes(self):
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 for slot in obj.material_slots:
                     if "." + slot.name + '_Original' in bpy.data.materials:
-                        print("The material: " + slot.name + " shifted to " + "." + slot.name + '_Original')
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("The material: " + slot.name + " shifted to " + "." + slot.name + '_Original')
                         slot.material = bpy.data.materials["." + slot.name + '_Original']
 
 
@@ -82,7 +83,8 @@ def configure_meshes(self):
 
                 uv_layers = obj.data.uv_layers
                 if not "UVMap_Lightmap" in uv_layers:
-                    print("UVMap made A")
+                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                        print("UVMap made A")
                     uvmap = uv_layers.new(name="UVMap_Lightmap")
                     uv_layers.active_index = len(uv_layers) - 1
                 else:
@@ -90,7 +92,8 @@ def configure_meshes(self):
                     for i in range(0, len(uv_layers)):
                         if uv_layers[i].name == 'UVMap_Lightmap':
                             uv_layers.active_index = i
-                            print("Lightmap shift A")
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("Lightmap shift A")
                             break
 
                 atlas_items.append(obj)
@@ -100,7 +103,8 @@ def configure_meshes(self):
             bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
         if atlasgroup.tlm_atlas_lightmap_unwrap_mode == "SmartProject":
-            print("Smart Project A for: " + str(atlas_items))
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("Smart Project A for: " + str(atlas_items))
             for obj in atlas_items:
                 print(obj.name + ": Active UV: " + obj.data.uv_layers[obj.data.uv_layers.active_index].name)
 
@@ -120,9 +124,10 @@ def configure_meshes(self):
             bpy.ops.object.mode_set(mode='OBJECT')
 
         elif atlasgroup.tlm_atlas_lightmap_unwrap_mode == "Xatlas":
-            print("Temporary skip: COPYING SMART PROJECT")
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("Temporary skip: COPYING SMART PROJECT")
 
-            print("Smart Project A for: " + str(atlas_items))
+                print("Smart Project A for: " + str(atlas_items))
             for obj in atlas_items:
                 print(obj.name + ": Active UV: " + obj.data.uv_layers[obj.data.uv_layers.active_index].name)
 
@@ -136,7 +141,8 @@ def configure_meshes(self):
             bpy.ops.object.mode_set(mode='OBJECT')
 
         else:
-            print("Copied Existing A")
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("Copied Existing A")
 
 
 
@@ -175,7 +181,8 @@ def configure_meshes(self):
                 if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
                     uv_layers = obj.data.uv_layers
                     if not "UVMap_Lightmap" in uv_layers:
-                        print("UVMap made B")
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("UVMap made B")
                         uvmap = uv_layers.new(name="UVMap_Lightmap")
                         uv_layers.active_index = len(uv_layers) - 1
 
@@ -187,7 +194,8 @@ def configure_meshes(self):
                         
                         #If smart project
                         elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "SmartProject":
-                            print("Smart Project B")
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("Smart Project B")
                             if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
                                 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
                             bpy.ops.object.select_all(action='DESELECT')
@@ -210,20 +218,22 @@ def configure_meshes(self):
 
                         elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
 
-                            print("ATLAS GROUP: " + obj.TLM_ObjectProperties.tlm_atlas_pointer)
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("ATLAS GROUP: " + obj.TLM_ObjectProperties.tlm_atlas_pointer)
                             
                         else: #if copy existing
 
-                            print("Copied Existing B")
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("Copied Existing B")
 
-                            #Here we copy an existing map
-                            pass
                     else:
-                        print("Existing found...skipping")
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("Existing found...skipping")
                         for i in range(0, len(uv_layers)):
                             if uv_layers[i].name == 'UVMap_Lightmap':
                                 uv_layers.active_index = i
-                                print("Lightmap shift B")
+                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                    print("Lightmap shift B")
                                 break
 
                 #Sort out nodes
@@ -254,19 +264,21 @@ def configure_meshes(self):
                                 mainNode = find_node_by_type(nodetree.nodes, Node_Types.diffuse)[0]
                             else:
                                 self.report({'INFO'}, "No supported nodes. Continuing anyway.")
-                                pass
 
                     if mainNode.type == 'GROUP':
                         if mainNode.node_tree != "Armory PBR":
-                            print("The material group is not supported!")
-                            pass
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("The material group is not supported!")
 
                     if (mainNode.type == "BSDF_PRINCIPLED"):
-                        print("BSDF_Principled")
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("BSDF_Principled")
                         if scene.TLM_EngineProperties.tlm_directional_mode == "None":
-                            print("Directional mode")
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("Directional mode")
                             if not len(mainNode.inputs[19].links) == 0:
-                                print("NOT LEN 0")
+                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                    print("NOT LEN 0")
                                 ninput = mainNode.inputs[19].links[0]
                                 noutput = mainNode.inputs[19].links[0].from_node
                                 nodetree.links.remove(noutput.outputs[0].links[0])
@@ -276,7 +288,8 @@ def configure_meshes(self):
                         #     mainNode.inputs[4].default_value = 0.99
 
                     if (mainNode.type == "BSDF_DIFFUSE"):
-                        print("BSDF_Diffuse")
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("BSDF_Diffuse")
 
                 for slot in obj.material_slots:
 
@@ -381,13 +394,16 @@ def preprocess_material(obj, scene):
             result_pixel = list(img.pixels)
 
             for i in range(0,num_pixels,4):
-                # result_pixel[i+0] = scene.TLM_SceneProperties.tlm_default_color[0]
-                # result_pixel[i+1] = scene.TLM_SceneProperties.tlm_default_color[1]
-                # result_pixel[i+2] = scene.TLM_SceneProperties.tlm_default_color[2]
-                result_pixel[i+0] = 0.0
-                result_pixel[i+1] = 0.0
-                result_pixel[i+2] = 0.0
-                result_pixel[i+3] = 1.0
+
+                if scene.TLM_SceneProperties.tlm_override_bg_color:
+                    result_pixel[i+0] = scene.TLM_SceneProperties.tlm_override_color[0]
+                    result_pixel[i+1] = scene.TLM_SceneProperties.tlm_override_color[1]
+                    result_pixel[i+2] = scene.TLM_SceneProperties.tlm_override_color[2]
+                else:
+                    result_pixel[i+0] = 0.0
+                    result_pixel[i+1] = 0.0
+                    result_pixel[i+2] = 0.0
+                    result_pixel[i+3] = 1.0
 
             img.pixels = result_pixel
 
@@ -422,13 +438,15 @@ def preprocess_material(obj, scene):
             result_pixel = list(img.pixels)
 
             for i in range(0,num_pixels,4):
-                # result_pixel[i+0] = scene.TLM_SceneProperties.tlm_default_color[0]
-                # result_pixel[i+1] = scene.TLM_SceneProperties.tlm_default_color[1]
-                # result_pixel[i+2] = scene.TLM_SceneProperties.tlm_default_color[2]
-                result_pixel[i+0] = 0.0
-                result_pixel[i+1] = 0.0
-                result_pixel[i+2] = 0.0
-                result_pixel[i+3] = 1.0
+                if scene.TLM_SceneProperties.tlm_override_bg_color:
+                    result_pixel[i+0] = scene.TLM_SceneProperties.tlm_override_color[0]
+                    result_pixel[i+1] = scene.TLM_SceneProperties.tlm_override_color[1]
+                    result_pixel[i+2] = scene.TLM_SceneProperties.tlm_override_color[2]
+                else:
+                    result_pixel[i+0] = 0.0
+                    result_pixel[i+1] = 0.0
+                    result_pixel[i+2] = 0.0
+                    result_pixel[i+3] = 1.0
 
             img.pixels = result_pixel
 

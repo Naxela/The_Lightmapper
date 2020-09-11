@@ -148,7 +148,8 @@ def prepare_build(self=0, background_mode=False):
 def finish_assemble(self=0):
 
     #bpy.ops.wm.revert_mainfile() We cannot use this, as Blender crashes...
-    print("Background baking finished")
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print("Background baking finished")
 
     scene = bpy.context.scene
     sceneProperties = scene.TLM_SceneProperties
@@ -208,7 +209,8 @@ def begin_build():
                 if file.endswith("_baked.hdr"):
                     baked_image_array.append(file)
 
-            print(baked_image_array)
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print(baked_image_array)
 
             denoiser = integrated.TLM_Integrated_Denoise()
 
@@ -276,7 +278,8 @@ def begin_build():
 
             if sceneProperties.tlm_format == "EXR":
 
-                print("EXR Format")
+                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    print("EXR Format")
 
                 ren = bpy.context.scene.render
                 ren.image_settings.file_format = "OPEN_EXR"
@@ -326,7 +329,8 @@ def begin_build():
 
         if sceneProperties.tlm_encoding_mode == "RGBM":
 
-            print("ENCODING RGBM")
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("ENCODING RGBM")
 
             dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
 
@@ -345,7 +349,8 @@ def begin_build():
 
                     img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
                     
-                    print("Encoding:" + str(file))
+                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                        print("Encoding:" + str(file))
                     encoding.encodeImageRGBM(img, sceneProperties.tlm_encoding_range, dirpath, 0)
 
     manage_build()
@@ -412,13 +417,6 @@ def manage_build(background_pass=False):
     else:
         supersampling_scale = 1
 
-    # for image in bpy.data.images:
-    #     if image.name.endswith("_baked"):
-    #         resolution = image.size[0]
-    #         rescale = resolution / supersampling_scale
-    #         image.scale(rescale, rescale)
-    #         image.save()
-
     for image in bpy.data.images:
         if image.users < 1:
             bpy.data.images.remove(image)
@@ -460,7 +458,8 @@ def manage_build(background_pass=False):
                 bpy.data.images.remove(image, do_unlink=True)
 
     total_time = sec_to_hours((time() - start_time))
-    print(total_time)
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print(total_time)
 
     reset_settings(previous_settings["settings"])
 
@@ -601,7 +600,8 @@ def check_materials():
                     mat = slot.material
 
                     if mat is None:
-                        print("MatNone")
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("MatNone")
                         mat = bpy.data.materials.new(name="Material")
                         mat.use_nodes = True
                         slot.material = mat

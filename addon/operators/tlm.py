@@ -120,6 +120,9 @@ class TLM_EnableSelection(bpy.types.Operator):
                 obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode = scene.TLM_SceneProperties.tlm_mesh_lightmap_unwrap_mode
                 obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_margin = scene.TLM_SceneProperties.tlm_mesh_unwrap_margin
 
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+                    obj.TLM_ObjectProperties.tlm_atlas_pointer = scene.TLM_SceneProperties.tlm_atlas_pointer
+
         return{'FINISHED'}
 
 class TLM_DisableSelection(bpy.types.Operator):

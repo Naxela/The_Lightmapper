@@ -10,7 +10,8 @@ class TLM_CV_Filtering:
 
         scene = bpy.context.scene
 
-        print("Beginning filtering for files: ")
+        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+            print("Beginning filtering for files: ")
 
         if denoise:
             file_ending = "_denoised.hdr"
@@ -22,7 +23,8 @@ class TLM_CV_Filtering:
         cv2 = importlib.util.find_spec("cv2")
 
         if cv2 is None:
-            print("CV2 not found - Ignoring filtering")
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("CV2 not found - Ignoring filtering")
             return 0
         else:
             cv2 = importlib.__import__("cv2")
@@ -43,7 +45,8 @@ class TLM_CV_Filtering:
 
                 opencv_process_image = cv2.imread(file_input, -1)
 
-                print("Filtering: " + os.path.basename(file_input))
+                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    print("Filtering: " + os.path.basename(file_input))
 
                 obj_name = os.path.basename(file_input).split("_")[0]
 
@@ -104,7 +107,8 @@ class TLM_CV_Filtering:
 
                     cv2.imwrite(filter_file_output, opencv_bl_result)
 
-                    print("Written to: " + filter_file_output)
+                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                        print("Written to: " + filter_file_output)
 
                 else:
 
@@ -156,4 +160,5 @@ class TLM_CV_Filtering:
 
                     cv2.imwrite(filter_file_output, opencv_bl_result)
 
-                    print("Written to: " + filter_file_output)
+                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                        print("Written to: " + filter_file_output)

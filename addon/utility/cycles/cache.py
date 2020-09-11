@@ -13,11 +13,13 @@ def backup_material_cache(slot, path):
     bpy.ops.wm.save_as_mainfile(filepath=path, copy=True)
 
 def backup_material_cache_restore(slot, path):
-    print("Restore cache")
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print("Restore cache")
 
 def backup_material_rename(obj):
     if "TLM_PrevMatArray" in obj:
-        print("Has PrevMat B")
+        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+            print("Has PrevMat B")
         for slot in obj.material_slots:
 
             if slot.material is not None:
@@ -30,7 +32,8 @@ def backup_material_rename(obj):
         del obj["TLM_PrevMatArray"]
 
 def backup_material_restore(obj):
-    print("RESTORE")
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print("RESTORE")
 
     if "TLM_PrevMatArray" in obj:
 

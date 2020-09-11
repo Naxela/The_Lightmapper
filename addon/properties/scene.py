@@ -8,6 +8,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
     #engines.append(('LuxCoreRender', 'LuxCoreRender', 'Use LuxCoreRender for lightmapping'))
     #engines.append(('OctaneRender', 'Octane Render', 'Use Octane Render for lightmapping'))
 
+    tlm_atlas_pointer : StringProperty(
+            name = "Atlas Group",
+            description = "Atlas Lightmap Group",
+            default = "")
+
     tlm_lightmap_engine : EnumProperty(
         items = engines,
                 name = "Lightmap Engine", 
@@ -286,3 +291,23 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 name = "Metallic clamping", 
                 description="TODO.", 
                 default="ignore")
+
+    tlm_verbose : BoolProperty(
+        name="Verbose", 
+        description="Verbose console output", 
+        default=False)
+
+    tlm_compile_statistics : BoolProperty(
+        name="Compile statistics", 
+        description="Compile lightbuild statistics", 
+        default=False)
+
+    tlm_override_bg_color : BoolProperty(
+        name="Override background", 
+        description="Override background color, black by default.", 
+        default=False)
+
+    tlm_override_color : FloatVectorProperty(name="Color",
+        description="Background color for baked maps", 
+        subtype='COLOR', 
+        default=[0.5,0.5,0.5])

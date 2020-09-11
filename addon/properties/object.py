@@ -10,6 +10,17 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
             description = "Atlas Lightmap Group",
             default = "")
 
+
+    tlm_uvchannel_pointer : StringProperty(
+            name = "UV Channel",
+            description = "Select UV Channel to bake to",
+            default = "")
+
+    tlm_uvchannel_pointer : BoolProperty(
+        name="Enable Lightmapping", 
+        description="TODO", 
+        default=False)
+
     tlm_mesh_lightmap_use : BoolProperty(
         name="Enable Lightmapping", 
         description="TODO", 

@@ -42,7 +42,8 @@ class TLM_OIDN_Denoise:
 
         else:
 
-            print("Please provide OIDN path")
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("Please provide OIDN path")
 
     def denoise(self):
 
@@ -71,9 +72,10 @@ class TLM_OIDN_Denoise:
                     self.save_pfm(fileWritePFM, image_output_array)
 
                 #Denoise
-                print("Loaded image: " + str(loaded_image))
+                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    print("Loaded image: " + str(loaded_image))
 
-                verbose = self.oidnProperties.tlm_oidn_verbose
+                verbose = bpy.context.scene.TLM_SceneProperties.tlm_verbose
                 affinity = self.oidnProperties.tlm_oidn_affinity
 
                 if verbose:
