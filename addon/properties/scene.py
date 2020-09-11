@@ -311,3 +311,19 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Background color for baked maps", 
         subtype='COLOR', 
         default=[0.5,0.5,0.5])
+
+    tlm_network_render : BoolProperty(
+        name="Enable network rendering", 
+        description="Enable network rendering (Unstable).", 
+        default=False)
+
+    tlm_network_paths : PointerProperty(
+        name="Network file", 
+        description="Network instruction file", 
+        type=bpy.types.Text)
+
+    tlm_network_dir : StringProperty(
+        name="Network directory", 
+        description="Use a path that is accessible to all your network render devices.", 
+        default="", 
+        subtype="FILE_PATH")

@@ -89,6 +89,14 @@ class TLM_PT_Settings(bpy.types.Panel):
             if scene.TLM_EngineProperties.tlm_bake_mode == "Background":
                 row = layout.row(align=True)
                 row.label(text="Warning! Background mode is currently unstable", icon_value=2)
+                row = layout.row(align=True)
+                row.prop(sceneProperties, "tlm_network_render")
+                if sceneProperties.tlm_network_render:
+                    row = layout.row(align=True)
+                    row.prop(sceneProperties, "tlm_network_paths")
+                    row = layout.row(align=True)
+                    row.prop(sceneProperties, "tlm_network_dir")
+            row = layout.row(align=True)
             row = layout.row(align=True)
             row.prop(engineProperties, "tlm_caching_mode")
             row = layout.row(align=True)
