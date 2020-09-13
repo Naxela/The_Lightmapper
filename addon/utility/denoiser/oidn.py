@@ -27,18 +27,17 @@ class TLM_OIDN_Denoise:
 
             file = os.path.basename(os.path.realpath(oidnPath))
             filename, file_extension = os.path.splitext(file)
-
-            if(file_extension == ".exe"):
-
-                #if file exists oidnDenoise or denoise
-
-                pass
-
-            else:
-
-                #if file exists oidnDenoise or denoise
-
-                self.oidnProperties.tlm_oidn_path = os.path.join(self.oidnProperties.tlm_oidn_path,"oidnDenoise.exe")
+            
+            
+            if platform.system() == 'Windows':
+            
+                if(file_extension == ".exe"):
+                
+                    pass
+                    
+                else:
+                
+                    self.oidnProperties.tlm_oidn_path = os.path.join(self.oidnProperties.tlm_oidn_path,"oidnDenoise.exe")
 
         else:
 
@@ -100,6 +99,9 @@ class TLM_OIDN_Denoise:
                     pipePath = [oidnPath + ' -f ' + ' RTLightmap ' + ' -hdr ' + image_output_denoise_destination + ' -o ' + image_output_denoise_result_destination + ' -verbose ' + v]
                 else:
                     oidnPath = bpy.path.abspath(self.oidnProperties.tlm_oidn_path)
+                    oidnPath = oidnPath.replace(' ', '\\ ')
+                    image_output_denoise_destination = image_output_denoise_destination.replace(' ', '\\ ')
+                    image_output_denoise_result_destination = image_output_denoise_result_destination.replace(' ', '\\ ')
                     pipePath = [oidnPath + ' -f ' + ' RTLightmap ' + ' -hdr ' + image_output_denoise_destination + ' -o ' + image_output_denoise_result_destination + ' -verbose ' + v]
                     
                 if not verbose:
@@ -108,6 +110,9 @@ class TLM_OIDN_Denoise:
                     denoisePipe = subprocess.Popen(pipePath, shell=True)
 
                 denoisePipe.communicate()[0]
+
+                if platform.system() != 'Windows':
+                    image_output_denoise_result_destination = image_output_denoise_result_destination.replace('\\', '')
 
                 with open(image_output_denoise_result_destination, "rb") as f:
                     denoise_data, scale = self.load_pfm(f)

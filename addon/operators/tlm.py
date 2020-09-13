@@ -1,4 +1,4 @@
-import bpy, os, time, blf, webbrowser
+import bpy, os, time, blf, webbrowser, platform
 from .. utility import build
 from .. utility.cycles import cache
 
@@ -92,12 +92,23 @@ class TLM_ExploreLightmaps(bpy.types.Operator):
 
         filepath = bpy.data.filepath
         dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_EngineProperties.tlm_lightmap_savedir)
+        
+        if platform.system() != "Linux":
 
-        if os.path.isdir(dirpath):
-            webbrowser.open('file://' + dirpath)
+            if os.path.isdir(dirpath):
+                webbrowser.open('file://' + dirpath)
+            else:
+                os.mkdir(dirpath)
+                webbrowser.open('file://' + dirpath)
         else:
-            os.mkdir(dirpath)
-            webbrowser.open('file://' + dirpath)
+
+            if os.path.isdir(dirpath):
+                os.system('xdg-open "%s"' % dirpath)
+                #webbrowser.open('file://' + dirpath)
+            else:
+                os.mkdir(dirpath)
+                os.system('xdg-open "%s"' % dirpath)
+                #webbrowser.open('file://' + dirpath)
 
         return {'FINISHED'}
 

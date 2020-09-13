@@ -22,7 +22,7 @@ bl_info = {
     'name': 'The Lightmapper',
     'description': 'The Lightmapper is a lightmapping utility addon for Blender, made specifically for making lightmaps for game engines.',
     'author': 'Alexander Kleemann @ Naxela',
-    'version': (0, 4, 1, 5),
+    'version': (0, 4, 2, 3),
     'blender': (2, 90, 0),
     'location': 'View3D',
     'category': '3D View'
@@ -101,4 +101,6 @@ Changes:
 - 13.09.2020
 0.4.2.0 - Stubs for network rendering
 0.4.2.1 - Reimplement process for background baking (No more unstable threading)
+0.4.2.2 - Fix denoising path errors on Linux and Mac
+0.4.2.3 - Fix infinite OpenCV installation on Linux
 '''

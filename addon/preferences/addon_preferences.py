@@ -1,4 +1,4 @@
-import bpy
+import bpy, platform
 from os.path import basename, dirname
 from bpy.types import AddonPreferences
 from .. operators import installopencv
@@ -23,7 +23,10 @@ class TLM_AddonPreferences(AddonPreferences):
         if cv2 is not None:
             row.label(text="OpenCV installed")
         else:
-            row.label(text="OpenCV not found - Install as administrator!", icon_value=2)
+            if platform.system() == "Windows":
+                row.label(text="OpenCV not found - Install as administrator!", icon_value=2)
+            else:
+                row.label(text="OpenCV not found - Click to install!", icon_value=2)
             row = box.row()
             row.operator("tlm.install_opencv_lightmaps", icon="PREFERENCES")
 
@@ -61,12 +64,3 @@ class TLM_AddonPreferences(AddonPreferences):
         row = box.row()
         row.label(text="OctaneRender")
         row.label(text="Coming soon")
-
-        # row = layout.row()
-        # row.label(text="PIP")
-        # row = layout.row()
-        # row.label(text="OIDN / Optix")
-        # row = layout.row()
-        # row.label(text="UVPackmaster")
-        # row = layout.row()
-        # row.label(text="Texel Density")

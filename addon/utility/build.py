@@ -653,15 +653,6 @@ def check_denoiser():
             else:
                 return 0
 
-    # if scene.TLM_SceneProperties.tlm_denoise_use:
-    #     if scene.TLM_SceneProperties.tlm_oidn_path == "":
-    #         print("NO DENOISE PATH")
-    #         return False
-    #     else:
-    #         return True
-    # else:
-    #     return True
-
 def check_materials():
     for obj in bpy.data.objects:
         if obj.type == "MESH":
