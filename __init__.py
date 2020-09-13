@@ -98,4 +98,7 @@ Changes:
 0.4.1.7 - Implement AO baking as an option
 0.4.1.8 - Begin to sort verbose console output
 0.4.1.9 - Added custom BG color
+- 13.09.2020
+0.4.2.0 - Stubs for network rendering
+0.4.2.1 - Reimplement process for background baking (No more unstable threading)
 '''

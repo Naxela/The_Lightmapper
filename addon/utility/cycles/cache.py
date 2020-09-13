@@ -19,13 +19,16 @@ def backup_material_cache_restore(slot, path):
 def backup_material_rename(obj):
     if "TLM_PrevMatArray" in obj:
         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-            print("Has PrevMat B")
+            print("Renaming material for: " + obj.name)
+
         for slot in obj.material_slots:
 
             if slot.material is not None:
                 if slot.material.name.endswith("_Original"):
                     newname = slot.material.name[1:-9]
                     if newname in bpy.data.materials:
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("Removing material: " + bpy.data.materials[newname].name)
                         bpy.data.materials.remove(bpy.data.materials[newname])
                     slot.material.name = newname
 

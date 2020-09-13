@@ -1,4 +1,5 @@
-import bpy, os, subprocess, sys, threading, platform, aud
+import bpy, os, subprocess, sys, platform, aud, json, datetime
+import threading
 from . import encoding
 from . cycles import lightmap, prepare, nodes, cache
 from . denoiser import integrated, oidn, optix
@@ -11,6 +12,8 @@ from importlib import util
 previous_settings = {}
 
 def prepare_build(self=0, background_mode=False):
+
+    print("Building lightmaps")
 
     if bpy.context.scene.TLM_EngineProperties.tlm_bake_mode == "Foreground" or background_mode==True:
 
@@ -143,11 +146,72 @@ def prepare_build(self=0, background_mode=False):
         #Naming check
         naming_check()
 
-        pipe_open([sys.executable,"-b",filepath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], finish_assemble)
+        bpy.app.driver_namespace["alpha"] = 0
+
+        bpy.app.driver_namespace["tlm_process"] = False
+
+        if os.path.exists(os.path.join(dirpath, "process.tlm")):
+            os.remove(os.path.join(dirpath, "process.tlm"))
+
+        bpy.app.timers.register(distribute_building)
+
+def distribute_building():
+
+    #CHECK IF THERE'S AN EXISTING SUBPROCESS 
+
+    if not os.path.isfile(os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir, "process.tlm")):
+        
+        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+            print("No process file - Creating one...")
+        
+        write_directory = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+
+        blendPath = bpy.data.filepath
+
+        process_status = [blendPath, 
+                    {'bake': 'all', 
+                    'completed': False
+                    }]
+
+        with open(write_directory + "/process.tlm", 'w') as file:
+            json.dump(process_status, file, indent=2)
+
+        bpy.app.driver_namespace["tlm_process"] = subprocess.Popen([sys.executable,"-b", blendPath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=False, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+
+        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+            print("Started process: " + str(bpy.app.driver_namespace["tlm_process"]) + " at " + str(datetime.datetime.now()))
+
+    else:
+
+        write_directory = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+
+        process_status = json.loads(open(write_directory + "/process.tlm").read())
+
+        if process_status[1]["completed"]:
+
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("Baking finished")
+
+            bpy.app.timers.unregister(distribute_building)
+
+            finish_assemble()
+
+        else:
+
+            #Open the json and check the status!
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("Baking in progress")
+            
+            process_status = json.loads(open(write_directory + "/process.tlm").read())
+
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print(process_status)
+
+    return 1.0
+
 
 def finish_assemble(self=0):
 
-    #bpy.ops.wm.revert_mainfile() We cannot use this, as Blender crashes...
     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
         print("Background baking finished")
 
@@ -165,18 +229,6 @@ def finish_assemble(self=0):
         pass
 
     manage_build(True)
-
-def pipe_open(args, callback):
-
-    def thread_process(args, callback):
-        process = subprocess.Popen(args)
-        process.wait()
-        callback()
-        return
-    
-    thread = threading.Thread(target=thread_process, args=(args, callback))
-    thread.start()
-    return thread
 
 def begin_build():
 
@@ -482,6 +534,24 @@ def manage_build(background_pass=False):
         device = aud.Device()
         sound = aud.Sound.file(sound_path)
         device.play(sound)
+
+    print("Lightmap building finished")
+
+    if bpy.app.background:
+
+        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+            print("Writing background process report")
+        
+        write_directory = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+
+        process_status = json.loads(open(write_directory + "/process.tlm").read())
+
+        process_status[1]["completed"] = True
+
+        with open(write_directory + "/process.tlm", 'w') as file:
+            json.dump(process_status, file, indent=2)
+
+        sys.exit()
 
 def reset_settings(prev_settings):
     scene = bpy.context.scene
