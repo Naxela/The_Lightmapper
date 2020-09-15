@@ -94,8 +94,8 @@ class TLM_PT_Settings(bpy.types.Panel):
                 if sceneProperties.tlm_network_render:
                     row = layout.row(align=True)
                     row.prop(sceneProperties, "tlm_network_paths")
-                    row = layout.row(align=True)
-                    row.prop(sceneProperties, "tlm_network_dir")
+                    #row = layout.row(align=True)
+                    #row.prop(sceneProperties, "tlm_network_dir")
             row = layout.row(align=True)
             row = layout.row(align=True)
             row.prop(engineProperties, "tlm_caching_mode")
@@ -285,8 +285,11 @@ class TLM_PT_Encoding(bpy.types.Panel):
         if sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD":
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_encoding_range")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_decoder_setup")
         if sceneProperties.tlm_encoding_mode == "LogLuv":
-            pass
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_decoder_setup")
         if sceneProperties.tlm_encoding_mode == "HDR":
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_format")
@@ -358,8 +361,10 @@ class TLM_PT_Additional(bpy.types.Panel):
         atlasListItem = scene.TLM_AtlasListItem
         atlasList = scene.TLM_AtlasList
 
+        layout.label(text="Network Rendering")
+        row = layout.row()
+        row.operator("tlm.start_server")
         layout.label(text="Atlas Groups")
-
         row = layout.row()
         row.prop(sceneProperties, "tlm_atlas_mode", expand=True)
 

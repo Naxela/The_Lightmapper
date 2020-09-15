@@ -22,7 +22,7 @@ bl_info = {
     'name': 'The Lightmapper',
     'description': 'The Lightmapper is a lightmapping utility addon for Blender, made specifically for making lightmaps for game engines.',
     'author': 'Alexander Kleemann @ Naxela',
-    'version': (0, 4, 2, 3),
+    'version': (0, 4, 2, 7),
     'blender': (2, 90, 0),
     'location': 'View3D',
     'category': '3D View'
@@ -46,6 +46,7 @@ def unregister():
 
 '''
 Changes:
+
 - 18.08.2020
 0.3.0.0 - Initial version
 0.3.0.1 - Fix for https://github.com/Naxela/The_Lightmapper/issues/38
@@ -53,6 +54,7 @@ Changes:
 0.3.0.3 - Fix for resolution scale
 0.3.0.4 - Begin supersampling, only internal resizing for now
 0.3.0.5 - Fix for multiple materials while encoding
+
 - 21.08.2020
 0.3.0.6 - Expose sound alert
 0.3.0.7 - Hide undetected engines, and display in preferences
@@ -60,17 +62,20 @@ Changes:
 0.3.0.9 - Possible fix for https://github.com/Naxela/The_Lightmapper/issues/33
 0.3.1.0 - Display baking process as percentage
 0.3.1.1 - Revert render engine after baking is finished
+
 - 26.08.2020
 0.3.1.2 - Revert resolution after integrated denoiser is used
 0.3.1.3 - Temporarily hide shader based filtering until it’s ready
 0.3.1.4 - Fix for https://github.com/Naxela/The_Lightmapper/issues/40
 0.3.1.5 - Reimplement Optix AI denoising
+
 - 27.08.2020
 0.3.1.6 - Safeguard against unassigned material slots
 0.3.1.7 - Unhide objects before unwrapping (Possibly due to Blender bug regarding SmartUV projection)
 0.3.1.8 - Fix for lightmaps won’t bake either due to hidden objects
 0.3.1.9 - Use nodes for unassigned materials
 0.3.2.0 - Fix for restoring unassigned materials (causing NoneType error)
+
 - 29.08.2020
 0.3.2.1 - Fix for context error when in Edit mode
 0.3.2.2 - Fix for audio, additional alert sounds
@@ -87,20 +92,29 @@ Changes:
 0.4.0.8 - Automatically configure tile size
 0.4.0.9 - Reset to SmartProject when AtlasGroup is deleted
 0.4.1.0 - Begin clamping for value based links
+
 - 07.09.2020
 0.4.1.1 - Fix for importlib utility call
 0.4.1.2 - Fix for background bake
 0.4.1.3 - Disable GPU offscreen function for background bake
 0.4.1.4 - Fix for unregister error
+
 - 08.09.2020
 0.4.1.5 - Fixed AtlasGroup assignments for selections
 0.4.1.6 - Implement indirect baking as an option
 0.4.1.7 - Implement AO baking as an option
 0.4.1.8 - Begin to sort verbose console output
 0.4.1.9 - Added custom BG color
+
 - 13.09.2020
 0.4.2.0 - Stubs for network rendering
 0.4.2.1 - Reimplement process for background baking (No more unstable threading)
 0.4.2.2 - Fix denoising path errors on Linux and Mac
 0.4.2.3 - Fix infinite OpenCV installation on Linux
+
+- 15.09.2020
+0.4.2.4 Reimplement RGBD encoding
+0.4.2.5 Add decoder options for RGBM, RGBD and LogLuv
+0.4.2.6 Begin network rendering server
+0.4.2.7 Begin network rendering client
 '''

@@ -185,6 +185,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     tlm_encoding_mode : EnumProperty(
         items = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
+                ('RGBD', 'RGBD', '8-bit HDR encoding. Similar to RGBM.'),
                     ('LogLuv', 'LogLuv', '8-bit HDR encoding. Different.'),
                     ('HDR', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.')],
                 name = "Encoding Mode", 
@@ -198,8 +199,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         min=1, 
         max=10)
 
-    tlm_encoding_armory_setup : BoolProperty(
-        name="Use Armory decoder", 
+    tlm_decoder_setup : BoolProperty(
+        name="Use decoder", 
         description="TODO", 
         default=False)
 

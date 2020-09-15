@@ -13,7 +13,8 @@ classes = [
     installopencv.TLM_Install_OpenCV,
     tlm.TLM_AtlasListNewItem,
     tlm.TLM_AtlastListDeleteItem,
-    tlm.TLM_AtlasListMoveItem
+    tlm.TLM_AtlasListMoveItem,
+    tlm.TLM_StartServer
 ]
 
 def register():

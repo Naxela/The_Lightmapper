@@ -1,4 +1,4 @@
-import bpy, os, subprocess, sys, platform, aud, json, datetime
+import bpy, os, subprocess, sys, platform, aud, json, datetime, socket
 import threading
 from . import encoding
 from . cycles import lightmap, prepare, nodes, cache
@@ -146,14 +146,42 @@ def prepare_build(self=0, background_mode=False):
         #Naming check
         naming_check()
 
-        bpy.app.driver_namespace["alpha"] = 0
+        if scene.TLM_SceneProperties.tlm_network_render:
 
-        bpy.app.driver_namespace["tlm_process"] = False
+            print("NETWORK RENDERING")
 
-        if os.path.exists(os.path.join(dirpath, "process.tlm")):
-            os.remove(os.path.join(dirpath, "process.tlm"))
+            if scene.TLM_SceneProperties.tlm_network_paths != None:
+                HOST = bpy.data.texts[scene.TLM_SceneProperties.tlm_network_paths.name].lines[0].body  # The server's hostname or IP address
+            else:
+                HOST = '127.0.0.1'  # The server's hostname or IP address
+            
+            PORT = 9898        # The port used by the server
 
-        bpy.app.timers.register(distribute_building)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((HOST, PORT))
+                message = {
+                                    "call" : 1,
+                                    "command" : 1,
+                                    "enquiry" : 0,
+                                    "args" : bpy.data.filepath
+                        }
+
+                s.sendall(json.dumps(message).encode())
+                data = s.recv(1024)
+                print(data.decode())
+
+            finish_assemble()
+
+        else:
+
+            bpy.app.driver_namespace["alpha"] = 0
+
+            bpy.app.driver_namespace["tlm_process"] = False
+
+            if os.path.exists(os.path.join(dirpath, "process.tlm")):
+                os.remove(os.path.join(dirpath, "process.tlm"))
+
+            bpy.app.timers.register(distribute_building)
 
 def distribute_building():
 
@@ -173,7 +201,7 @@ def distribute_building():
                     'completed': False
                     }]
 
-        with open(write_directory + "/process.tlm", 'w') as file:
+        with open(os.path.join(write_directory, "process.tlm"), 'w') as file:
             json.dump(process_status, file, indent=2)
 
         bpy.app.driver_namespace["tlm_process"] = subprocess.Popen([sys.executable,"-b", blendPath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=False, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
@@ -185,7 +213,7 @@ def distribute_building():
 
         write_directory = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
 
-        process_status = json.loads(open(write_directory + "/process.tlm").read())
+        process_status = json.loads(open(os.path.join(write_directory, "process.tlm")).read())
 
         if process_status[1]["completed"]:
 
@@ -202,7 +230,7 @@ def distribute_building():
             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                 print("Baking in progress")
             
-            process_status = json.loads(open(write_directory + "/process.tlm").read())
+            process_status = json.loads(open(os.path.join(write_directory, "process.tlm")).read())
 
             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                 print(process_status)
@@ -405,6 +433,32 @@ def begin_build():
                         print("Encoding:" + str(file))
                     encoding.encodeImageRGBM(img, sceneProperties.tlm_encoding_range, dirpath, 0)
 
+        if sceneProperties.tlm_encoding_mode == "RGBD":
+
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("ENCODING RGBD")
+
+            dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+            end = "_baked"
+
+            if sceneProperties.tlm_denoise_use:
+
+                end = "_denoised"
+
+            if sceneProperties.tlm_filtering_use:
+
+                end = "_filtered"
+
+            for file in dirfiles:
+                if file.endswith(end + ".hdr"):
+
+                    img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
+                    
+                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                        print("Encoding:" + str(file))
+                    encoding.encodeImageRGBD(img, sceneProperties.tlm_encoding_range, dirpath, 0)
+
     manage_build()
 
 def manage_build(background_pass=False):
@@ -444,6 +498,10 @@ def manage_build(background_pass=False):
                 formatEnc = "_encoded.png"
 
             if sceneProperties.tlm_encoding_mode == "RGBM":
+
+                formatEnc = "_encoded.png"
+
+            if sceneProperties.tlm_encoding_mode == "RGBD":
 
                 formatEnc = "_encoded.png"
 
@@ -544,12 +602,14 @@ def manage_build(background_pass=False):
         
         write_directory = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
 
-        process_status = json.loads(open(write_directory + "/process.tlm").read())
+        if os.path.exists(os.path.join(write_directory, "process.tlm")):
 
-        process_status[1]["completed"] = True
+            process_status = json.loads(open(os.path.join(write_directory, "process.tlm")).read())
 
-        with open(write_directory + "/process.tlm", 'w') as file:
-            json.dump(process_status, file, indent=2)
+            process_status[1]["completed"] = True
+
+            with open(os.path.join(write_directory, "process.tlm"), 'w') as file:
+                json.dump(process_status, file, indent=2)
 
         sys.exit()
 

@@ -197,7 +197,7 @@ def encodeImageRGBM(image, maxRange, outDir, quality):
     #input_image.save()
 
 def saturate(num, floats=True):
-    if num < 0:
+    if num <= 0:
         num = 0
     elif num > (1 if floats else 255):
         num = (1 if floats else 255)
@@ -229,9 +229,9 @@ def encodeImageRGBD(image, maxRange, outDir, quality):
 
     for i in range(0,num_pixels,4):
 
-        m = utility.saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
+        m = saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
         d = max(maxRange / m, 1)
-        d = utility.saturate(math.floor(d) / 255 )
+        d = saturate(math.floor(d) / 255 )
 
         result_pixel[i] = result_pixel[i] * d * 255 / maxRange
         result_pixel[i+1] = result_pixel[i+1] * d * 255 / maxRange
@@ -243,7 +243,9 @@ def encodeImageRGBD(image, maxRange, outDir, quality):
     input_image = target_image
 
     #Save RGBD
-    input_image.filepath_raw = outDir + "_encoded.png"
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print(input_image.name)
+    input_image.filepath_raw = outDir + "/" + input_image.name + ".png"
     input_image.file_format = "PNG"
     bpy.context.scene.render.image_settings.quality = quality
-    input_image.save_render(filepath = input_image.filepath_raw, scene = bpy.context.scene)
+    input_image.save()

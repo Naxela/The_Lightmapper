@@ -1,6 +1,7 @@
 import bpy, os, time, blf, webbrowser, platform
 from .. utility import build
 from .. utility.cycles import cache
+from .. network import server
 
 class TLM_BuildLightmaps(bpy.types.Operator):
     bl_idname = "tlm.build_lightmaps"
@@ -272,3 +273,23 @@ class TLM_AtlasListMoveItem(bpy.types.Operator):
         else:
             return{'CANCELLED'}
         return{'FINISHED'}
+
+class TLM_StartServer(bpy.types.Operator):
+    bl_idname = "tlm.start_server"
+    bl_label = "Start Network Server"
+    bl_description = "Start Network Server"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def modal(self, context, event):
+
+        #Add progress bar from 0.15
+
+        print("MODAL")
+
+        return {'PASS_THROUGH'}
+
+    def invoke(self, context, event):
+
+        server.startServer(9898)
+
+        return {'RUNNING_MODAL'}

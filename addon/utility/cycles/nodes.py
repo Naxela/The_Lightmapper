@@ -49,6 +49,21 @@ def apply_materials():
                         old = slot.material
                         slot.material = bpy.data.materials[old.name.split('_' + obj.name)[0]]
 
+                if(scene.TLM_SceneProperties.tlm_decoder_setup):
+
+                    tlm_rgbm = bpy.data.node_groups.get('RGBM Decode')
+                    tlm_rgbd = bpy.data.node_groups.get('RGBD Decode')
+                    tlm_logluv = bpy.data.node_groups.get('LogLuv Decode')
+
+                    if tlm_rgbm == None:
+                        load_library('RGBM Decode')
+
+                    if tlm_rgbd == None:
+                        load_library('RGBD Decode')
+
+                    if tlm_logluv == None:
+                        load_library('LogLuv Decode')
+
                 if(scene.TLM_EngineProperties.tlm_exposure_multiplier > 0):
                     tlm_exposure = bpy.data.node_groups.get("Exposure")
 
@@ -132,6 +147,26 @@ def apply_materials():
                         UVLightmap.name = "Lightmap_UV"
                         UVLightmap.location = -1000, 300
 
+                        if(scene.TLM_SceneProperties.tlm_decoder_setup):
+                            if scene.TLM_SceneProperties.tlm_encoding_mode == 'RGBM':
+                                DecodeNode = node_tree.nodes.new(type="ShaderNodeGroup")
+                                DecodeNode.node_tree = bpy.data.node_groups["RGBM Decode"]
+                                DecodeNode.location = -400, 300
+                                DecodeNode.name = "Lightmap_RGBM_Decode"
+                                decoding = True
+                            if scene.TLM_SceneProperties.tlm_encoding_mode == "RGBD":
+                                DecodeNode = node_tree.nodes.new(type="ShaderNodeGroup")
+                                DecodeNode.node_tree = bpy.data.node_groups["RGBD Decode"]
+                                DecodeNode.location = -400, 300
+                                DecodeNode.name = "Lightmap_RGBD_Decode"
+                                decoding = True
+                            if scene.TLM_SceneProperties.tlm_encoding_mode == "LogLuv":
+                                DecodeNode = node_tree.nodes.new(type="ShaderNodeGroup")
+                                DecodeNode.node_tree = bpy.data.node_groups["LogLuv Decode"]
+                                DecodeNode.location = -400, 300
+                                DecodeNode.name = "Lightmap_LogLuv_Decode"
+                                decoding = True
+
                         if(scene.TLM_EngineProperties.tlm_exposure_multiplier > 0):
                             ExposureNode = node_tree.nodes.new(type="ShaderNodeGroup")
                             ExposureNode.node_tree = bpy.data.node_groups["Exposure"]
@@ -151,14 +186,37 @@ def apply_materials():
                             baseColorNode.name = "LM_P"
 
                         #Linking
-                        if(scene.TLM_EngineProperties.tlm_exposure_multiplier > 0):
-                            mat.node_tree.links.new(lightmapNode.outputs[0], ExposureNode.inputs[0]) #Connect lightmap node to mixnode
-                            mat.node_tree.links.new(ExposureNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
+
+                        if decoding and scene.TLM_SceneProperties.tlm_encoding_use:
+
+                            if(scene.TLM_EngineProperties.tlm_exposure_multiplier > 0):
+                                
+                                mat.node_tree.links.new(lightmapNode.outputs[0], DecodeNode.inputs[0]) #Connect lightmap node to mixnode
+                                mat.node_tree.links.new(lightmapNode.outputs[1], DecodeNode.inputs[1]) #Connect lightmap node to mixnode
+
+                                mat.node_tree.links.new(DecodeNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
+                                mat.node_tree.links.new(ExposureNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
+                            
+                            else:
+                                mat.node_tree.links.new(lightmapNode.outputs[0], DecodeNode.inputs[0]) #Connect lightmap node to mixnode
+                                mat.node_tree.links.new(lightmapNode.outputs[1], DecodeNode.inputs[1]) #Connect lightmap node to mixnode
+
+                                mat.node_tree.links.new(DecodeNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
+                            
+                            mat.node_tree.links.new(baseColorNode.outputs[0], mixNode.inputs[2]) #Connect basecolor to pbr node
+                            mat.node_tree.links.new(mixNode.outputs[0], mainNode.inputs[0]) #Connect mixnode to pbr node
+                            mat.node_tree.links.new(UVLightmap.outputs[0], lightmapNode.inputs[0]) #Connect uvnode to lightmapnode
+
                         else:
-                            mat.node_tree.links.new(lightmapNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
-                        mat.node_tree.links.new(baseColorNode.outputs[0], mixNode.inputs[2]) #Connect basecolor to pbr node
-                        mat.node_tree.links.new(mixNode.outputs[0], mainNode.inputs[0]) #Connect mixnode to pbr node
-                        mat.node_tree.links.new(UVLightmap.outputs[0], lightmapNode.inputs[0]) #Connect uvnode to lightmapnode
+
+                            if(scene.TLM_EngineProperties.tlm_exposure_multiplier > 0):
+                                mat.node_tree.links.new(lightmapNode.outputs[0], ExposureNode.inputs[0]) #Connect lightmap node to mixnode
+                                mat.node_tree.links.new(ExposureNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
+                            else:
+                                mat.node_tree.links.new(lightmapNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
+                            mat.node_tree.links.new(baseColorNode.outputs[0], mixNode.inputs[2]) #Connect basecolor to pbr node
+                            mat.node_tree.links.new(mixNode.outputs[0], mainNode.inputs[0]) #Connect mixnode to pbr node
+                            mat.node_tree.links.new(UVLightmap.outputs[0], lightmapNode.inputs[0]) #Connect uvnode to lightmapnode
 
 def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
 
@@ -199,7 +257,7 @@ def load_library(asset_name):
     if bpy.data.filepath.endswith('tlm_data.blend'): # Prevent load in library itself
         return
 
-    data_path = os.path.abspath(os.path.join(scriptDir, '..', '..', 'Assets/tlm_data.blend'))
+    data_path = os.path.abspath(os.path.join(scriptDir, '..', '..', 'assets/tlm_data.blend'))
     data_names = [asset_name]
 
     # Import
