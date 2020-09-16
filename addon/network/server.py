@@ -30,8 +30,9 @@ def evalIncoming(inc_socket, connection , inc, args=[blenderPath]):
             pipe = subprocess.Popen([blenderPath, "-b", blendPath, "--python-expr", 'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=True, stdout=subprocess.PIPE)
             stdout = pipe.communicate()[0]
 
-            if(stdout.decode().endswith("Saving output\r\n")):
+            if 0 == 0:
                 print("Finished")
+                print(stdout.decode())
                 connection.sendall(("Baking finished").encode())
 
                 try:

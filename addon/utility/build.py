@@ -240,6 +240,8 @@ def distribute_building():
 
 def finish_assemble(self=0):
 
+    print("Finishing assembly")
+
     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
         print("Background baking finished")
 
@@ -259,6 +261,8 @@ def finish_assemble(self=0):
     manage_build(True)
 
 def begin_build():
+
+    print("Beginning build")
 
     dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
 
@@ -462,6 +466,8 @@ def begin_build():
     manage_build()
 
 def manage_build(background_pass=False):
+
+    print("Managing build")
 
     scene = bpy.context.scene
     sceneProperties = scene.TLM_SceneProperties
