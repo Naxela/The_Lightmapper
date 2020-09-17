@@ -4,6 +4,7 @@ from . import encoding
 from . cycles import lightmap, prepare, nodes, cache
 from . denoiser import integrated, oidn, optix
 from . filtering import opencv
+from .. network import client
 from os import listdir
 from os.path import isfile, join
 from time import time, sleep
@@ -154,21 +155,23 @@ def prepare_build(self=0, background_mode=False):
                 HOST = bpy.data.texts[scene.TLM_SceneProperties.tlm_network_paths.name].lines[0].body  # The server's hostname or IP address
             else:
                 HOST = '127.0.0.1'  # The server's hostname or IP address
-            
+
             PORT = 9898        # The port used by the server
 
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((HOST, PORT))
-                message = {
-                                    "call" : 1,
-                                    "command" : 1,
-                                    "enquiry" : 0,
-                                    "args" : bpy.data.filepath
-                        }
+            client.connect_client(HOST, PORT, bpy.data.filepath, 0)
 
-                s.sendall(json.dumps(message).encode())
-                data = s.recv(1024)
-                print(data.decode())
+            # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            #     s.connect((HOST, PORT))
+            #     message = {
+            #                         "call" : 1,
+            #                         "command" : 1,
+            #                         "enquiry" : 0,
+            #                         "args" : bpy.data.filepath
+            #             }
+
+            #     s.sendall(json.dumps(message).encode())
+            #     data = s.recv(1024)
+            #     print(data.decode())
 
             finish_assemble()
 

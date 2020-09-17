@@ -290,6 +290,6 @@ class TLM_StartServer(bpy.types.Operator):
 
     def invoke(self, context, event):
 
-        server.startServer(9898)
+        server.startServer()
 
         return {'RUNNING_MODAL'}

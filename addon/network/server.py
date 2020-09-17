@@ -1,76 +1,71 @@
 #!/usr/bin/env python3
 
-import socket, json, subprocess, os, platform, subprocess
+import bpy, socket, json, subprocess, os, platform, subprocess, select
 
-HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
-#PORT = 9898        # Port to listen on (non-privileged ports are > 1023)
+def startServer():
 
-blenderPath = r"C:\Program Files\Blender Foundation\Blender 2.90\blender.exe"
+    active = True
+    baking = False
 
-def evalIncoming(inc_socket, connection , inc, args=[blenderPath]):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
+    sock.bind(('localhost', 9898))  
+    sock.listen(1)
 
-    if inc["call"] == 0: #Ping
-        print("Pinged by: " + str(connection.getsockname()))
-        connection.sendall(("Ping callback").encode())
-        
-    elif inc["call"] == 1: #Command
+    print("Server started")
 
-        print("Command: " + str(inc["command"]))
+    while active:
+        connection,address = sock.accept()  
 
-        if inc["command"] == 0: #Shutdown
-            open_socket = False
-            try:
-                inc_socket.shutdown(socket.SHUT_RDWR)
-            except:
-                print("Server shutdown")
+        data = connection.recv(1024)  
 
-        if inc["command"] == 1: #Init baking
-            blendPath = inc["args"]
-            print("Path: " + blendPath)
-            pipe = subprocess.Popen([blenderPath, "-b", blendPath, "--python-expr", 'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=True, stdout=subprocess.PIPE)
-            stdout = pipe.communicate()[0]
+        if data:
 
-            if 0 == 0:
-                print("Finished")
-                print(stdout.decode())
-                connection.sendall(("Baking finished").encode())
+            parsed_data = json.loads(data.decode())
 
-                try:
-                    inc_socket.shutdown(socket.SHUT_RDWR)
-                except:
-                    print("Closed...")
-            else:
-                print("Error")
-                print(stdout.decode())
-        
-    elif inc["call"] == 2: #Enquiry
-        print("C")
-        
-    else:
-        print("Unknown: " + inc)
+            if parsed_data["call"] == 0: #Ping
 
-def startServer(port):
+                print("Pinged by: " + str(connection.getsockname()))
+                connection.sendall(("Ping callback").encode())
 
-    print("Starting server...")
+            elif parsed_data["call"] == 1: #Command
 
-    TCP_Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                if parsed_data["command"] == 0: #Shutdown
 
-    TCP_Socket.bind((HOST, port))
+                    print("Server shutdown")
+                    active = False
+                    
+                if parsed_data["command"] == 1: #Baking
 
-    TCP_Socket.listen(1)
+                    print("Baking...")
 
-    connection, address = TCP_Socket.accept()
+                    args = parsed_data["args"]
 
-    open_socket = True
+                    blenderpath = bpy.app.binary_path
 
-    print("Server is now started - Waiting for incoming connection on: " + str(TCP_Socket.getsockname))
+                    if not baking:
 
-    while open_socket:
+                        baking = True
 
-        data = connection.recv(1024)
+                        pipe = subprocess.Popen([blenderpath, "-b", str(args[0]), "--python-expr", 'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=True, stdout=subprocess.PIPE)
 
-        if not data:
+                        stdout = pipe.communicate()[0]
 
-            break
+                        print("Baking finished...")
 
-        evalIncoming(TCP_Socket, connection, json.loads(data.decode()))
+                        active = False
+
+                    else:
+
+                        print("Request denied, server busy...")
+
+                print("Data received: " + data.decode())
+
+        connection.send(('Callback from: ' + str(socket.gethostname())).encode())
+
+        connection.close()
+
+        print("Connection closed.")
+
+    sock.close()
+
+    print("Server closed.")
