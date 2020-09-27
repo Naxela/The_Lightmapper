@@ -10,7 +10,6 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
             description = "Atlas Lightmap Group",
             default = "")
 
-
     tlm_uvchannel_pointer : StringProperty(
             name = "UV Channel",
             description = "Select UV Channel to bake to",
@@ -48,7 +47,8 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
     unwrap_modes = [('Lightmap', 'Lightmap', 'TODO'),
                 ('SmartProject', 'Smart Project', 'TODO'),
                 ('CopyExisting', 'Copy Existing', 'TODO'),
-                ('AtlasGroup', 'Atlas Group', 'TODO')]
+                ('AtlasGroupA', 'Atlas Group (Prepack)', 'TODO'),
+                 ('AtlasGroupB', 'Atlas Group (Postpack)', 'TODO')]
 
     if "blender_xatlas" in addon_keys:
         unwrap_modes.append(('Xatlas', 'Xatlas', 'TODO'))

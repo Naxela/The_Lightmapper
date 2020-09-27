@@ -252,7 +252,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         items = [('Lightmap', 'Lightmap', 'TODO'),
                  ('SmartProject', 'Smart Project', 'TODO'),
                  ('CopyExisting', 'Copy Existing', 'TODO'),
-                 ('AtlasGroup', 'Atlas Group', 'TODO')],
+                 ('AtlasGroupA', 'Atlas Group (Prepack)', 'TODO'),
+                 ('AtlasGroupB', 'Atlas Group (Postpack)', 'TODO')],
                 name = "Unwrap Mode", 
                 description="TODO", 
                 default='SmartProject')
@@ -270,8 +271,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         default=False)
 
     tlm_atlas_mode : EnumProperty(
-        items = [('Prepack', 'Pre-packaging', 'Todo.'),
-                 ('Postpack', 'Post-packaging', 'Todo.')],
+        items = [('Prepack', 'Pre-packing', 'Todo.'),
+                 ('Postpack', 'Post-packing', 'Todo.')],
                 name = "Atlas mode", 
                 description="TODO", 
                 default='Prepack')
@@ -312,6 +313,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Background color for baked maps", 
         subtype='COLOR', 
         default=[0.5,0.5,0.5])
+
+    tlm_reset_uv : BoolProperty(
+        name="Remove Lightmap UV", 
+        description="Remove existing UV maps for lightmaps.", 
+        default=False)
 
     tlm_network_render : BoolProperty(
         name="Enable network rendering", 

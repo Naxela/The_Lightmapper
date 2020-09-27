@@ -202,6 +202,21 @@ class TLM_AtlasListNewItem(bpy.types.Operator):
 
         return{'FINISHED'}
 
+class TLM_PostAtlasListNewItem(bpy.types.Operator):
+    # Add a new item to the list
+    bl_idname = "tlm_postatlaslist.new_item"
+    bl_label = "Add a new item"
+    bl_description = ""
+
+    def execute(self, context):
+        scene = context.scene
+        scene.TLM_PostAtlasList.add()
+        scene.TLM_PostAtlasListItem = len(scene.TLM_PostAtlasList) - 1
+
+        scene.TLM_PostAtlasList[len(scene.TLM_PostAtlasList) - 1].name = "AtlasGroup"
+
+        return{'FINISHED'}
+
 class TLM_AtlastListDeleteItem(bpy.types.Operator):
     # Delete the selected item from the list
     bl_idname = "tlm_atlaslist.delete_item"
@@ -233,6 +248,37 @@ class TLM_AtlastListDeleteItem(bpy.types.Operator):
         scene.TLM_AtlasListItem = index
         return{'FINISHED'}
 
+class TLM_PostAtlastListDeleteItem(bpy.types.Operator):
+    # Delete the selected item from the list
+    bl_idname = "tlm_postatlaslist.delete_item"
+    bl_label = "Deletes an item"
+
+    @classmethod
+    def poll(self, context):
+        """ Enable if there's something in the list """
+        scene = context.scene
+        return len(scene.TLM_PostAtlasList) > 0
+
+    def execute(self, context):
+        scene = context.scene
+        list = scene.TLM_PostAtlasList
+        index = scene.TLM_PostAtlasListItem
+
+        for obj in bpy.data.objects:
+
+            atlasName = scene.TLM_PostAtlasList[index].name
+
+            if obj.TLM_ObjectProperties.tlm_atlas_pointer == atlasName:
+                obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode = "SmartProject"
+
+        list.remove(index)
+
+        if index > 0:
+            index = index - 1
+
+        scene.TLM_PostAtlasListItem = index
+        return{'FINISHED'}
+
 class TLM_AtlasListMoveItem(bpy.types.Operator):
     # Move an item in the list
     bl_idname = "tlm_atlaslist.move_item"
@@ -262,6 +308,47 @@ class TLM_AtlasListMoveItem(bpy.types.Operator):
         scene = context.scene
         list = scene.TLM_AtlasList
         index = scene.TLM_AtlasListItem
+
+        if self.direction == 'DOWN':
+            neighbor = index + 1
+            self.move_index()
+
+        elif self.direction == 'UP':
+            neighbor = index - 1
+            self.move_index()
+        else:
+            return{'CANCELLED'}
+        return{'FINISHED'}
+
+class TLM_PostAtlasListMoveItem(bpy.types.Operator):
+    # Move an item in the list
+    bl_idname = "tlm_postatlaslist.move_item"
+    bl_label = "Move an item in the list"
+    direction: bpy.props.EnumProperty(
+                items=(
+                    ('UP', 'Up', ""),
+                    ('DOWN', 'Down', ""),))
+
+    def move_index(self):
+        # Move index of an item render queue while clamping it
+        scene = context.scene
+        index = scene.TLM_PostAtlasListItem
+        list_length = len(scene.TLM_PostAtlasList) - 1
+        new_index = 0
+
+        if self.direction == 'UP':
+            new_index = index - 1
+        elif self.direction == 'DOWN':
+            new_index = index + 1
+
+        new_index = max(0, min(new_index, list_length))
+        scene.TLM_PostAtlasList.move(index, new_index)
+        scene.TLM_PostAtlasListItem = new_index
+
+    def execute(self, context):
+        scene = context.scene
+        list = scene.TLM_PostAtlasList
+        index = scene.TLM_PostAtlasListItem
 
         if self.direction == 'DOWN':
             neighbor = index + 1

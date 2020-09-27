@@ -70,7 +70,6 @@ def configure_meshes(self):
 
 
     #ATLAS
-
     for atlasgroup in scene.TLM_AtlasList:
 
         atlas = atlasgroup.name
@@ -79,7 +78,7 @@ def configure_meshes(self):
         bpy.ops.object.select_all(action='DESELECT')
 
         for obj in bpy.data.objects:
-            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
 
                 uv_layers = obj.data.uv_layers
                 if not "UVMap_Lightmap" in uv_layers:
@@ -144,11 +143,6 @@ def configure_meshes(self):
             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                 print("Copied Existing A")
 
-
-
-
-
-
     for obj in bpy.data.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
@@ -178,7 +172,7 @@ def configure_meshes(self):
                 preprocess_material(obj, scene)
 
                 #UV Layer management here
-                if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+                if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
                     uv_layers = obj.data.uv_layers
                     if not "UVMap_Lightmap" in uv_layers:
                         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
@@ -216,7 +210,7 @@ def configure_meshes(self):
                             #bpy.ops.object.setup_unwrap()
                             Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj)
 
-                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
 
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                                 print("ATLAS GROUP: " + obj.TLM_ObjectProperties.tlm_atlas_pointer)
@@ -380,7 +374,7 @@ def preprocess_material(obj, scene):
         supersampling_scale = 1
 
 
-    if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
+    if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
 
         atlas_image_name = obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"
 

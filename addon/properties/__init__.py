@@ -11,7 +11,9 @@ classes = [
     oidn.TLM_OIDNEngineProperties,
     optix.TLM_OptixEngineProperties,
     atlas.TLM_AtlasListItem,
-    atlas.TLM_UL_AtlasList
+    atlas.TLM_UL_AtlasList,
+    atlas.TLM_PostAtlasListItem,
+    atlas.TLM_UL_PostAtlasList
 ]
 
 def register():
@@ -25,6 +27,8 @@ def register():
     bpy.types.Scene.TLM_OptixEngineProperties = bpy.props.PointerProperty(type=optix.TLM_OptixEngineProperties)
     bpy.types.Scene.TLM_AtlasListItem = bpy.props.IntProperty(name="Index for my_list", default=0)
     bpy.types.Scene.TLM_AtlasList = bpy.props.CollectionProperty(type=atlas.TLM_AtlasListItem)
+    bpy.types.Scene.TLM_PostAtlasListItem = bpy.props.IntProperty(name="Index for my_list", default=0)
+    bpy.types.Scene.TLM_PostAtlasList = bpy.props.CollectionProperty(type=atlas.TLM_PostAtlasListItem)
 
     bpy.types.Material.TLM_ignore = bpy.props.BoolProperty(name="Skip material", description="Ignore material for lightmapped object", default=False)
 
@@ -39,3 +43,5 @@ def unregister():
     del bpy.types.Scene.TLM_OptixEngineProperties
     del bpy.types.Scene.TLM_AtlasListItem
     del bpy.types.Scene.TLM_AtlasList
+    del bpy.types.Scene.TLM_PostAtlasListItem
+    del bpy.types.Scene.TLM_PostAtlasList

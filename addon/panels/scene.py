@@ -71,6 +71,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             if sceneProperties.tlm_override_bg_color:
                 row = layout.row(align=True)
                 row.prop(sceneProperties, "tlm_override_color")
+            #row = layout.row(align=True)
+            #row.prop(sceneProperties, "tlm_reset_uv")
 
             row = layout.row(align=True)
             row.label(text="Cycles Settings")
@@ -325,12 +327,21 @@ class TLM_PT_Selection(bpy.types.Panel):
             row.prop(sceneProperties, "tlm_mesh_lightmap_unwrap_mode")
             row = layout.row()
 
-            if sceneProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+            if sceneProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
 
                 if scene.TLM_AtlasListItem >= 0 and len(scene.TLM_AtlasList) > 0:
                     row = layout.row()
                     item = scene.TLM_AtlasList[scene.TLM_AtlasListItem]
                     row.prop_search(sceneProperties, "tlm_atlas_pointer", scene, "TLM_AtlasList", text='Atlas Group')
+                else:
+                    row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
+
+            elif sceneProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
+
+                if scene.TLM_PostAtlasListItem >= 0 and len(scene.TLM_PostAtlasList) > 0:
+                    row = layout.row()
+                    item = scene.TLM_PostAtlasList[scene.TLM_PostAtlasListItem]
+                    row.prop_search(sceneProperties, "tlm_postatlas_pointer", scene, "TLM_PostAtlasList", text='Atlas Group')
                 else:
                     row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
 
@@ -374,7 +385,7 @@ class TLM_PT_Additional(bpy.types.Panel):
             if len(atlasList) > 1:
                 rows = 4
             row = layout.row()
-            row.template_list("TLM_UL_AtlasList", "The_List", scene, "TLM_AtlasList", scene, "TLM_AtlasListItem", rows=rows)
+            row.template_list("TLM_UL_AtlasList", "Atlas List", scene, "TLM_AtlasList", scene, "TLM_AtlasListItem", rows=rows)
             col = row.column(align=True)
             col.operator("tlm_atlaslist.new_item", icon='ADD', text="")
             col.operator("tlm_atlaslist.delete_item", icon='REMOVE', text="")
@@ -412,4 +423,13 @@ class TLM_PT_Additional(bpy.types.Panel):
             # layout.label(text="Something...")
 
         else:
-            layout.label(text="Postpacking not yet available.")
+
+            layout.label(text="Postpacking is unstable.")
+            rows = 2
+            if len(atlasList) > 1:
+                rows = 4
+            row = layout.row()
+            row.template_list("TLM_UL_PostAtlasList", "PostList", scene, "TLM_PostAtlasList", scene, "TLM_PostAtlasListItem", rows=rows)
+            col = row.column(align=True)
+            col.operator("tlm_postatlaslist.new_item", icon='ADD', text="")
+            col.operator("tlm_postatlaslist.delete_item", icon='REMOVE', text="")

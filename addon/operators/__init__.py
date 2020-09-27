@@ -14,6 +14,9 @@ classes = [
     tlm.TLM_AtlasListNewItem,
     tlm.TLM_AtlastListDeleteItem,
     tlm.TLM_AtlasListMoveItem,
+    tlm.TLM_PostAtlasListNewItem,
+    tlm.TLM_PostAtlastListDeleteItem,
+    tlm.TLM_PostAtlasListMoveItem,
     tlm.TLM_StartServer
 ]
 

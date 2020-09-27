@@ -70,6 +70,15 @@ def prepare_build(self=0, background_mode=False):
         #Naming check
         naming_check()
 
+        if sceneProperties.tlm_reset_uv:
+            for obj in bpy.context.selected_objects:
+                if obj.type == "MESH":
+                    uv_layers = obj.data.uv_layers
+
+                    for uvlayer in uv_layers:
+                        if uvlayer.name == "UVMap_Lightmap":
+                            uv_layers.remove(uvlayer)
+
         ## RENDER DEPENDENCY FROM HERE
 
         if sceneProperties.tlm_lightmap_engine == "Cycles":
@@ -539,6 +548,8 @@ def manage_build(background_pass=False):
     for image in bpy.data.images:
         if image.users < 1:
             bpy.data.images.remove(image)
+
+    
 
     if scene.TLM_SceneProperties.tlm_headless:
 

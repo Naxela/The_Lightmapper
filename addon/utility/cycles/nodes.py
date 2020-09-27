@@ -102,7 +102,7 @@ def apply_materials():
                             lightmapNode.name = "TLM_Lightmap"
                             lightmapNode.interpolation = "Smart"
 
-                            if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
+                            if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
                                 lightmapNode.image = bpy.data.images[obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"]
                             else:
                                 lightmapNode.image = bpy.data.images[img_name]

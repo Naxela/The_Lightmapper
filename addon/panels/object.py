@@ -27,12 +27,23 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
                 row = layout.row()
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_unwrap_mode")
                 row = layout.row()
-                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
 
                     if scene.TLM_AtlasListItem >= 0 and len(scene.TLM_AtlasList) > 0:
                         row = layout.row()
                         item = scene.TLM_AtlasList[scene.TLM_AtlasListItem]
                         row.prop_search(obj.TLM_ObjectProperties, "tlm_atlas_pointer", scene, "TLM_AtlasList", text='Atlas Group')
+                        row = layout.row()
+                    else:
+                        row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
+                        row = layout.row()
+
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
+
+                    if scene.TLM_PostAtlasListItem >= 0 and len(scene.TLM_PostAtlasList) > 0:
+                        row = layout.row()
+                        item = scene.TLM_PostAtlasList[scene.TLM_PostAtlasListItem]
+                        row.prop_search(obj.TLM_ObjectProperties, "tlm_atlas_pointer", scene, "TLM_PostAtlasList", text='Atlas Group')
                         row = layout.row()
                     else:
                         row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
