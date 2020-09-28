@@ -13,6 +13,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
             description = "Atlas Lightmap Group",
             default = "")
 
+    tlm_postatlas_pointer : StringProperty(
+            name = "Atlas Group",
+            description = "Atlas Lightmap Group",
+            default = "")
+
     tlm_lightmap_engine : EnumProperty(
         items = engines,
                 name = "Lightmap Engine", 

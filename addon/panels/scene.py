@@ -371,6 +371,8 @@ class TLM_PT_Additional(bpy.types.Panel):
         sceneProperties = scene.TLM_SceneProperties
         atlasListItem = scene.TLM_AtlasListItem
         atlasList = scene.TLM_AtlasList
+        postatlasListItem = scene.TLM_PostAtlasListItem
+        postatlasList = scene.TLM_PostAtlasList
 
         layout.label(text="Network Rendering")
         row = layout.row()
@@ -410,7 +412,7 @@ class TLM_PT_Additional(bpy.types.Panel):
 
                 for obj in bpy.data.objects:
                     if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
+                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
                             if obj.TLM_ObjectProperties.tlm_atlas_pointer == item.name:
                                 amount = amount + 1
 
@@ -433,3 +435,22 @@ class TLM_PT_Additional(bpy.types.Panel):
             col = row.column(align=True)
             col.operator("tlm_postatlaslist.new_item", icon='ADD', text="")
             col.operator("tlm_postatlaslist.delete_item", icon='REMOVE', text="")
+
+            if postatlasListItem >= 0 and len(postatlasList) > 0:
+                item = postatlasList[postatlasListItem]
+                #layout.prop_search(item, "obj", bpy.data, "objects", text="Object")
+                #layout.prop(item, "res_x")
+                layout.prop(item, "tlm_atlas_lightmap_unwrap_mode")
+                layout.prop(item, "tlm_atlas_lightmap_resolution")
+                layout.prop(item, "tlm_atlas_unwrap_margin")
+
+                #Below list object counter
+                amount = 0
+
+                for obj in bpy.data.objects:
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
+                            if obj.TLM_ObjectProperties.tlm_postatlas_pointer == item.name:
+                                amount = amount + 1
+
+                layout.label(text="Objects: " + str(amount))

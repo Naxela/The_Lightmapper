@@ -1,105 +1,118 @@
-import bpy, cv2, os, sys, math
+import bpy, cv2, os, sys, math, mathutils
 import numpy as np
 import matplotlib.pyplot as plt
-from rectpack import newPacker, PackingMode, PackingBin
+from . rectpack import newPacker, PackingMode, PackingBin
 
 def postpack():
 
     lightmap_directory = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
 
-    bins = []
+    packedAtlas = {}
 
-    for atlas in bpy.context.scene.TLM_PostAtlasList:
+    #TODO - TEST WITH ONLY 1 ATLAS AT FIRST (1 Atlas for each, but only 1 bin (no overflow))
+    #PackedAtlas = Packer
+    #Each atlas has bins
+    #Each bins has rects
+    #Each rect corresponds to a pack_object
 
-        bin_size = atlas.tlm_postatlas_lightmap_resolution
+    packer = {}
 
-        atlas_area = atlas.tlm_postatlas_lightmap_resolution ** 2
+    for atlas in bpy.context.scene.TLM_PostAtlasList: #For each atlas
 
-        atlas_used_area = 0
+        packer[atlas.name] = newPacker(PackingMode.Offline, PackingBin.BFF, rotation=False)
 
-        pack_objects = []
+        scene = bpy.context.scene
 
+        if scene.TLM_EngineProperties.tlm_setting_supersample == "2x":
+            supersampling_scale = 2
+        elif scene.TLM_EngineProperties.tlm_setting_supersample == "4x":
+            supersampling_scale = 4
+        else:
+            supersampling_scale = 1
+
+        atlas_resolution = int(int(atlas.tlm_atlas_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale))
+
+        packer[atlas.name].add_bin(atlas_resolution, atlas_resolution, 1)
+
+        #AtlasList same name prevention?
+        rect = []
+
+        #For each object that targets the atlas
         for obj in bpy.data.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
-                    if obj.TLM_ObjectProperties.tlm_atlas_pointer == atlas:
+                    if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
 
-                        pack_objects.append((obj.name,obj.tlm_mesh_lightmap_resolution))
+                        res = int(int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale))
 
-        for obj in pack_objects:
+                        rect.append((res, res, obj.name))
 
-            area = obj[1] ** 2
+        for r in rect:
+            packer[atlas.name].add_rect(*r)
 
-            atlas_used_area = atlas_used_area + area
+        #Continue here...
+        packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 3), dtype="float32")
 
-        atlasAmounts = math.ceil(usedArea / (atlasArea**2))
+        packer[atlas.name].pack()
 
-# for i in range(atlasAmounts):
-    
-#     Atlas.append((atlasResolution, atlasResolution, 1)) #For packer (Bin), along with rectangle
-    
-#     VS.append(np.zeros((1024,1024, 3), dtype="float32")) #For VS/Img, writes based on bins
-#     VS[i][0:1024, 0:1024] = (255,0,0)
-    
-# packer = newPacker(PackingMode.Offline, PackingBin.BNF)
+        for idy, rect in enumerate(packer[atlas.name].rect_list()):
 
-# # Add the rectangles to packing queue
-# for object in atlasObjects:
-#     #r = (object[1],object[1])
-#     packer.add_rect(object[1],object[1],object[0])
+            aob = rect[5]
 
-# # Add the bins where the rectangles will be placed
-# for b in Atlas:
-#     packer.add_bin(*b)
+            src = cv2.imread(os.path.join(lightmap_directory, aob + "_baked.hdr"), cv2.IMREAD_ANYDEPTH)
 
-# # Start packing
-# packer.pack()
+            print("Obj name is: " + aob)
 
+            x,y,w,h = rect[1],rect[2],rect[3],rect[4]
 
-# #TODO? CHECK IF FILE EXISTS IN CASE OF COPY?
-
-# for idx, bin in enumerate(packer):
-#     print("Bin #" + str(idx) + " with size 1024") # Bin id if it has one
-    
-#     for idy, rect in enumerate(packer.rect_list()):
-        
-#         print(rect)
-        
-#         if rect[0] == idx: #If bin fits the rect
+            packedAtlas[atlas.name][y:h+y, x:w+x] = src
             
-#             #res = [val[0] for idx, val in enumerate(atlasObjects) if atlasObjects[0] == rect[5]]
-#             #for idx, val in enumerate(atlasObjects):
-#             #    if val[0] == rect[5]:
-#             #        res = idx
-            
-#             print(rect[5])
-            
-            
-#             #AOB is AtlasObjects where idy is rid?
-#             for obj in atlasObjects:
-#                 if obj[0] == rect[5]:
-#                     #print(obj[0])
-#                     aob = obj[0]
-            
-#             #print(aob)
-            
-#             src = cv2.imread(os.path.join(lmdir, aob + "_baked.hdr"), cv2.IMREAD_ANYDEPTH)
-            
-#             x = rect[1]
-#             y = rect[2]
-#             w = rect[3]
-#             h = rect[4]
-            
-#             VS[idx][y:h+y, x:w+x] = src
-            
-#             print(" ")
-            
-#             #print(atlasObjects[idy])
-#             #src = os.path.join(lmdir, atlasObjects[idy][0] + "_baked.hdr")
-#             #print(src)
-            
-            
-#     cv2.imshow('Image', VS[idx])
+            obj = bpy.data.objects[aob]
 
+            for idx, layer in enumerate(obj.data.uv_layers):
+                if layer.name == "UVMap_Lightmap":
+                    obj.data.uv_layers.active_index = idx
 
+                    print("UVLayer set to: " + str(obj.data.uv_layers.active_index))
 
+            #S = mathutils.Vector.Diagonal((1, -1)) # scale matrix
+
+            for uv_verts in obj.data.uv_layers.active.data:
+
+                #SET UV LAYER TO 
+
+                atlasRes = atlas_resolution
+                texRes = rect[3]
+                x,y,w,z = x,y,texRes,texRes
+                
+                ratio = atlasRes/texRes
+                
+                if x == 0:
+                    x_offset = 0
+                else:
+                    x_offset = 1/(atlasRes/x)
+
+                if y == 0:
+                    y_offset = 0
+                else:
+                    y_offset = 1/(atlasRes/y)
+                
+                vertex_x = (uv_verts.uv[0] * 1/(ratio)) + x_offset
+                vertex_y = (1 - ((uv_verts.uv[1] * 1/(ratio)) + y_offset))
+                
+                uv_verts.uv[0] = vertex_x
+                uv_verts.uv[1] = vertex_y
+
+            #Change the material for each material, slot
+            for slot in obj.material_slots:
+                nodetree = slot.material.node_tree
+
+                for node in nodetree.nodes:
+
+                    if node.name == "TLM_Lightmap":
+
+                        node.image.filepath_raw = os.path.join(lightmap_directory, atlas.name + "_baked.hdr")
+
+            #print(xxs)
+
+        cv2.imwrite(os.path.join(lightmap_directory, atlas.name + "_baked.hdr"), packedAtlas[atlas.name])

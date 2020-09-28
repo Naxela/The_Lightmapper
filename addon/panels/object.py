@@ -43,7 +43,7 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
                     if scene.TLM_PostAtlasListItem >= 0 and len(scene.TLM_PostAtlasList) > 0:
                         row = layout.row()
                         item = scene.TLM_PostAtlasList[scene.TLM_PostAtlasListItem]
-                        row.prop_search(obj.TLM_ObjectProperties, "tlm_atlas_pointer", scene, "TLM_PostAtlasList", text='Atlas Group')
+                        row.prop_search(obj.TLM_ObjectProperties, "tlm_postatlas_pointer", scene, "TLM_PostAtlasList", text='Atlas Group')
                         row = layout.row()
                     else:
                         row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")

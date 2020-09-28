@@ -10,6 +10,11 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
             description = "Atlas Lightmap Group",
             default = "")
 
+    tlm_postatlas_pointer : StringProperty(
+            name = "Atlas Group",
+            description = "Atlas Lightmap Group",
+            default = "")
+
     tlm_uvchannel_pointer : StringProperty(
             name = "UV Channel",
             description = "Select UV Channel to bake to",

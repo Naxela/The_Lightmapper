@@ -1,6 +1,6 @@
 import bpy, os, subprocess, sys, platform, aud, json, datetime, socket
 import threading
-from . import encoding
+from . import encoding, pack
 from . cycles import lightmap, prepare, nodes, cache
 from . denoiser import integrated, oidn, optix
 from . filtering import opencv
@@ -549,7 +549,7 @@ def manage_build(background_pass=False):
         if image.users < 1:
             bpy.data.images.remove(image)
 
-    
+    pack.postpack()
 
     if scene.TLM_SceneProperties.tlm_headless:
 
