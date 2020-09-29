@@ -1,4 +1,4 @@
-import bpy, importlib
+import bpy, importlib, math
 from bpy.props import *
 from bpy.types import Menu, Panel
 from .. utility import icon
@@ -71,8 +71,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             if sceneProperties.tlm_override_bg_color:
                 row = layout.row(align=True)
                 row.prop(sceneProperties, "tlm_override_color")
-            #row = layout.row(align=True)
-            #row.prop(sceneProperties, "tlm_reset_uv")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_reset_uv")
 
             row = layout.row(align=True)
             row.label(text="Cycles Settings")
@@ -438,19 +438,28 @@ class TLM_PT_Additional(bpy.types.Panel):
 
             if postatlasListItem >= 0 and len(postatlasList) > 0:
                 item = postatlasList[postatlasListItem]
-                #layout.prop_search(item, "obj", bpy.data, "objects", text="Object")
-                #layout.prop(item, "res_x")
                 layout.prop(item, "tlm_atlas_lightmap_unwrap_mode")
                 layout.prop(item, "tlm_atlas_lightmap_resolution")
                 layout.prop(item, "tlm_atlas_unwrap_margin")
 
                 #Below list object counter
                 amount = 0
+                utilized = 0
+                atlasUsedArea = 0
+                atlasSize = item.tlm_atlas_lightmap_resolution
 
                 for obj in bpy.data.objects:
                     if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                         if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
                             if obj.TLM_ObjectProperties.tlm_postatlas_pointer == item.name:
                                 amount = amount + 1
+                                
+                                atlasUsedArea += int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) ** 2
 
                 layout.label(text="Objects: " + str(amount))
+
+                utilized = atlasUsedArea / (int(atlasSize) ** 2)
+                layout.label(text="Utilized: " + str(utilized * 100) + "%")
+
+                if (utilized * 100) > 100:
+                    layout.label(text="Warning! Overflow not yet supported")

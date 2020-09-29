@@ -8,8 +8,6 @@ class TLM_AddonPreferences(AddonPreferences):
 
     bl_idname = "thelightmapper"
 
-    addon_keys = bpy.context.preferences.addons.keys()
-
     def draw(self, context):
 
         layout = self.layout
@@ -33,7 +31,7 @@ class TLM_AddonPreferences(AddonPreferences):
         box = layout.box()
         row = box.row()
         row.label(text="Blender Xatlas")
-        if "blender_xatlas" in self.addon_keys:
+        if "blender_xatlas" in bpy.context.preferences.addons.keys():
             row.label(text="Blender Xatlas installed and available")
         else:
             row.label(text="Blender Xatlas not installed", icon_value=2)

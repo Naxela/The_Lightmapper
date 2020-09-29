@@ -61,6 +61,12 @@ def prepare_build(self=0, background_mode=False):
                 self.report({'INFO'}, "Error:Filtering - OpenCV not installed")
                 return{'FINISHED'}
 
+        #TODO DO some resolution change
+        #if checkAtlasSize():
+        #    print("Error: AtlasGroup overflow")
+        #    self.report({'INFO'}, "Error: AtlasGroup overflow - Too many objects")
+        #    return{'FINISHED'}
+
         setMode()
 
         dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
@@ -70,8 +76,8 @@ def prepare_build(self=0, background_mode=False):
         #Naming check
         naming_check()
 
-        if sceneProperties.tlm_reset_uv:
-            for obj in bpy.context.selected_objects:
+        if sceneProperties.tlm_reset_uv or sceneProperties.tlm_atlas_mode == "Postpack":
+            for obj in bpy.data.objects:
                 if obj.type == "MESH":
                     uv_layers = obj.data.uv_layers
 
@@ -545,11 +551,11 @@ def manage_build(background_pass=False):
     else:
         supersampling_scale = 1
 
+    pack.postpack()
+
     for image in bpy.data.images:
         if image.users < 1:
             bpy.data.images.remove(image)
-
-    pack.postpack()
 
     if scene.TLM_SceneProperties.tlm_headless:
 
@@ -763,3 +769,41 @@ def setMode():
     bpy.ops.object.mode_set(mode='OBJECT')
 
     #TODO Make some checks that returns to previous selection
+
+def checkAtlasSize():
+
+    overflow = False
+
+    scene = bpy.context.scene
+
+    if scene.TLM_EngineProperties.tlm_setting_supersample == "2x":
+        supersampling_scale = 2
+    elif scene.TLM_EngineProperties.tlm_setting_supersample == "4x":
+        supersampling_scale = 4
+    else:
+        supersampling_scale = 1
+
+    for atlas in bpy.context.scene.TLM_PostAtlasList:
+
+        atlas_resolution = int(int(atlas.tlm_atlas_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale))
+
+        utilized = 0
+        atlasUsedArea = 0
+
+        for obj in bpy.data.objects:
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
+                    if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
+                        
+                        atlasUsedArea += int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) ** 2
+
+        utilized = atlasUsedArea / (int(atlas_resolution) ** 2)
+        if (utilized * 100) > 100:
+            overflow = True
+            print("Overflow for: " + str(atlas.name))
+
+    if overflow == True:
+        return True
+    else:
+        return False
+

@@ -191,7 +191,7 @@ class TLM_AtlasListNewItem(bpy.types.Operator):
     # Add a new item to the list
     bl_idname = "tlm_atlaslist.new_item"
     bl_label = "Add a new item"
-    bl_description = ""
+    bl_description = "Create a new AtlasGroup"
 
     def execute(self, context):
         scene = context.scene
@@ -206,6 +206,7 @@ class TLM_PostAtlasListNewItem(bpy.types.Operator):
     # Add a new item to the list
     bl_idname = "tlm_postatlaslist.new_item"
     bl_label = "Add a new item"
+    bl_description = "Create a new AtlasGroup"
     bl_description = ""
 
     def execute(self, context):
@@ -221,6 +222,7 @@ class TLM_AtlastListDeleteItem(bpy.types.Operator):
     # Delete the selected item from the list
     bl_idname = "tlm_atlaslist.delete_item"
     bl_label = "Deletes an item"
+    bl_description = "Delete an AtlasGroup"
 
     @classmethod
     def poll(self, context):
@@ -252,6 +254,7 @@ class TLM_PostAtlastListDeleteItem(bpy.types.Operator):
     # Delete the selected item from the list
     bl_idname = "tlm_postatlaslist.delete_item"
     bl_label = "Deletes an item"
+    bl_description = "Delete an AtlasGroup"
 
     @classmethod
     def poll(self, context):
@@ -283,6 +286,7 @@ class TLM_AtlasListMoveItem(bpy.types.Operator):
     # Move an item in the list
     bl_idname = "tlm_atlaslist.move_item"
     bl_label = "Move an item in the list"
+    bl_description = "Move an item in the list"
     direction: bpy.props.EnumProperty(
                 items=(
                     ('UP', 'Up', ""),
@@ -324,6 +328,7 @@ class TLM_PostAtlasListMoveItem(bpy.types.Operator):
     # Move an item in the list
     bl_idname = "tlm_postatlaslist.move_item"
     bl_label = "Move an item in the list"
+    bl_description = "Move an item in the list"
     direction: bpy.props.EnumProperty(
                 items=(
                     ('UP', 'Up', ""),

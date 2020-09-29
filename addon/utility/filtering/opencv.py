@@ -54,6 +54,8 @@ class TLM_CV_Filtering:
                     override = bpy.data.objects[obj_name].TLM_ObjectProperties.tlm_mesh_filter_override
                 elif obj_name in scene.TLM_AtlasList:
                     override = False
+                else:
+                    override = False
 
                 if override:
 

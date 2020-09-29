@@ -15,13 +15,54 @@ def postpack():
     #Each bins has rects
     #Each rect corresponds to a pack_object
 
+    scene = bpy.context.scene
+    
+    sceneProperties = scene.TLM_SceneProperties
+
+    end = "_baked"
+
+    if sceneProperties.tlm_denoise_use:
+
+        end = "_denoised"
+
+    if sceneProperties.tlm_filtering_use:
+
+        end = "_filtered"
+
+    formatEnc = ".hdr"
+
+    image_channel_depth = cv2.IMREAD_ANYDEPTH
+    linear_straight = False
+    
+    if sceneProperties.tlm_encoding_use and scene.TLM_EngineProperties.tlm_bake_mode != "Background":
+
+        if sceneProperties.tlm_encoding_mode == "HDR":
+
+            if sceneProperties.tlm_format == "EXR":
+
+                formatEnc = ".exr"
+
+        if sceneProperties.tlm_encoding_mode == "LogLuv":
+
+            formatEnc = "_encoded.png"
+            image_channel_depth = cv2.IMREAD_UNCHANGED
+            linear_straight = True
+
+        if sceneProperties.tlm_encoding_mode == "RGBM":
+
+            formatEnc = "_encoded.png"
+            image_channel_depth = cv2.IMREAD_UNCHANGED
+
+        if sceneProperties.tlm_encoding_mode == "RGBD":
+
+            formatEnc = "_encoded.png"
+            image_channel_depth = cv2.IMREAD_UNCHANGED
+
     packer = {}
 
     for atlas in bpy.context.scene.TLM_PostAtlasList: #For each atlas
 
         packer[atlas.name] = newPacker(PackingMode.Offline, PackingBin.BFF, rotation=False)
-
-        scene = bpy.context.scene
 
         if scene.TLM_EngineProperties.tlm_setting_supersample == "2x":
             supersampling_scale = 2
@@ -51,7 +92,10 @@ def postpack():
             packer[atlas.name].add_rect(*r)
 
         #Continue here...
-        packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 3), dtype="float32")
+        if (sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD" or sceneProperties.tlm_encoding_mode == "LogLuv") and sceneProperties.tlm_encoding_use:
+            packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 4), dtype=np.uint8)
+        else:
+            packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 3), dtype="float32")
 
         packer[atlas.name].pack()
 
@@ -59,11 +103,14 @@ def postpack():
 
             aob = rect[5]
 
-            src = cv2.imread(os.path.join(lightmap_directory, aob + "_baked.hdr"), cv2.IMREAD_ANYDEPTH)
+            src = cv2.imread(os.path.join(lightmap_directory, aob + end + formatEnc), image_channel_depth) #"_baked.hdr"
 
             print("Obj name is: " + aob)
 
             x,y,w,h = rect[1],rect[2],rect[3],rect[4]
+
+            print(src.shape)
+            print(packedAtlas[atlas.name].shape)
 
             packedAtlas[atlas.name][y:h+y, x:w+x] = src
             
@@ -74,8 +121,6 @@ def postpack():
                     obj.data.uv_layers.active_index = idx
 
                     print("UVLayer set to: " + str(obj.data.uv_layers.active_index))
-
-            #S = mathutils.Vector.Diagonal((1, -1)) # scale matrix
 
             for uv_verts in obj.data.uv_layers.active.data:
 
@@ -103,16 +148,81 @@ def postpack():
                 uv_verts.uv[0] = vertex_x
                 uv_verts.uv[1] = vertex_y
 
-            #Change the material for each material, slot
-            for slot in obj.material_slots:
-                nodetree = slot.material.node_tree
+            scaleUV(obj.data.uv_layers.active, (1, -1), getBoundsCenter(obj.data.uv_layers.active))
+            print(getCenter(obj.data.uv_layers.active))
 
-                for node in nodetree.nodes:
+        cv2.imwrite(os.path.join(lightmap_directory, atlas.name + end + formatEnc), packedAtlas[atlas.name])
+        print("Written: " + str(os.path.join(lightmap_directory, atlas.name + end + formatEnc)))
 
-                    if node.name == "TLM_Lightmap":
+        #Change the material for each material, slot
+        for obj in bpy.data.objects:
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
+                if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
+                    for slot in obj.material_slots:
+                        nodetree = slot.material.node_tree
 
-                        node.image.filepath_raw = os.path.join(lightmap_directory, atlas.name + "_baked.hdr")
+                        for node in nodetree.nodes:
 
-            #print(xxs)
+                            if node.name == "TLM_Lightmap":
 
-        cv2.imwrite(os.path.join(lightmap_directory, atlas.name + "_baked.hdr"), packedAtlas[atlas.name])
+                                existing_image = node.image
+
+                                atlasImage = bpy.data.images.load(os.path.join(lightmap_directory, atlas.name + end + formatEnc), check_existing=True)
+
+                                if linear_straight:
+                                    if atlasImage.colorspace_settings.name != 'Linear':
+                                        atlasImage.colorspace_settings.name = 'Linear'
+
+                                node.image = atlasImage
+
+                                os.remove(os.path.join(lightmap_directory, obj.name + end + formatEnc))
+                                existing_image.user_clear()
+
+def getCenter(uv_layer):
+
+    total_x, total_y = 0,0
+    len = 0
+
+    for uv_verts in uv_layer.data:
+        total_x += uv_verts.uv[0]
+        total_y += uv_verts.uv[1]
+
+        len += 1 
+
+    center_x = total_x / len
+    center_y = total_y / len
+
+    return (center_x, center_y)
+
+def getBoundsCenter(uv_layer):
+
+    min_x = getCenter(uv_layer)[0]
+    max_x = getCenter(uv_layer)[0]
+    min_y = getCenter(uv_layer)[1]
+    max_y = getCenter(uv_layer)[1]
+
+    len = 0
+
+    for uv_verts in uv_layer.data:
+
+        if uv_verts.uv[0] < min_x:
+            min_x = uv_verts.uv[0]
+        if uv_verts.uv[0] > max_x:
+            max_x = uv_verts.uv[0]
+        if uv_verts.uv[1] < min_y:
+            min_y = uv_verts.uv[1]
+        if uv_verts.uv[1] > max_y:
+            max_y = uv_verts.uv[1]
+
+    center_x = (max_x - min_x) / 2 + min_x
+    center_y = (max_y - min_y) / 2 + min_y
+
+    return (center_x, center_y)
+
+
+def scale2D(v, s, p):
+    return (p[0] + s[0]*(v[0] - p[0]), p[1] + s[1]*(v[1] - p[1]))
+
+def scaleUV( uvMap, scale, pivot ):
+    for uvIndex in range( len(uvMap.data) ):
+        uvMap.data[uvIndex].uv = scale2D(uvMap.data[uvIndex].uv, scale, pivot)

@@ -22,7 +22,7 @@ bl_info = {
     'name': 'The Lightmapper',
     'description': 'The Lightmapper is a lightmapping utility addon for Blender, made specifically for making lightmaps for game engines.',
     'author': 'Alexander Kleemann @ Naxela',
-    'version': (0, 4, 2, 7),
+    'version': (0, 4, 2, 8),
     'blender': (2, 90, 0),
     'location': 'View3D',
     'category': '3D View'
@@ -113,8 +113,16 @@ Changes:
 0.4.2.3 - Fix infinite OpenCV installation on Linux
 
 - 15.09.2020
-0.4.2.4 Reimplement RGBD encoding
-0.4.2.5 Add decoder options for RGBM, RGBD and LogLuv
-0.4.2.6 Begin network rendering server
-0.4.2.7 Begin network rendering client
+0.4.2.4 - Reimplement RGBD encoding
+0.4.2.5 - Add decoder options for RGBM, RGBD and LogLuv
+0.4.2.6 - Begin network rendering server
+0.4.2.7 - Begin network rendering client
+
+- 29.09.2020
+0.4.2.9 - Fix Xatlas bug
+0.4.3.0 - Begin AtlasGroup postpacking
+0.4.3.1 - Improve AtlasGroup postpacking (Rectmap packing)
+0.4.3.2 - Improve AtlasGroup postpacking
+0.4.3.3 - Add UV manipulation for AtlasGroup postpacking
+0.4.3.4 - Fix for encoding with AtlasGroup
 '''
