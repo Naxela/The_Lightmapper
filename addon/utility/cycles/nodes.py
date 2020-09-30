@@ -139,7 +139,10 @@ def apply_materials():
                         mixNode = node_tree.nodes.new(type="ShaderNodeMixRGB")
                         mixNode.name = "Lightmap_Multiplication"
                         mixNode.location = -300, 300
-                        mixNode.blend_type = 'MULTIPLY'
+                        if scene.TLM_EngineProperties.tlm_lighting_mode == "indirect" or scene.TLM_EngineProperties.tlm_lighting_mode == "indirectAO":
+                            mixNode.blend_type = 'ADD'
+                        else:
+                            mixNode.blend_type = 'MULTIPLY'
                         mixNode.inputs[0].default_value = 1.0
 
                         UVLightmap = node_tree.nodes.new(type="ShaderNodeUVMap")

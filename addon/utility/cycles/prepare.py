@@ -126,17 +126,15 @@ def configure_meshes(self):
             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                 print("Temporary skip: COPYING SMART PROJECT")
 
-                print("Smart Project A for: " + str(atlas_items))
             for obj in atlas_items:
-                print(obj.name + ": Active UV: " + obj.data.uv_layers[obj.data.uv_layers.active_index].name)
-
+                obj.select_set(True)
             if len(atlas_items) > 0:
                 bpy.context.view_layer.objects.active = atlas_items[0]
 
             bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.select_all(action='SELECT')
-            bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=atlasgroup.tlm_atlas_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
-            bpy.ops.mesh.select_all(action='DESELECT')
+
+            Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj)
+
             bpy.ops.object.mode_set(mode='OBJECT')
 
         else:

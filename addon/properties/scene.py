@@ -257,11 +257,15 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         items = [('Lightmap', 'Lightmap', 'TODO'),
                  ('SmartProject', 'Smart Project', 'TODO'),
                  ('CopyExisting', 'Copy Existing', 'TODO'),
-                 ('AtlasGroupA', 'Atlas Group (Prepack)', 'TODO'),
-                 ('AtlasGroupB', 'Atlas Group (Postpack)', 'TODO')],
+                 ('AtlasGroupA', 'Atlas Group (Prepack)', 'TODO')],
                 name = "Unwrap Mode", 
                 description="TODO", 
                 default='SmartProject')
+
+    tlm_postpack_object : BoolProperty( #CHECK INSTEAD OF ATLASGROUPB
+        name="Postpack object", 
+        description="Postpack object into an AtlasGroup", 
+        default=False)
 
     tlm_mesh_unwrap_margin : FloatProperty(
         name="Unwrap Margin", 

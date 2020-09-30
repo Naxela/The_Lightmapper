@@ -792,7 +792,7 @@ def checkAtlasSize():
 
         for obj in bpy.data.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
+                if obj.TLM_ObjectProperties.tlm_postpack_object:
                     if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
                         
                         atlasUsedArea += int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) ** 2

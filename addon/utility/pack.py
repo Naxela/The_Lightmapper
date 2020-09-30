@@ -81,7 +81,7 @@ def postpack():
         #For each object that targets the atlas
         for obj in bpy.data.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
+                if obj.TLM_ObjectProperties.tlm_postpack_object:
                     if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
 
                         res = int(int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale))
@@ -156,7 +156,7 @@ def postpack():
 
         #Change the material for each material, slot
         for obj in bpy.data.objects:
-            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
+            if obj.TLM_ObjectProperties.tlm_postpack_object:
                 if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
                     for slot in obj.material_slots:
                         nodetree = slot.material.node_tree

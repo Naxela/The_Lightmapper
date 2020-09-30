@@ -52,8 +52,12 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
     unwrap_modes = [('Lightmap', 'Lightmap', 'TODO'),
                 ('SmartProject', 'Smart Project', 'TODO'),
                 ('CopyExisting', 'Copy Existing', 'TODO'),
-                ('AtlasGroupA', 'Atlas Group (Prepack)', 'TODO'),
-                 ('AtlasGroupB', 'Atlas Group (Postpack)', 'TODO')]
+                ('AtlasGroupA', 'Atlas Group (Prepack)', 'TODO')]
+
+    tlm_postpack_object : BoolProperty( #CHECK INSTEAD OF ATLASGROUPB
+        name="Postpack object", 
+        description="Postpack object into an AtlasGroup", 
+        default=False)
 
     if "blender_xatlas" in addon_keys:
         unwrap_modes.append(('Xatlas', 'Xatlas', 'TODO'))

@@ -26,7 +26,8 @@ class TLM_PostAtlasListItem(bpy.types.PropertyGroup):
 
     tlm_atlas_lightmap_unwrap_mode : EnumProperty(
         items = [('Lightmap', 'Lightmap', 'TODO'),
-                 ('SmartProject', 'Smart Project', 'TODO')],
+                 ('SmartProject', 'Smart Project', 'TODO'),
+                 ('Xatlas', 'Xatlas', 'TODO')],
                 name = "Unwrap Mode", 
                 description="TODO", 
                 default='SmartProject')
@@ -42,7 +43,7 @@ class TLM_UL_PostAtlasList(bpy.types.UIList):
 
             for obj in bpy.data.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
+                    if obj.TLM_ObjectProperties.tlm_postpack_object:
                         if obj.TLM_ObjectProperties.tlm_postatlas_pointer == item.name:
                             amount = amount + 1
 
@@ -86,7 +87,8 @@ class TLM_AtlasListItem(bpy.types.PropertyGroup):
 
     tlm_atlas_lightmap_unwrap_mode : EnumProperty(
         items = [('Lightmap', 'Lightmap', 'TODO'),
-                 ('SmartProject', 'Smart Project', 'TODO')],
+                 ('SmartProject', 'Smart Project', 'TODO'),
+                 ('Xatlas', 'Xatlas', 'TODO')],
                 name = "Unwrap Mode", 
                 description="TODO", 
                 default='SmartProject')

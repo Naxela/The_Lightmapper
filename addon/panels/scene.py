@@ -336,17 +336,23 @@ class TLM_PT_Selection(bpy.types.Panel):
                 else:
                     row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
 
-            elif sceneProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
+            else:
+                row = layout.row()
+                row.prop(sceneProperties, "tlm_postpack_object")
+                row = layout.row()
 
+            if sceneProperties.tlm_postpack_object and sceneProperties.tlm_mesh_lightmap_unwrap_mode != "AtlasGroupA":
                 if scene.TLM_PostAtlasListItem >= 0 and len(scene.TLM_PostAtlasList) > 0:
                     row = layout.row()
                     item = scene.TLM_PostAtlasList[scene.TLM_PostAtlasListItem]
                     row.prop_search(sceneProperties, "tlm_postatlas_pointer", scene, "TLM_PostAtlasList", text='Atlas Group')
+                    row = layout.row()
+
                 else:
                     row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
+                    row = layout.row()
 
-            else:
-
+            if sceneProperties.tlm_mesh_lightmap_unwrap_mode != "AtlasGroupA":
                 row.prop(sceneProperties, "tlm_mesh_lightmap_resolution")
                 row = layout.row()
                 row.prop(sceneProperties, "tlm_mesh_unwrap_margin")
@@ -438,9 +444,7 @@ class TLM_PT_Additional(bpy.types.Panel):
 
             if postatlasListItem >= 0 and len(postatlasList) > 0:
                 item = postatlasList[postatlasListItem]
-                layout.prop(item, "tlm_atlas_lightmap_unwrap_mode")
                 layout.prop(item, "tlm_atlas_lightmap_resolution")
-                layout.prop(item, "tlm_atlas_unwrap_margin")
 
                 #Below list object counter
                 amount = 0
@@ -450,7 +454,7 @@ class TLM_PT_Additional(bpy.types.Panel):
 
                 for obj in bpy.data.objects:
                     if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupB":
+                        if obj.TLM_ObjectProperties.tlm_postpack_object:
                             if obj.TLM_ObjectProperties.tlm_postatlas_pointer == item.name:
                                 amount = amount + 1
                                 
