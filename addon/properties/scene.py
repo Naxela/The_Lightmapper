@@ -257,7 +257,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         items = [('Lightmap', 'Lightmap', 'TODO'),
                  ('SmartProject', 'Smart Project', 'TODO'),
                  ('CopyExisting', 'Copy Existing', 'TODO'),
-                 ('AtlasGroupA', 'Atlas Group (Prepack)', 'TODO')],
+                 ('AtlasGroupA', 'Atlas Group (Prepack)', 'TODO'),
+                 ('Xatlas', 'Xatlas', 'TODO')],
                 name = "Unwrap Mode", 
                 description="TODO", 
                 default='SmartProject')

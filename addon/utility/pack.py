@@ -156,27 +156,28 @@ def postpack():
 
         #Change the material for each material, slot
         for obj in bpy.data.objects:
-            if obj.TLM_ObjectProperties.tlm_postpack_object:
-                if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
-                    for slot in obj.material_slots:
-                        nodetree = slot.material.node_tree
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                if obj.TLM_ObjectProperties.tlm_postpack_object:
+                    if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
+                        for slot in obj.material_slots:
+                            nodetree = slot.material.node_tree
 
-                        for node in nodetree.nodes:
+                            for node in nodetree.nodes:
 
-                            if node.name == "TLM_Lightmap":
+                                if node.name == "TLM_Lightmap":
 
-                                existing_image = node.image
+                                    existing_image = node.image
 
-                                atlasImage = bpy.data.images.load(os.path.join(lightmap_directory, atlas.name + end + formatEnc), check_existing=True)
+                                    atlasImage = bpy.data.images.load(os.path.join(lightmap_directory, atlas.name + end + formatEnc), check_existing=True)
 
-                                if linear_straight:
-                                    if atlasImage.colorspace_settings.name != 'Linear':
-                                        atlasImage.colorspace_settings.name = 'Linear'
+                                    if linear_straight:
+                                        if atlasImage.colorspace_settings.name != 'Linear':
+                                            atlasImage.colorspace_settings.name = 'Linear'
 
-                                node.image = atlasImage
+                                    node.image = atlasImage
 
-                                os.remove(os.path.join(lightmap_directory, obj.name + end + formatEnc))
-                                existing_image.user_clear()
+                                    os.remove(os.path.join(lightmap_directory, obj.name + end + formatEnc))
+                                    existing_image.user_clear()
 
 def getCenter(uv_layer):
 
