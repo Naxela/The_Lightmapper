@@ -17,7 +17,9 @@ classes = [
     tlm.TLM_PostAtlasListNewItem,
     tlm.TLM_PostAtlastListDeleteItem,
     tlm.TLM_PostAtlasListMoveItem,
-    tlm.TLM_StartServer
+    tlm.TLM_StartServer,
+    tlm.TLM_BuildEnvironmentProbes,
+    tlm.TLM_CleanBuildEnvironmentProbes
 ]
 
 def register():

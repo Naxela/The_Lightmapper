@@ -1,4 +1,5 @@
 import bpy, os, time, blf, webbrowser, platform
+import math, subprocess
 from .. utility import build
 from .. utility.cycles import cache
 from .. network import server
@@ -388,3 +389,155 @@ class TLM_StartServer(bpy.types.Operator):
         server.startServer()
 
         return {'RUNNING_MODAL'}
+
+class TLM_BuildEnvironmentProbes(bpy.types.Operator):
+    bl_idname = "tlm.build_environmentprobe"
+    bl_label = "Build Environment Probes"
+    bl_description = "Build all environment probes from reflection cubemaps"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def invoke(self, context, event):
+
+        for obj in bpy.data.objects:
+
+            if obj.type == "LIGHT_PROBE":
+                if obj.data.type == "CUBEMAP":
+
+                    cam_name = "EnvPCam_" + obj.name
+                    camera = bpy.data.cameras.new(cam_name)
+                    camobj_name = "EnvPCamera_" + obj.name
+                    cam_obj = bpy.data.objects.new(camobj_name, camera)
+                    bpy.context.collection.objects.link(cam_obj)
+                    cam_obj.location = obj.location
+                    camera.angle = math.radians(90)
+
+                    prevResx = bpy.context.scene.render.resolution_x
+                    prevResy = bpy.context.scene.render.resolution_y
+                    prevCam = bpy.context.scene.camera
+                    prevEngine = bpy.context.scene.render.engine
+                    bpy.context.scene.camera = cam_obj
+
+                    bpy.context.scene.render.engine = bpy.context.scene.TLM_SceneProperties.tlm_environment_probe_engine
+                    bpy.context.scene.render.resolution_x = int(bpy.context.scene.TLM_SceneProperties.tlm_environment_probe_resolution)
+                    bpy.context.scene.render.resolution_y = int(bpy.context.scene.TLM_SceneProperties.tlm_environment_probe_resolution)
+
+                    savedir = os.path.dirname(bpy.data.filepath)
+                    directory = os.path.join(savedir, "Probes")
+
+                    t = 90
+
+                    positions = {
+                            "xp" : (math.radians(t),0,0),
+                            "zp" : (math.radians(t),0,math.radians(t)),
+                            "xm" : (math.radians(t),0,math.radians(t*2)),
+                            "zm" : (math.radians(t),0,math.radians(-t)),
+                            "yp" : (math.radians(t*2),0,math.radians(t)),
+                            "ym" : (0,0,math.radians(t))
+                        }
+
+                    cam = cam_obj
+                    image_settings = bpy.context.scene.render.image_settings
+                    image_settings.file_format = "HDR"
+                    image_settings.color_depth = '32'
+
+                    for val in positions:
+                        cam.rotation_euler = positions[val]
+                        
+                        filename = os.path.join(directory, val) + "_" + camobj_name + ".hdr"
+                        bpy.data.scenes['Scene'].render.filepath = filename
+                        print("Writing out: " + val)
+                        bpy.ops.render.render(write_still=True)
+
+                    cmft_path = bpy.path.abspath(os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_SceneProperties.tlm_cmft_path))
+
+                    output_file_irr = camobj_name + ".hdr"
+
+                    posx = directory + "/" + "xp_" + camobj_name + ".hdr"
+                    negx = directory + "/" + "xm_" + camobj_name + ".hdr"
+                    posy = directory + "/" + "yp_" + camobj_name + ".hdr"
+                    negy = directory + "/" + "ym_" + camobj_name + ".hdr"
+                    posz = directory + "/" + "zp_" + camobj_name + ".hdr"
+                    negz = directory + "/" + "zm_" + camobj_name + ".hdr"
+                    output = directory + "/" + camobj_name
+
+                    if platform.system() == 'Windows':
+                        envpipe = [cmft_path, 
+                        '--inputFacePosX', posx, 
+                        '--inputFaceNegX', negx, 
+                        '--inputFacePosY', posy, 
+                        '--inputFaceNegY', negy, 
+                        '--inputFacePosZ', posz, 
+                        '--inputFaceNegZ', negz, 
+                        '--output0', output, 
+                        '--output0params', 
+                        'hdr,rgbe,latlong']
+                        
+                    else:
+                        envpipe = [cmft_path + '--inputFacePosX' + posx 
+                        + '--inputFaceNegX' + negx 
+                        + '--inputFacePosY' + posy 
+                        + '--inputFaceNegY' + negy 
+                        + '--inputFacePosZ' + posz 
+                        + '--inputFaceNegZ' + negz 
+                        + '--output0' + output 
+                        + '--output0params' + 'hdr,rgbe,latlong']
+
+                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                        print("Calling CMFT with:" + str(envpipe))
+
+                    if bpy.context.scene.TLM_SceneProperties.tlm_create_spherical:
+                        subprocess.call(envpipe, shell=True)
+
+                    input2 = output + ".hdr"
+                    output2 = directory + "/" + camobj_name
+
+                    if platform.system() == 'Windows':
+                        envpipe2 = [cmft_path, 
+                        '--input', input2, 
+                        '--filter', 'shcoeffs', 
+                        '--outputNum', '1', 
+                        '--output0', output2]
+                        
+                    else:
+                        envpipe2 = [cmft_path + 
+                        '--input' + input2
+                        + '-filter' + 'shcoeffs'
+                        + '--outputNum' + '1'
+                        + '--output0' + output2]
+                        
+                    if bpy.context.scene.TLM_SceneProperties.tlm_write_sh:
+                        subprocess.call(envpipe2, shell=True)
+
+                    for obj in bpy.data.objects:
+                        obj.select_set(False)
+
+                    cam_obj.select_set(True)
+                    bpy.ops.object.delete()
+                    bpy.context.scene.render.resolution_x = prevResx
+                    bpy.context.scene.render.resolution_y = prevResy
+                    bpy.context.scene.camera = prevCam
+                    bpy.context.scene.render.engine = prevEngine
+
+                    print("Finished building environment probes")
+
+
+        return {'RUNNING_MODAL'}
+
+class TLM_CleanBuildEnvironmentProbes(bpy.types.Operator): 
+    bl_idname = "tlm.clean_environmentprobe"
+    bl_label = "Clean Environment Probes"
+    bl_description = "Clean Environment Probes"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        scene = context.scene
+
+        savedir = os.path.dirname(bpy.data.filepath)
+        dirpath = os.path.join(savedir, "Probes")
+
+        if os.path.isdir(dirpath):
+            for file in os.listdir(dirpath):
+                os.remove(os.path.join(dirpath + "/" + file))
+
+        return {'FINISHED'}

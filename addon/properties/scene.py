@@ -344,3 +344,40 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Use a path that is accessible to all your network render devices.", 
         default="", 
         subtype="FILE_PATH")
+
+    tlm_cmft_path : StringProperty(
+        name="CMFT Path", 
+        description="The path to the CMFT binaries", 
+        default="", 
+        subtype="FILE_PATH")
+    
+    tlm_create_spherical : BoolProperty(
+        name="Create spherical texture", 
+        description="Merge cubemap to a 360 spherical texture.", 
+        default=False)
+
+    tlm_write_sh : BoolProperty(
+        name="Calculate SH coefficients", 
+        description="Calculates spherical harmonics coefficients to a file.", 
+        default=False)
+
+    tlm_environment_probe_resolution : EnumProperty(
+        items = [('32', '32', 'TODO'),
+                 ('64', '64', 'TODO'),
+                 ('128', '128', 'TODO'),
+                 ('256', '256', 'TODO'),
+                 ('512', '512', 'TODO'),
+                 ('1024', '1024', 'TODO'),
+                 ('2048', '2048', 'TODO'),
+                 ('4096', '4096', 'TODO'),
+                 ('8192', '8192', 'TODO')],
+                name = "Probe Resolution", 
+                description="TODO", 
+                default='256')
+
+    tlm_environment_probe_engine : EnumProperty(
+        items = [('BLENDER_EEVEE', 'Eevee', 'TODO'),
+                 ('CYCLES', 'Cycles', 'TODO')],
+                name = "Probe Render Engine", 
+                description="TODO", 
+                default='BLENDER_EEVEE')

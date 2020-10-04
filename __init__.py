@@ -125,4 +125,21 @@ Changes:
 0.4.3.2 - Improve AtlasGroup postpacking
 0.4.3.3 - Add UV manipulation for AtlasGroup postpacking
 0.4.3.4 - Fix for encoding with AtlasGroup
+
+- 01.10.2020
+0.4.3.5 - Fixes for postpacking
+0.4.3.6 - Fixes for prepacking
+0.4.3.7 - Xatlas atlasgroup packing
+0.4.3.8 - Begin combinedAO
+
+- 02.10.2020
+0.4.3.9 - Add Xatlas bulk selection
+0.4.4.0 - Ensure lightmap status on postpacking
+
+- 04.10.2020
+0.4.4.1 - Begin environment probe building
+0.4.4.2 - CMFT path fixes
+0.4.4.3 - Probe resolution
+0.4.4.4 - SH coefficients option
+0.4.4.5 - Add clean environment probe
 '''

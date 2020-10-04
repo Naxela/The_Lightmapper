@@ -467,3 +467,21 @@ class TLM_PT_Additional(bpy.types.Panel):
 
                 if (utilized * 100) > 100:
                     layout.label(text="Warning! Overflow not yet supported")
+
+        row = layout.row()
+        row.label(text="Build Environment Probes")
+        row = layout.row()
+        row.operator("tlm.build_environmentprobe")
+        row = layout.row()
+        row.operator("tlm.clean_environmentprobe")
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_environment_probe_engine")
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_cmft_path")
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_environment_probe_resolution")
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_create_spherical")
+        if sceneProperties.tlm_create_spherical:
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_write_sh")
