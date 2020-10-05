@@ -361,6 +361,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Calculates spherical harmonics coefficients to a file.", 
         default=False)
 
+    tlm_write_radiance : BoolProperty(
+        name="Write radiance images", 
+        description="Writes out the radiance images.", 
+        default=False)
+
     tlm_environment_probe_resolution : EnumProperty(
         items = [('32', '32', 'TODO'),
                  ('64', '64', 'TODO'),
@@ -381,3 +386,5 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 name = "Probe Render Engine", 
                 description="TODO", 
                 default='BLENDER_EEVEE')
+
+    

@@ -485,3 +485,5 @@ class TLM_PT_Additional(bpy.types.Panel):
         if sceneProperties.tlm_create_spherical:
             row = layout.row()
             row.prop(sceneProperties, "tlm_write_sh")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_write_radiance")

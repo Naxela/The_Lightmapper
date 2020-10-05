@@ -426,14 +426,15 @@ class TLM_BuildEnvironmentProbes(bpy.types.Operator):
 
                     t = 90
 
+                    #OBS! Y and Z is shifted
                     positions = {
-                            "xp" : (math.radians(t),0,0),
-                            "zp" : (math.radians(t),0,math.radians(t)),
-                            "xm" : (math.radians(t),0,math.radians(t*2)),
-                            "zm" : (math.radians(t),0,math.radians(-t)),
-                            "yp" : (math.radians(t*2),0,math.radians(t)),
-                            "ym" : (0,0,math.radians(t))
-                        }
+                            "xp" : (math.radians(t), 0, math.radians(t*2)),
+                            "zp" : (math.radians(t), 0, math.radians(-t)),
+                            "xm" : (math.radians(t), 0, math.radians(0)),
+                            "zm" : (math.radians(t), 0, math.radians(t)),
+                            "yp" : (math.radians(t*2), 0, math.radians(-t)),
+                            "ym" : (0, 0, math.radians(-t))
+                    }
 
                     cam = cam_obj
                     image_settings = bpy.context.scene.render.image_settings
