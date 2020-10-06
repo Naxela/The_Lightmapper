@@ -1,5 +1,5 @@
 import bpy, os, time, blf, webbrowser, platform
-import math, subprocess
+import math, subprocess, multiprocessing
 from .. utility import build
 from .. utility.cycles import cache
 from .. network import server
@@ -426,15 +426,31 @@ class TLM_BuildEnvironmentProbes(bpy.types.Operator):
 
                     t = 90
 
-                    #OBS! Y and Z is shifted
-                    positions = {
-                            "xp" : (math.radians(t), 0, math.radians(t*2)),
-                            "zp" : (math.radians(t), 0, math.radians(-t)),
-                            "xm" : (math.radians(t), 0, math.radians(0)),
-                            "zm" : (math.radians(t), 0, math.radians(t)),
-                            "yp" : (math.radians(t*2), 0, math.radians(-t)),
-                            "ym" : (0, 0, math.radians(-t))
-                    }
+                    inverted = bpy.context.scene.TLM_SceneProperties.tlm_invert_direction
+
+                    if inverted:
+
+                        positions = {
+                                "xp" : (math.radians(t), 0, math.radians(0)),
+                                "zp" : (math.radians(t), 0, math.radians(t)),
+                                "xm" : (math.radians(t), 0, math.radians(t*2)),
+                                "zm" : (math.radians(t), 0, math.radians(-t)),
+                                "yp" : (math.radians(t*2), 0, math.radians(t)),
+                                "ym" : (0, 0, math.radians(t))
+                        }
+
+                    else:
+
+                        positions = {
+                                "xp" : (math.radians(t), 0, math.radians(t*2)),
+                                "zp" : (math.radians(t), 0, math.radians(-t)),
+                                "xm" : (math.radians(t), 0, math.radians(0)),
+                                "zm" : (math.radians(t), 0, math.radians(t)),
+                                "yp" : (math.radians(t*2), 0, math.radians(-t)),
+                                "ym" : (0, 0, math.radians(-t))
+                        }
+
+
 
                     cam = cam_obj
                     image_settings = bpy.context.scene.render.image_settings
@@ -509,6 +525,84 @@ class TLM_BuildEnvironmentProbes(bpy.types.Operator):
                     if bpy.context.scene.TLM_SceneProperties.tlm_write_sh:
                         subprocess.call(envpipe2, shell=True)
 
+                    if bpy.context.scene.TLM_SceneProperties.tlm_write_radiance:
+
+                        use_opencl = 'false'
+                        cpu_count = 2
+
+                        # 4096 = 256 face
+                        # 2048 = 128 face
+                        # 1024 = 64 face
+                        target_w = int(512)
+                        face_size = target_w / 8
+                        if target_w == 2048:
+                            mip_count = 9
+                        elif target_w == 1024:
+                            mip_count = 8
+                        else:
+                            mip_count = 7
+
+                        output_file_rad = directory + "/" + camobj_name + "_rad.hdr"
+                        
+                        if platform.system() == 'Windows':
+
+                            envpipe3 = [
+                                cmft_path,
+                                '--input', input2,
+                                '--filter', 'radiance',
+                                '--dstFaceSize', str(face_size),
+                                '--srcFaceSize', str(face_size),
+                                '--excludeBase', 'false',
+                                # '--mipCount', str(mip_count),
+                                '--glossScale', '8',
+                                '--glossBias', '3',
+                                '--lightingModel', 'blinnbrdf',
+                                '--edgeFixup', 'none',
+                                '--numCpuProcessingThreads', str(cpu_count),
+                                '--useOpenCL', use_opencl,
+                                '--clVendor', 'anyGpuVendor',
+                                '--deviceType', 'gpu',
+                                '--deviceIndex', '0',
+                                '--generateMipChain', 'true',
+                                '--inputGammaNumerator', '1.0',
+                                '--inputGammaDenominator', '1.0',
+                                '--outputGammaNumerator', '1.0',
+                                '--outputGammaDenominator', '1.0',
+                                '--outputNum', '1',
+                                '--output0', output_file_rad,
+                                '--output0params', 'hdr,rgbe,latlong'
+                            ]
+
+                            subprocess.call(envpipe3)
+
+                        else:
+
+                            envpipe3 = cmft_path + \
+                                ' --input "' + input2 + '"' + \
+                                ' --filter radiance' + \
+                                ' --dstFaceSize ' + str(face_size) + \
+                                ' --srcFaceSize ' + str(face_size) + \
+                                ' --excludeBase false' + \
+                                ' --glossScale 8' + \
+                                ' --glossBias 3' + \
+                                ' --lightingModel blinnbrdf' + \
+                                ' --edgeFixup none' + \
+                                ' --numCpuProcessingThreads ' + str(cpu_count) + \
+                                ' --useOpenCL ' + use_opencl + \
+                                ' --clVendor anyGpuVendor' + \
+                                ' --deviceType gpu' + \
+                                ' --deviceIndex 0' + \
+                                ' --generateMipChain true' + \
+                                ' --inputGammaNumerator ' + '1.0' + \
+                                ' --inputGammaDenominator 1.0' + \
+                                ' --outputGammaNumerator 1.0' + \
+                                ' --outputGammaDenominator 1.0' + \
+                                ' --outputNum 1' + \
+                                ' --output0 "' + output_file_rad + '"' + \
+                                ' --output0params hdr,rgbe,latlong'
+
+                            subprocess.call([envpipe3], shell=True)
+
                     for obj in bpy.data.objects:
                         obj.select_set(False)
 
@@ -540,5 +634,19 @@ class TLM_CleanBuildEnvironmentProbes(bpy.types.Operator):
         if os.path.isdir(dirpath):
             for file in os.listdir(dirpath):
                 os.remove(os.path.join(dirpath + "/" + file))
+
+        return {'FINISHED'}
+
+class TLM_MergeAdjacentActors(bpy.types.Operator): 
+    bl_idname = "tlm.merge_adjacent_actors"
+    bl_label = "Merge adjacent actors"
+    bl_description = "Merges the adjacent faces/vertices of selected objects"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        scene = context.scene
+
+        
 
         return {'FINISHED'}

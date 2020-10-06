@@ -366,6 +366,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Writes out the radiance images.", 
         default=False)
 
+    tlm_invert_direction : BoolProperty(
+        name="Invert direction", 
+        description="Inverts the direction.", 
+        default=False)
+
     tlm_environment_probe_resolution : EnumProperty(
         items = [('32', '32', 'TODO'),
                  ('64', '64', 'TODO'),

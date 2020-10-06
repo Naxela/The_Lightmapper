@@ -48,10 +48,21 @@ class TLM_AddonPreferences(AddonPreferences):
         row.label(text="UVPackmaster")
         row.label(text="Coming soon")
 
+        texel_density_addon = False
+        for addon in bpy.context.preferences.addons.keys():
+            if addon.startswith("Texel_Density"):
+                texel_density_addon = True
+
         box = layout.box()
         row = box.row()
         row.label(text="Texel Density Checker")
-        row.label(text="Coming soon")
+        if texel_density_addon:
+            row.label(text="Texel Density Checker installed and available")
+        else:
+            row.label(text="Texel Density Checker", icon_value=2)
+            row.label(text="Coming soon")
+        row = box.row()
+        row.label(text="Github: https://github.com/mrven/Blender-Texel-Density-Checker")
 
         box = layout.box()
         row = box.row()

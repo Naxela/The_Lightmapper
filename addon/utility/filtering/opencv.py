@@ -50,6 +50,18 @@ class TLM_CV_Filtering:
 
                 obj_name = os.path.basename(file_input).split("_")[0]
 
+                #SEAM TESTING# #####################
+
+                # obj = bpy.data.objects[obj_name]
+
+                # bpy.context.view_layer.objects.active = obj
+                # bpy.ops.object.mode_set(mode='EDIT')
+                # bpy.ops.uv.export_layout(filepath=os.path.join(lightmap_dir,obj_name), export_all=True, mode='PNG', opacity=0.0)
+                # bpy.ops.object.mode_set(mode='OBJECT')
+                # print("Exported")
+
+                #SEAM TESTING# #####################
+
                 if obj_name in bpy.data.objects:
                     override = bpy.data.objects[obj_name].TLM_ObjectProperties.tlm_mesh_filter_override
                 elif obj_name in scene.TLM_AtlasList:
