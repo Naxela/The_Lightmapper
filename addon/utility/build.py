@@ -12,7 +12,12 @@ from importlib import util
 
 previous_settings = {}
 
-def prepare_build(self=0, background_mode=False):
+postprocess_shutdown = False
+
+def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
+
+    if shutdown_after_build:
+        postprocess_shutdown = True
 
     print("Building lightmaps")
 
@@ -637,7 +642,8 @@ def manage_build(background_pass=False):
             with open(os.path.join(write_directory, "process.tlm"), 'w') as file:
                 json.dump(process_status, file, indent=2)
 
-        sys.exit()
+        if postprocess_shutdown:
+            sys.exit()
 
 def reset_settings(prev_settings):
     scene = bpy.context.scene
