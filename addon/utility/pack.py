@@ -1,6 +1,5 @@
 import bpy, cv2, os, sys, math, mathutils
 import numpy as np
-import matplotlib.pyplot as plt
 from . rectpack import newPacker, PackingMode, PackingBin
 
 def postpack():
