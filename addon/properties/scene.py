@@ -188,11 +188,30 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Enable encoding for lightmaps", 
         default=False)
 
-    tlm_encoding_mode : EnumProperty(
-        items = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
+    tlm_encoding_device : EnumProperty(
+        items = [('CPU', 'CPU', 'Todo'),
+                ('GPU', 'GPU', 'Todo.')],
+                name = "Encoding Device", 
+                description="TODO", 
+                default='CPU')
+
+    encoding_modes_1 = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
+                    ('RGBD', 'RGBD', '8-bit HDR encoding. Similar to RGBM.'),
+                    ('HDR', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.')]
+
+    encoding_modes_2 = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
                 ('RGBD', 'RGBD', '8-bit HDR encoding. Similar to RGBM.'),
                     ('LogLuv', 'LogLuv', '8-bit HDR encoding. Different.'),
-                    ('HDR', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.')],
+                    ('HDR', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.')]
+    
+    tlm_encoding_mode_a : EnumProperty(
+        items = encoding_modes_1,
+                name = "Encoding Mode", 
+                description="TODO", 
+                default='HDR')
+
+    tlm_encoding_mode_b : EnumProperty(
+        items = encoding_modes_2,
                 name = "Encoding Mode", 
                 description="TODO", 
                 default='HDR')
@@ -202,7 +221,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Higher gives a larger HDR range, but also gives more banding.", 
         default=6, 
         min=1, 
-        max=10)
+        max=255)
 
     tlm_decoder_setup : BoolProperty(
         name="Use decoder", 

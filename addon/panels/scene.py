@@ -75,6 +75,13 @@ class TLM_PT_Settings(bpy.types.Panel):
             row.prop(sceneProperties, "tlm_reset_uv")
 
             row = layout.row(align=True)
+            try:
+                if bpy.context.scene["TLM_Buildstat"] is not None:
+                    row.label(text="Last build completed in: " + str(bpy.context.scene["TLM_Buildstat"][0]))
+            except:
+                pass
+            
+            row = layout.row(align=True)
             row.label(text="Cycles Settings")
 
             row = layout.row(align=True)
@@ -283,18 +290,37 @@ class TLM_PT_Encoding(bpy.types.Panel):
             row.label(text="Encoding options disabled in background mode")
             row = layout.row(align=True)
 
-        row.prop(sceneProperties, "tlm_encoding_mode", expand=True)
-        if sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD":
-            row = layout.row(align=True)
-            row.prop(sceneProperties, "tlm_encoding_range")
-            row = layout.row(align=True)
-            row.prop(sceneProperties, "tlm_decoder_setup")
-        if sceneProperties.tlm_encoding_mode == "LogLuv":
-            row = layout.row(align=True)
-            row.prop(sceneProperties, "tlm_decoder_setup")
-        if sceneProperties.tlm_encoding_mode == "HDR":
-            row = layout.row(align=True)
-            row.prop(sceneProperties, "tlm_format")
+        row.prop(sceneProperties, "tlm_encoding_device", expand=True)
+        row = layout.row(align=True)
+
+        if sceneProperties.tlm_encoding_device == "CPU":
+            row.prop(sceneProperties, "tlm_encoding_mode_a", expand=True)
+        else:
+            row.prop(sceneProperties, "tlm_encoding_mode_b", expand=True)
+
+        if sceneProperties.tlm_encoding_device == "CPU":
+            if sceneProperties.tlm_encoding_mode_a == "RGBM" or sceneProperties.tlm_encoding_mode_a == "RGBD":
+                row = layout.row(align=True)
+                row.prop(sceneProperties, "tlm_encoding_range")
+                row = layout.row(align=True)
+                row.prop(sceneProperties, "tlm_decoder_setup")
+            if sceneProperties.tlm_encoding_mode_a == "HDR":
+                row = layout.row(align=True)
+                row.prop(sceneProperties, "tlm_format")
+        else:
+
+            if sceneProperties.tlm_encoding_mode_b == "RGBM":
+                row = layout.row(align=True)
+                row.prop(sceneProperties, "tlm_encoding_range")
+                row = layout.row(align=True)
+                row.prop(sceneProperties, "tlm_decoder_setup")
+
+            if sceneProperties.tlm_encoding_mode_b == "LogLuv" and sceneProperties.tlm_encoding_device == "GPU":
+                row = layout.row(align=True)
+                row.prop(sceneProperties, "tlm_decoder_setup")
+            if sceneProperties.tlm_encoding_mode_b == "HDR":
+                row = layout.row(align=True)
+                row.prop(sceneProperties, "tlm_format")
 
 
 

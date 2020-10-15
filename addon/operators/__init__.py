@@ -1,6 +1,6 @@
 import bpy
 from bpy.utils import register_class, unregister_class
-from . import tlm, installopencv
+from . import tlm, installopencv, imagetools
 
 classes = [
     tlm.TLM_BuildLightmaps,
@@ -19,7 +19,10 @@ classes = [
     tlm.TLM_PostAtlasListMoveItem,
     tlm.TLM_StartServer,
     tlm.TLM_BuildEnvironmentProbes,
-    tlm.TLM_CleanBuildEnvironmentProbes
+    tlm.TLM_CleanBuildEnvironmentProbes,
+    imagetools.TLM_ImageUpscale,
+    imagetools.TLM_ImageDownscale
+
 ]
 
 def register():

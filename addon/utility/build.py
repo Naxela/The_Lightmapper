@@ -12,7 +12,12 @@ from importlib import util
 
 previous_settings = {}
 
-def prepare_build(self=0, background_mode=False):
+postprocess_shutdown = False
+
+def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
+
+    if shutdown_after_build:
+        postprocess_shutdown = True
 
     print("Building lightmaps")
 
@@ -376,20 +381,48 @@ def begin_build():
 
     if sceneProperties.tlm_encoding_use and scene.TLM_EngineProperties.tlm_bake_mode != "Background":
 
-        if sceneProperties.tlm_encoding_mode == "HDR":
+        if sceneProperties.tlm_encoding_device == "CPU":
 
-            if sceneProperties.tlm_format == "EXR":
+            if sceneProperties.tlm_encoding_mode_a == "HDR":
+
+                if sceneProperties.tlm_format == "EXR":
+
+                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                        print("EXR Format")
+
+                    ren = bpy.context.scene.render
+                    ren.image_settings.file_format = "OPEN_EXR"
+                    #ren.image_settings.exr_codec = "scene.TLM_SceneProperties.tlm_exr_codec"
+
+                    end = "_baked"
+
+                    baked_image_array = []
+
+                    if sceneProperties.tlm_denoise_use:
+
+                        end = "_denoised"
+
+                    if sceneProperties.tlm_filtering_use:
+
+                        end = "_filtered"
+                    
+                    #For each image in folder ending in denoised/filtered
+                    dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+                    for file in dirfiles:
+                        if file.endswith(end + ".hdr"):
+
+                            img = bpy.data.images.load(os.path.join(dirpath,file))
+                            img.save_render(img.filepath_raw[:-4] + ".exr")
+
+            if sceneProperties.tlm_encoding_mode_a == "RGBM":
 
                 if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                    print("EXR Format")
+                    print("ENCODING RGBM")
 
-                ren = bpy.context.scene.render
-                ren.image_settings.file_format = "OPEN_EXR"
-                #ren.image_settings.exr_codec = "scene.TLM_SceneProperties.tlm_exr_codec"
+                dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
 
                 end = "_baked"
-
-                baked_image_array = []
 
                 if sceneProperties.tlm_denoise_use:
 
@@ -398,88 +431,148 @@ def begin_build():
                 if sceneProperties.tlm_filtering_use:
 
                     end = "_filtered"
-                
-                #For each image in folder ending in denoised/filtered
-                dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
 
                 for file in dirfiles:
                     if file.endswith(end + ".hdr"):
 
-                        img = bpy.data.images.load(os.path.join(dirpath,file))
-                        img.save_render(img.filepath_raw[:-4] + ".exr")
+                        img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
+                        
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("Encoding:" + str(file))
+                        encoding.encodeImageRGBMCPU(img, sceneProperties.tlm_encoding_range, dirpath, 0)
 
-        if sceneProperties.tlm_encoding_mode == "LogLuv":
+            if sceneProperties.tlm_encoding_mode_b == "RGBD":
 
-            dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    print("ENCODING RGBD")
 
-            end = "_baked"
+                dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
 
-            if sceneProperties.tlm_denoise_use:
+                end = "_baked"
 
-                end = "_denoised"
+                if sceneProperties.tlm_denoise_use:
 
-            if sceneProperties.tlm_filtering_use:
+                    end = "_denoised"
 
-                end = "_filtered"
+                if sceneProperties.tlm_filtering_use:
 
-            for file in dirfiles:
-                if file.endswith(end + ".hdr"):
+                    end = "_filtered"
 
-                    img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
-                    
-                    encoding.encodeLogLuv(img, dirpath, 0)
+                for file in dirfiles:
+                    if file.endswith(end + ".hdr"):
 
-        if sceneProperties.tlm_encoding_mode == "RGBM":
+                        img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
+                        
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("Encoding:" + str(file))
+                        encoding.encodeImageRGBDCPU(img, sceneProperties.tlm_encoding_range, dirpath, 0)
 
-            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                print("ENCODING RGBM")
+        else:
 
-            dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+            if sceneProperties.tlm_encoding_mode_b == "HDR":
 
-            end = "_baked"
+                if sceneProperties.tlm_format == "EXR":
 
-            if sceneProperties.tlm_denoise_use:
-
-                end = "_denoised"
-
-            if sceneProperties.tlm_filtering_use:
-
-                end = "_filtered"
-
-            for file in dirfiles:
-                if file.endswith(end + ".hdr"):
-
-                    img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
-                    
                     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                        print("Encoding:" + str(file))
-                    encoding.encodeImageRGBM(img, sceneProperties.tlm_encoding_range, dirpath, 0)
+                        print("EXR Format")
 
-        if sceneProperties.tlm_encoding_mode == "RGBD":
+                    ren = bpy.context.scene.render
+                    ren.image_settings.file_format = "OPEN_EXR"
+                    #ren.image_settings.exr_codec = "scene.TLM_SceneProperties.tlm_exr_codec"
 
-            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                print("ENCODING RGBD")
+                    end = "_baked"
 
-            dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+                    baked_image_array = []
 
-            end = "_baked"
+                    if sceneProperties.tlm_denoise_use:
 
-            if sceneProperties.tlm_denoise_use:
+                        end = "_denoised"
 
-                end = "_denoised"
+                    if sceneProperties.tlm_filtering_use:
 
-            if sceneProperties.tlm_filtering_use:
-
-                end = "_filtered"
-
-            for file in dirfiles:
-                if file.endswith(end + ".hdr"):
-
-                    img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
+                        end = "_filtered"
                     
-                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                        print("Encoding:" + str(file))
-                    encoding.encodeImageRGBD(img, sceneProperties.tlm_encoding_range, dirpath, 0)
+                    #For each image in folder ending in denoised/filtered
+                    dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+                    for file in dirfiles:
+                        if file.endswith(end + ".hdr"):
+
+                            img = bpy.data.images.load(os.path.join(dirpath,file))
+                            img.save_render(img.filepath_raw[:-4] + ".exr")
+
+            if sceneProperties.tlm_encoding_mode_b == "LogLuv":
+
+                dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+                end = "_baked"
+
+                if sceneProperties.tlm_denoise_use:
+
+                    end = "_denoised"
+
+                if sceneProperties.tlm_filtering_use:
+
+                    end = "_filtered"
+
+                for file in dirfiles:
+                    if file.endswith(end + ".hdr"):
+
+                        img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
+                        
+                        encoding.encodeLogLuvGPU(img, dirpath, 0)
+
+            if sceneProperties.tlm_encoding_mode_b == "RGBM":
+
+                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    print("ENCODING RGBM")
+
+                dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+                end = "_baked"
+
+                if sceneProperties.tlm_denoise_use:
+
+                    end = "_denoised"
+
+                if sceneProperties.tlm_filtering_use:
+
+                    end = "_filtered"
+
+                for file in dirfiles:
+                    if file.endswith(end + ".hdr"):
+
+                        img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
+                        
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("Encoding:" + str(file))
+                        encoding.encodeImageRGBMGPU(img, sceneProperties.tlm_encoding_range, dirpath, 0)
+
+            if sceneProperties.tlm_encoding_mode_b == "RGBD":
+
+                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    print("ENCODING RGBD")
+
+                dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+                end = "_baked"
+
+                if sceneProperties.tlm_denoise_use:
+
+                    end = "_denoised"
+
+                if sceneProperties.tlm_filtering_use:
+
+                    end = "_filtered"
+
+                for file in dirfiles:
+                    if file.endswith(end + ".hdr"):
+
+                        img = bpy.data.images.load(os.path.join(dirpath, file), check_existing=False)
+                        
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("Encoding:" + str(file))
+                        encoding.encodeImageRGBDGPU(img, sceneProperties.tlm_encoding_range, dirpath, 0)
 
     manage_build()
 
@@ -511,23 +604,45 @@ def manage_build(background_pass=False):
         
         if sceneProperties.tlm_encoding_use and scene.TLM_EngineProperties.tlm_bake_mode != "Background":
 
-            if sceneProperties.tlm_encoding_mode == "HDR":
+            if sceneProperties.tlm_encoding_device == "CPU":
 
-                if sceneProperties.tlm_format == "EXR":
+                print("CPU Encoding")
 
-                    formatEnc = ".exr"
+                if sceneProperties.tlm_encoding_mode_a == "HDR":
 
-            if sceneProperties.tlm_encoding_mode == "LogLuv":
+                    if sceneProperties.tlm_format == "EXR":
 
-                formatEnc = "_encoded.png"
+                        formatEnc = ".exr"
 
-            if sceneProperties.tlm_encoding_mode == "RGBM":
+                if sceneProperties.tlm_encoding_mode_a == "RGBM":
 
-                formatEnc = "_encoded.png"
+                    formatEnc = "_encoded.png"
 
-            if sceneProperties.tlm_encoding_mode == "RGBD":
+                if sceneProperties.tlm_encoding_mode_a == "RGBD":
 
-                formatEnc = "_encoded.png"
+                    formatEnc = "_encoded.png"
+
+            else:
+
+                print("GPU Encoding")
+
+                if sceneProperties.tlm_encoding_mode_b == "HDR":
+
+                    if sceneProperties.tlm_format == "EXR":
+
+                        formatEnc = ".exr"
+
+                if sceneProperties.tlm_encoding_mode_b == "LogLuv":
+
+                    formatEnc = "_encoded.png"
+
+                if sceneProperties.tlm_encoding_mode_b == "RGBM":
+
+                    formatEnc = "_encoded.png"
+
+                if sceneProperties.tlm_encoding_mode_b == "RGBD":
+
+                    formatEnc = "_encoded.png"
 
         if not background_pass:
             nodes.exchangeLightmapsToPostfix("_baked", end, formatEnc)
@@ -597,6 +712,8 @@ def manage_build(background_pass=False):
     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
         print(total_time)
 
+    bpy.context.scene["TLM_Buildstat"] = total_time
+
     reset_settings(previous_settings["settings"])
 
     if scene.TLM_SceneProperties.tlm_alert_on_finish:
@@ -637,7 +754,8 @@ def manage_build(background_pass=False):
             with open(os.path.join(write_directory, "process.tlm"), 'w') as file:
                 json.dump(process_status, file, indent=2)
 
-        sys.exit()
+        if postprocess_shutdown:
+            sys.exit()
 
 def reset_settings(prev_settings):
     scene = bpy.context.scene

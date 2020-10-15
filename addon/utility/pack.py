@@ -1,6 +1,5 @@
 import bpy, cv2, os, sys, math, mathutils
 import numpy as np
-import matplotlib.pyplot as plt
 from . rectpack import newPacker, PackingMode, PackingBin
 
 def postpack():
@@ -36,27 +35,42 @@ def postpack():
     
     if sceneProperties.tlm_encoding_use and scene.TLM_EngineProperties.tlm_bake_mode != "Background":
 
-        if sceneProperties.tlm_encoding_mode == "HDR":
+        if sceneProperties.tlm_encoding_device == "CPU":
 
-            if sceneProperties.tlm_format == "EXR":
+            if sceneProperties.tlm_encoding_mode_a == "HDR":
 
-                formatEnc = ".exr"
+                if sceneProperties.tlm_format == "EXR":
 
-        if sceneProperties.tlm_encoding_mode == "LogLuv":
+                    formatEnc = ".exr"
 
-            formatEnc = "_encoded.png"
-            image_channel_depth = cv2.IMREAD_UNCHANGED
-            linear_straight = True
+            if sceneProperties.tlm_encoding_mode_a == "RGBM":
 
-        if sceneProperties.tlm_encoding_mode == "RGBM":
+                formatEnc = "_encoded.png"
+                image_channel_depth = cv2.IMREAD_UNCHANGED
 
-            formatEnc = "_encoded.png"
-            image_channel_depth = cv2.IMREAD_UNCHANGED
+        else:
 
-        if sceneProperties.tlm_encoding_mode == "RGBD":
+            if sceneProperties.tlm_encoding_mode_b == "HDR":
 
-            formatEnc = "_encoded.png"
-            image_channel_depth = cv2.IMREAD_UNCHANGED
+                if sceneProperties.tlm_format == "EXR":
+
+                    formatEnc = ".exr"
+
+            if sceneProperties.tlm_encoding_mode_b == "LogLuv":
+
+                formatEnc = "_encoded.png"
+                image_channel_depth = cv2.IMREAD_UNCHANGED
+                linear_straight = True
+
+            if sceneProperties.tlm_encoding_mode_b == "RGBM":
+
+                formatEnc = "_encoded.png"
+                image_channel_depth = cv2.IMREAD_UNCHANGED
+
+            if sceneProperties.tlm_encoding_mode_b == "RGBD":
+
+                formatEnc = "_encoded.png"
+                image_channel_depth = cv2.IMREAD_UNCHANGED
 
     packer = {}
 

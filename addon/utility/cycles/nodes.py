@@ -151,24 +151,38 @@ def apply_materials():
                         UVLightmap.location = -1000, 300
 
                         if(scene.TLM_SceneProperties.tlm_decoder_setup):
-                            if scene.TLM_SceneProperties.tlm_encoding_mode == 'RGBM':
-                                DecodeNode = node_tree.nodes.new(type="ShaderNodeGroup")
-                                DecodeNode.node_tree = bpy.data.node_groups["RGBM Decode"]
-                                DecodeNode.location = -400, 300
-                                DecodeNode.name = "Lightmap_RGBM_Decode"
-                                decoding = True
-                            if scene.TLM_SceneProperties.tlm_encoding_mode == "RGBD":
-                                DecodeNode = node_tree.nodes.new(type="ShaderNodeGroup")
-                                DecodeNode.node_tree = bpy.data.node_groups["RGBD Decode"]
-                                DecodeNode.location = -400, 300
-                                DecodeNode.name = "Lightmap_RGBD_Decode"
-                                decoding = True
-                            if scene.TLM_SceneProperties.tlm_encoding_mode == "LogLuv":
-                                DecodeNode = node_tree.nodes.new(type="ShaderNodeGroup")
-                                DecodeNode.node_tree = bpy.data.node_groups["LogLuv Decode"]
-                                DecodeNode.location = -400, 300
-                                DecodeNode.name = "Lightmap_LogLuv_Decode"
-                                decoding = True
+                            if scene.TLM_SceneProperties.tlm_encoding_device == "CPU":
+                                if scene.TLM_SceneProperties.tlm_encoding_mode_a == 'RGBM':
+                                    DecodeNode = node_tree.nodes.new(type="ShaderNodeGroup")
+                                    DecodeNode.node_tree = bpy.data.node_groups["RGBM Decode"]
+                                    DecodeNode.location = -400, 300
+                                    DecodeNode.name = "Lightmap_RGBM_Decode"
+                                    decoding = True
+                                if scene.TLM_SceneProperties.tlm_encoding_mode_b == "RGBD":
+                                    DecodeNode = node_tree.nodes.new(type="ShaderNodeGroup")
+                                    DecodeNode.node_tree = bpy.data.node_groups["RGBD Decode"]
+                                    DecodeNode.location = -400, 300
+                                    DecodeNode.name = "Lightmap_RGBD_Decode"
+                                    decoding = True
+                            else:
+                                if scene.TLM_SceneProperties.tlm_encoding_mode_b == 'RGBM':
+                                    DecodeNode = node_tree.nodes.new(type="ShaderNodeGroup")
+                                    DecodeNode.node_tree = bpy.data.node_groups["RGBM Decode"]
+                                    DecodeNode.location = -400, 300
+                                    DecodeNode.name = "Lightmap_RGBM_Decode"
+                                    decoding = True
+                                if scene.TLM_SceneProperties.tlm_encoding_mode_b == "RGBD":
+                                    DecodeNode = node_tree.nodes.new(type="ShaderNodeGroup")
+                                    DecodeNode.node_tree = bpy.data.node_groups["RGBD Decode"]
+                                    DecodeNode.location = -400, 300
+                                    DecodeNode.name = "Lightmap_RGBD_Decode"
+                                    decoding = True
+                                if scene.TLM_SceneProperties.tlm_encoding_mode_b == "LogLuv":
+                                    DecodeNode = node_tree.nodes.new(type="ShaderNodeGroup")
+                                    DecodeNode.node_tree = bpy.data.node_groups["LogLuv Decode"]
+                                    DecodeNode.location = -400, 300
+                                    DecodeNode.name = "Lightmap_LogLuv_Decode"
+                                    decoding = True
 
                         if(scene.TLM_EngineProperties.tlm_exposure_multiplier > 0):
                             ExposureNode = node_tree.nodes.new(type="ShaderNodeGroup")
