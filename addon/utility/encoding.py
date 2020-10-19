@@ -422,9 +422,11 @@ def encodeImageRGBDCPU(image, maxRange, outDir, quality):
         d = max(maxRange / m, 1)
         d = saturate(math.floor(d) / 255 )
 
-        result_pixel[i] = result_pixel[i] * d * 255 / maxRange
-        result_pixel[i+1] = result_pixel[i+1] * d * 255 / maxRange
-        result_pixel[i+2] = result_pixel[i+2] * d * 255 / maxRange
+        #TODO TO GAMMA SPACE
+
+        result_pixel[i] = math.pow(result_pixel[i] * d * 255 / maxRange, 1/2.2)
+        result_pixel[i+1] = math.pow(result_pixel[i+1] * d * 255 / maxRange, 1/2.2)
+        result_pixel[i+2] = math.pow(result_pixel[i+2] * d * 255 / maxRange, 1/2.2)
         result_pixel[i+3] = d
     
     target_image.pixels = result_pixel

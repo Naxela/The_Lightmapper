@@ -657,7 +657,6 @@ def manage_build(background_pass=False):
 
     if bpy.context.scene.TLM_EngineProperties.tlm_bake_mode == "Background":
         pass
-        #bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath + "baked") #Crashes Blender
 
     if scene.TLM_EngineProperties.tlm_setting_supersample == "2x":
         supersampling_scale = 2
