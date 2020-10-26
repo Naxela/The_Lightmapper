@@ -392,6 +392,9 @@ def saturate(num, floats=True):
         num = (1 if floats else 255)
     return num
 
+def maxEps(x):
+    return max(x, 1e-6)
+
 def encodeImageRGBDCPU(image, maxRange, outDir, quality):
     input_image = bpy.data.images[image.name]
     image_name = input_image.name
@@ -416,18 +419,33 @@ def encodeImageRGBDCPU(image, maxRange, outDir, quality):
     num_pixels = len(input_image.pixels)
     result_pixel = list(input_image.pixels)
 
+    rgbdMaxRange = 255.0
+
     for i in range(0,num_pixels,4):
 
-        m = saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
-        d = max(maxRange / m, 1)
-        d = saturate(math.floor(d) / 255 )
+        maxRGB = maxEps(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2]))
+        D = max(rgbdMaxRange/maxRGB, 1.0)
+        D = np.clip((math.floor(D) / 255.0), 0.0, 1.0)
 
-        #TODO TO GAMMA SPACE
+        result_pixel[i] = math.pow(result_pixel[i] * D, 1/2.2)
+        result_pixel[i+1] = math.pow(result_pixel[i+1] * D, 1/2.2)
+        result_pixel[i+2] = math.pow(result_pixel[i+2] * D, 1/2.2)
+        result_pixel[i+3] = D
 
-        result_pixel[i] = math.pow(result_pixel[i] * d * 255 / maxRange, 1/2.2)
-        result_pixel[i+1] = math.pow(result_pixel[i+1] * d * 255 / maxRange, 1/2.2)
-        result_pixel[i+2] = math.pow(result_pixel[i+2] * d * 255 / maxRange, 1/2.2)
-        result_pixel[i+3] = d
+
+    # for i in range(0,num_pixels,4):
+
+    #     m = saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
+    #     d = max(maxRange / m, 1)
+    #     #d = saturate(math.floor(d) / 255.0)
+    #     d = np.clip((math.floor(d) / 255.0), 0.0, 1.0)
+
+    #     #TODO TO GAMMA SPACE
+
+    #     result_pixel[i] = math.pow(result_pixel[i] * d * 255 / maxRange, 1/2.2)
+    #     result_pixel[i+1] = math.pow(result_pixel[i+1] * d * 255 / maxRange, 1/2.2)
+    #     result_pixel[i+2] = math.pow(result_pixel[i+2] * d * 255 / maxRange, 1/2.2)
+    #     result_pixel[i+3] = d
     
     target_image.pixels = result_pixel
     
@@ -440,3 +458,24 @@ def encodeImageRGBDCPU(image, maxRange, outDir, quality):
     input_image.file_format = "PNG"
     bpy.context.scene.render.image_settings.quality = quality
     input_image.save()
+
+        # const float rgbdMaxRange = 255.0;
+
+        # vec4 toRGBD(vec3 color) {
+        #     float maxRGB = maxEps(max(color.r, max(color.g, color.b)));
+        #     float D      = max(rgbdMaxRange / maxRGB, 1.);
+        #     D            = clamp(floor(D) / 255.0, 0., 1.);
+        #     vec3 rgb = color.rgb * D;
+            
+        #     // Helps with png quantization.
+        #     rgb = toGammaSpace(rgb);
+
+        #     return vec4(rgb, D); 
+        # }
+
+        # const float Epsilon = 0.0000001;
+        # #define saturate(x)         clamp(x, 0.0, 1.0)
+
+        # float maxEps(float x) {
+        #     return max(x, Epsilon);
+        # }

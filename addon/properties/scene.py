@@ -196,7 +196,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 default='CPU')
 
     encoding_modes_1 = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
-                    #('RGBD', 'RGBD', '8-bit HDR encoding. Similar to RGBM.'),
+                    ('RGBD', 'RGBD', '8-bit HDR encoding. Similar to RGBM.'),
                     ('HDR', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.')]
 
     encoding_modes_2 = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),

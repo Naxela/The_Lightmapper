@@ -299,11 +299,13 @@ class TLM_PT_Encoding(bpy.types.Panel):
             row.prop(sceneProperties, "tlm_encoding_mode_b", expand=True)
 
         if sceneProperties.tlm_encoding_device == "CPU":
-            if sceneProperties.tlm_encoding_mode_a == "RGBM" or sceneProperties.tlm_encoding_mode_a == "RGBD":
+            if sceneProperties.tlm_encoding_mode_a == "RGBM":
                 row = layout.row(align=True)
                 row.prop(sceneProperties, "tlm_encoding_range")
                 row = layout.row(align=True)
                 row.prop(sceneProperties, "tlm_decoder_setup")
+            if sceneProperties.tlm_encoding_mode_a == "RGBD":
+                pass
             if sceneProperties.tlm_encoding_mode_a == "HDR":
                 row = layout.row(align=True)
                 row.prop(sceneProperties, "tlm_format")

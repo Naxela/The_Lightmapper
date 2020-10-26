@@ -1,197 +1,214 @@
-import bpy, cv2, os, sys, math, mathutils
+import bpy, os, sys, math, mathutils, importlib
 import numpy as np
 from . rectpack import newPacker, PackingMode, PackingBin
 
 def postpack():
 
-    lightmap_directory = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+    cv_installed = False
 
-    packedAtlas = {}
+    cv2 = importlib.util.find_spec("cv2")
 
-    #TODO - TEST WITH ONLY 1 ATLAS AT FIRST (1 Atlas for each, but only 1 bin (no overflow))
-    #PackedAtlas = Packer
-    #Each atlas has bins
-    #Each bins has rects
-    #Each rect corresponds to a pack_object
+    if cv2 is None:
+        print("CV2 not found - Ignoring postpacking")
+        return 0
+    else:
+        cv2 = importlib.__import__("cv2")
+        cv_installed = True
 
-    scene = bpy.context.scene
-    
-    sceneProperties = scene.TLM_SceneProperties
+    if cv_installed:
 
-    end = "_baked"
+        lightmap_directory = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
 
-    if sceneProperties.tlm_denoise_use:
+        packedAtlas = {}
 
-        end = "_denoised"
+        #TODO - TEST WITH ONLY 1 ATLAS AT FIRST (1 Atlas for each, but only 1 bin (no overflow))
+        #PackedAtlas = Packer
+        #Each atlas has bins
+        #Each bins has rects
+        #Each rect corresponds to a pack_object
 
-    if sceneProperties.tlm_filtering_use:
+        scene = bpy.context.scene
+        
+        sceneProperties = scene.TLM_SceneProperties
 
-        end = "_filtered"
+        end = "_baked"
 
-    formatEnc = ".hdr"
+        if sceneProperties.tlm_denoise_use:
 
-    image_channel_depth = cv2.IMREAD_ANYDEPTH
-    linear_straight = False
-    
-    if sceneProperties.tlm_encoding_use and scene.TLM_EngineProperties.tlm_bake_mode != "Background":
+            end = "_denoised"
 
-        if sceneProperties.tlm_encoding_device == "CPU":
+        if sceneProperties.tlm_filtering_use:
 
-            if sceneProperties.tlm_encoding_mode_a == "HDR":
+            end = "_filtered"
 
-                if sceneProperties.tlm_format == "EXR":
+        formatEnc = ".hdr"
 
-                    formatEnc = ".exr"
+        image_channel_depth = cv2.IMREAD_ANYDEPTH
+        linear_straight = False
+        
+        if sceneProperties.tlm_encoding_use and scene.TLM_EngineProperties.tlm_bake_mode != "Background":
 
-            if sceneProperties.tlm_encoding_mode_a == "RGBM":
+            if sceneProperties.tlm_encoding_device == "CPU":
 
-                formatEnc = "_encoded.png"
-                image_channel_depth = cv2.IMREAD_UNCHANGED
+                if sceneProperties.tlm_encoding_mode_a == "HDR":
 
-        else:
+                    if sceneProperties.tlm_format == "EXR":
 
-            if sceneProperties.tlm_encoding_mode_b == "HDR":
+                        formatEnc = ".exr"
 
-                if sceneProperties.tlm_format == "EXR":
+                if sceneProperties.tlm_encoding_mode_a == "RGBM":
 
-                    formatEnc = ".exr"
+                    formatEnc = "_encoded.png"
+                    image_channel_depth = cv2.IMREAD_UNCHANGED
 
-            if sceneProperties.tlm_encoding_mode_b == "LogLuv":
+            else:
 
-                formatEnc = "_encoded.png"
-                image_channel_depth = cv2.IMREAD_UNCHANGED
-                linear_straight = True
+                if sceneProperties.tlm_encoding_mode_b == "HDR":
 
-            if sceneProperties.tlm_encoding_mode_b == "RGBM":
+                    if sceneProperties.tlm_format == "EXR":
 
-                formatEnc = "_encoded.png"
-                image_channel_depth = cv2.IMREAD_UNCHANGED
+                        formatEnc = ".exr"
 
-            if sceneProperties.tlm_encoding_mode_b == "RGBD":
+                if sceneProperties.tlm_encoding_mode_b == "LogLuv":
 
-                formatEnc = "_encoded.png"
-                image_channel_depth = cv2.IMREAD_UNCHANGED
+                    formatEnc = "_encoded.png"
+                    image_channel_depth = cv2.IMREAD_UNCHANGED
+                    linear_straight = True
 
-    packer = {}
+                if sceneProperties.tlm_encoding_mode_b == "RGBM":
 
-    for atlas in bpy.context.scene.TLM_PostAtlasList: #For each atlas
+                    formatEnc = "_encoded.png"
+                    image_channel_depth = cv2.IMREAD_UNCHANGED
 
-        packer[atlas.name] = newPacker(PackingMode.Offline, PackingBin.BFF, rotation=False)
+                if sceneProperties.tlm_encoding_mode_b == "RGBD":
 
-        if scene.TLM_EngineProperties.tlm_setting_supersample == "2x":
-            supersampling_scale = 2
-        elif scene.TLM_EngineProperties.tlm_setting_supersample == "4x":
-            supersampling_scale = 4
-        else:
-            supersampling_scale = 1
+                    formatEnc = "_encoded.png"
+                    image_channel_depth = cv2.IMREAD_UNCHANGED
 
-        atlas_resolution = int(int(atlas.tlm_atlas_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale))
+        packer = {}
 
-        packer[atlas.name].add_bin(atlas_resolution, atlas_resolution, 1)
+        for atlas in bpy.context.scene.TLM_PostAtlasList: #For each atlas
 
-        #AtlasList same name prevention?
-        rect = []
+            packer[atlas.name] = newPacker(PackingMode.Offline, PackingBin.BFF, rotation=False)
 
-        #For each object that targets the atlas
-        for obj in bpy.data.objects:
-            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                if obj.TLM_ObjectProperties.tlm_postpack_object:
-                    if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
+            if scene.TLM_EngineProperties.tlm_setting_supersample == "2x":
+                supersampling_scale = 2
+            elif scene.TLM_EngineProperties.tlm_setting_supersample == "4x":
+                supersampling_scale = 4
+            else:
+                supersampling_scale = 1
 
-                        res = int(int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale))
+            atlas_resolution = int(int(atlas.tlm_atlas_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale))
 
-                        rect.append((res, res, obj.name))
+            packer[atlas.name].add_bin(atlas_resolution, atlas_resolution, 1)
 
-        for r in rect:
-            packer[atlas.name].add_rect(*r)
+            #AtlasList same name prevention?
+            rect = []
 
-        #Continue here...
-        if (sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD" or sceneProperties.tlm_encoding_mode == "LogLuv") and sceneProperties.tlm_encoding_use:
-            packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 4), dtype=np.uint8)
-        else:
-            packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 3), dtype="float32")
+            #For each object that targets the atlas
+            for obj in bpy.data.objects:
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    if obj.TLM_ObjectProperties.tlm_postpack_object:
+                        if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
 
-        packer[atlas.name].pack()
+                            res = int(int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale))
 
-        for idy, rect in enumerate(packer[atlas.name].rect_list()):
+                            rect.append((res, res, obj.name))
 
-            aob = rect[5]
+            for r in rect:
+                packer[atlas.name].add_rect(*r)
 
-            src = cv2.imread(os.path.join(lightmap_directory, aob + end + formatEnc), image_channel_depth) #"_baked.hdr"
+            #Continue here...
+            if (sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD" or sceneProperties.tlm_encoding_mode == "LogLuv") and sceneProperties.tlm_encoding_use:
+                packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 4), dtype=np.uint8)
+            else:
+                packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 3), dtype="float32")
 
-            print("Obj name is: " + aob)
+            packer[atlas.name].pack()
 
-            x,y,w,h = rect[1],rect[2],rect[3],rect[4]
+            for idy, rect in enumerate(packer[atlas.name].rect_list()):
 
-            print(src.shape)
-            print(packedAtlas[atlas.name].shape)
+                aob = rect[5]
 
-            packedAtlas[atlas.name][y:h+y, x:w+x] = src
-            
-            obj = bpy.data.objects[aob]
+                src = cv2.imread(os.path.join(lightmap_directory, aob + end + formatEnc), image_channel_depth) #"_baked.hdr"
 
-            for idx, layer in enumerate(obj.data.uv_layers):
-                if layer.name == "UVMap_Lightmap":
-                    obj.data.uv_layers.active_index = idx
+                print("Obj name is: " + aob)
 
-                    print("UVLayer set to: " + str(obj.data.uv_layers.active_index))
+                x,y,w,h = rect[1],rect[2],rect[3],rect[4]
 
-            for uv_verts in obj.data.uv_layers.active.data:
+                print(src.shape)
+                print(packedAtlas[atlas.name].shape)
 
-                #SET UV LAYER TO 
-
-                atlasRes = atlas_resolution
-                texRes = rect[3]
-                x,y,w,z = x,y,texRes,texRes
+                packedAtlas[atlas.name][y:h+y, x:w+x] = src
                 
-                ratio = atlasRes/texRes
-                
-                if x == 0:
-                    x_offset = 0
-                else:
-                    x_offset = 1/(atlasRes/x)
+                obj = bpy.data.objects[aob]
 
-                if y == 0:
-                    y_offset = 0
-                else:
-                    y_offset = 1/(atlasRes/y)
-                
-                vertex_x = (uv_verts.uv[0] * 1/(ratio)) + x_offset
-                vertex_y = (1 - ((uv_verts.uv[1] * 1/(ratio)) + y_offset))
-                
-                uv_verts.uv[0] = vertex_x
-                uv_verts.uv[1] = vertex_y
+                for idx, layer in enumerate(obj.data.uv_layers):
+                    if layer.name == "UVMap_Lightmap":
+                        obj.data.uv_layers.active_index = idx
 
-            scaleUV(obj.data.uv_layers.active, (1, -1), getBoundsCenter(obj.data.uv_layers.active))
-            print(getCenter(obj.data.uv_layers.active))
+                        print("UVLayer set to: " + str(obj.data.uv_layers.active_index))
 
-        cv2.imwrite(os.path.join(lightmap_directory, atlas.name + end + formatEnc), packedAtlas[atlas.name])
-        print("Written: " + str(os.path.join(lightmap_directory, atlas.name + end + formatEnc)))
+                for uv_verts in obj.data.uv_layers.active.data:
 
-        #Change the material for each material, slot
-        for obj in bpy.data.objects:
-            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                if obj.TLM_ObjectProperties.tlm_postpack_object:
-                    if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
-                        for slot in obj.material_slots:
-                            nodetree = slot.material.node_tree
+                    #SET UV LAYER TO 
 
-                            for node in nodetree.nodes:
+                    atlasRes = atlas_resolution
+                    texRes = rect[3]
+                    x,y,w,z = x,y,texRes,texRes
+                    
+                    ratio = atlasRes/texRes
+                    
+                    if x == 0:
+                        x_offset = 0
+                    else:
+                        x_offset = 1/(atlasRes/x)
 
-                                if node.name == "TLM_Lightmap":
+                    if y == 0:
+                        y_offset = 0
+                    else:
+                        y_offset = 1/(atlasRes/y)
+                    
+                    vertex_x = (uv_verts.uv[0] * 1/(ratio)) + x_offset
+                    vertex_y = (1 - ((uv_verts.uv[1] * 1/(ratio)) + y_offset))
+                    
+                    uv_verts.uv[0] = vertex_x
+                    uv_verts.uv[1] = vertex_y
 
-                                    existing_image = node.image
+                scaleUV(obj.data.uv_layers.active, (1, -1), getBoundsCenter(obj.data.uv_layers.active))
+                print(getCenter(obj.data.uv_layers.active))
 
-                                    atlasImage = bpy.data.images.load(os.path.join(lightmap_directory, atlas.name + end + formatEnc), check_existing=True)
+            cv2.imwrite(os.path.join(lightmap_directory, atlas.name + end + formatEnc), packedAtlas[atlas.name])
+            print("Written: " + str(os.path.join(lightmap_directory, atlas.name + end + formatEnc)))
 
-                                    if linear_straight:
-                                        if atlasImage.colorspace_settings.name != 'Linear':
-                                            atlasImage.colorspace_settings.name = 'Linear'
+            #Change the material for each material, slot
+            for obj in bpy.data.objects:
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    if obj.TLM_ObjectProperties.tlm_postpack_object:
+                        if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
+                            for slot in obj.material_slots:
+                                nodetree = slot.material.node_tree
 
-                                    node.image = atlasImage
+                                for node in nodetree.nodes:
 
-                                    os.remove(os.path.join(lightmap_directory, obj.name + end + formatEnc))
-                                    existing_image.user_clear()
+                                    if node.name == "TLM_Lightmap":
+
+                                        existing_image = node.image
+
+                                        atlasImage = bpy.data.images.load(os.path.join(lightmap_directory, atlas.name + end + formatEnc), check_existing=True)
+
+                                        if linear_straight:
+                                            if atlasImage.colorspace_settings.name != 'Linear':
+                                                atlasImage.colorspace_settings.name = 'Linear'
+
+                                        node.image = atlasImage
+
+                                        os.remove(os.path.join(lightmap_directory, obj.name + end + formatEnc))
+                                        existing_image.user_clear()
+
+    else:
+
+        print("OpenCV not installed. Skipping postpacking process.")
 
 def getCenter(uv_layer):
 
