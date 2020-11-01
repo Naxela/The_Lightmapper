@@ -276,8 +276,8 @@ def configure_meshes(self):
                                 nodetree.links.remove(noutput.outputs[0].links[0])
 
                         #Clamp metallic
-                        # if(mainNode.inputs[4].default_value == 1 and scene.TLM_SceneProperties.tlm_clamp_metallic):
-                        #     mainNode.inputs[4].default_value = 0.99
+                        if(mainNode.inputs[4].default_value == 1):
+                            mainNode.inputs[4].default_value = 0.0
 
                     if (mainNode.type == "BSDF_DIFFUSE"):
                         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:

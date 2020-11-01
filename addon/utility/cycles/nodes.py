@@ -120,19 +120,19 @@ def apply_materials():
 
                         #Clamp metallic
 
-                        if scene.TLM_SceneProperties.tlm_metallic_clamp != "ignore":
-                            if mainNode.type == "BSDF_PRINCIPLED":
+                        # if scene.TLM_SceneProperties.tlm_metallic_clamp != "ignore":
+                        #     if mainNode.type == "BSDF_PRINCIPLED":
                                 
-                                if len(mainNode.inputs[4].links) == 0:
+                        #         if len(mainNode.inputs[4].links) == 0:
 
-                                    if scene.TLM_SceneProperties.tlm_metallic_clamp == "zero":
-                                        mainNode.inputs[4].default_value = 0.0
-                                    else:
-                                        mainNode.inputs[4].default_value = 0.99
+                        #             if scene.TLM_SceneProperties.tlm_metallic_clamp == "zero":
+                        #                 mainNode.inputs[4].default_value = 0.0
+                        #             else:
+                        #                 mainNode.inputs[4].default_value = 0.99
 
-                                else:
+                        #         else:
 
-                                    pass
+                        #             pass
 
                         #Add all nodes first
                         #Add lightmap multipliction texture

@@ -650,3 +650,16 @@ class TLM_MergeAdjacentActors(bpy.types.Operator):
         
 
         return {'FINISHED'}
+
+
+def TLM_DoubleResolution():
+    pass
+
+def TLM_HalfResolution():
+    pass
+
+def TLM_DivideLMGroups():
+    pass
+
+def TLM_LoadFromFolder():
+    pass
