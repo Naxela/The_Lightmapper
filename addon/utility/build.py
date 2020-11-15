@@ -81,14 +81,16 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
         #Naming check
         naming_check()
 
-        if sceneProperties.tlm_reset_uv or sceneProperties.tlm_atlas_mode == "Postpack":
-            for obj in bpy.data.objects:
-                if obj.type == "MESH":
-                    uv_layers = obj.data.uv_layers
+        # if sceneProperties.tlm_reset_uv or sceneProperties.tlm_atlas_mode == "Postpack":
+        #     for obj in bpy.data.objects:
+        #         if obj.type == "MESH":
+        #             uv_layers = obj.data.uv_layers
 
-                    for uvlayer in uv_layers:
-                        if uvlayer.name == "UVMap_Lightmap":
-                            uv_layers.remove(uvlayer)
+
+
+                    #for uvlayer in uv_layers:
+                    #    if uvlayer.name == "UVMap_Lightmap":
+                    #        uv_layers.remove(uvlayer)
 
         ## RENDER DEPENDENCY FROM HERE
 

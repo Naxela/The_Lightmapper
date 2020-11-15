@@ -17,6 +17,16 @@ class TLM_PostAtlasListItem(bpy.types.PropertyGroup):
                     description="TODO",
                     default='256')
 
+    tlm_atlas_repack_on_cleanup : BoolProperty(
+        name="Repack on cleanup", 
+        description="Postpacking adjusts the UV's. Toggle to resize back to full scale on cleanup.", 
+        default=True)
+
+    tlm_atlas_dilation : BoolProperty(
+        name="Dilation", 
+        description="Adds a blurred background layer that acts as a dilation map.", 
+        default=False)
+
     tlm_atlas_unwrap_margin : FloatProperty(
         name="Unwrap Margin", 
         default=0.1, 

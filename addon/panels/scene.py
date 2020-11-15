@@ -488,6 +488,15 @@ class TLM_PT_Additional(bpy.types.Panel):
                                 
                                 atlasUsedArea += int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) ** 2
 
+                row = layout.row()
+                row.prop(item, "tlm_atlas_repack_on_cleanup")
+
+                #TODO SET A CHECK FOR THIS! ADD A CV2 CHECK TO UTILITY!
+                cv2 = True
+
+                if cv2:
+                    row = layout.row()
+                    row.prop(item, "tlm_atlas_dilation")
                 layout.label(text="Objects: " + str(amount))
 
                 utilized = atlasUsedArea / (int(atlasSize) ** 2)

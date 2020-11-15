@@ -75,6 +75,45 @@ class TLM_CleanLightmaps(bpy.types.Operator):
             if image.name.endswith("_baked"):
                 bpy.data.images.remove(image, do_unlink=True)
 
+        for obj in bpy.data.objects:
+            if obj.type == "MESH":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    if obj.TLM_ObjectProperties.tlm_postpack_object:
+
+                        atlas = obj.TLM_ObjectProperties.tlm_postatlas_pointer
+                        atlas_resize = False
+
+                        for atlasgroup in scene.TLM_PostAtlasList:
+                            if atlasgroup.name == atlas:
+                                atlas_resize = True
+
+                        if atlas_resize:
+
+                            bpy.ops.object.select_all(action='DESELECT')
+                            obj.select_set(True)
+                            bpy.context.view_layer.objects.active = obj
+                            #print(x)
+
+                            uv_layers = obj.data.uv_layers
+                            for i in range(0, len(uv_layers)):
+                                if uv_layers[i].name == 'UVMap_Lightmap':
+                                    uv_layers.active_index = i
+                                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                        print("Lightmap shift A")
+                                    break
+
+                            bpy.ops.object.mode_set(mode='EDIT')
+                            bpy.ops.mesh.select_all(action='SELECT')
+                            bpy.ops.uv.select_all(action='SELECT')
+                            bpy.ops.uv.pack_islands(rotate=False, margin=0.001)
+                            bpy.ops.uv.select_all(action='DESELECT')
+                            bpy.ops.mesh.select_all(action='DESELECT')
+                            bpy.ops.object.mode_set(mode='OBJECT')
+
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                #print(obj.name + ": Active UV: " + obj.data.uv_layers[obj.data.uv_layers.active_index].name)
+                                print("Resized for obj: " + obj.name)
+
         return {'FINISHED'}
 
 class TLM_ExploreLightmaps(bpy.types.Operator):

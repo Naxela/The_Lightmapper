@@ -118,11 +118,23 @@ def postpack():
             for r in rect:
                 packer[atlas.name].add_rect(*r)
 
-            #Continue here...
-            if (sceneProperties.tlm_encoding_mode == "RGBM" or sceneProperties.tlm_encoding_mode == "RGBD" or sceneProperties.tlm_encoding_mode == "LogLuv") and sceneProperties.tlm_encoding_use:
-                packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 4), dtype=np.uint8)
-            else:
-                packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 3), dtype="float32")
+            packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 3), dtype="float32")
+
+            #Continue here...overwrite value if using 8-bit encoding
+            if sceneProperties.tlm_encoding_use:
+                if sceneProperties.tlm_encoding_device == "CPU":
+                    if sceneProperties.tlm_encoding_mode_a == "RGBM":
+                        packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 4), dtype=np.uint8)
+                    if sceneProperties.tlm_encoding_mode_a == "RGBD":
+                        packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 4), dtype=np.uint8)
+                
+                if sceneProperties.tlm_encoding_device == "GPU":
+                    if sceneProperties.tlm_encoding_mode_b == "RGBM":
+                        packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 4), dtype=np.uint8)
+                    if sceneProperties.tlm_encoding_mode_b == "RGBD":
+                        packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 4), dtype=np.uint8)
+                    if sceneProperties.tlm_encoding_mode_b == "LogLuv":
+                        packedAtlas[atlas.name] = np.zeros((atlas_resolution,atlas_resolution, 4), dtype=np.uint8)
 
             packer[atlas.name].pack()
 
@@ -205,6 +217,37 @@ def postpack():
 
                                         os.remove(os.path.join(lightmap_directory, obj.name + end + formatEnc))
                                         existing_image.user_clear()
+
+            #Add dilation map here...
+            for obj in bpy.data.objects:
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    if obj.TLM_ObjectProperties.tlm_postpack_object:
+                        if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
+                            if atlas.tlm_atlas_dilation:
+                                for slot in obj.material_slots:
+                                    nodetree = slot.material.node_tree
+
+                                    for node in nodetree.nodes:
+
+                                        if node.name == "TLM_Lightmap":
+
+                                            existing_image = node.image
+
+                                            atlasImage = bpy.data.images.load(os.path.join(lightmap_directory, atlas.name + end + formatEnc), check_existing=True)
+
+                                            img = cv2.imread(atlasImage.filepath_raw, image_channel_depth)
+
+                                            kernel = np.ones((5,5), dtype="float32")
+
+                                            img_dilation = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+
+                                            cv2.imshow('Dilation', img_dilation)
+                                            cv2.waitKey(0)
+                                            
+                                            print("TODO: Adding dilation for: " + obj.name)
+                                            #TODO MASKING OPTION!
+
+
 
     else:
 
