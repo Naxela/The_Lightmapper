@@ -2,6 +2,7 @@ import bpy, os, subprocess, sys, platform, aud, json, datetime, socket
 import threading
 from . import encoding, pack
 from . cycles import lightmap, prepare, nodes, cache
+from . luxcore import setup
 from . denoiser import integrated, oidn, optix
 from . filtering import opencv
 from .. network import client
@@ -28,20 +29,6 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
 
         scene = bpy.context.scene
         sceneProperties = scene.TLM_SceneProperties
-
-        #We dynamically load the renderer and denoiser, instead of loading something we don't use
-
-        if sceneProperties.tlm_lightmap_engine == "Cycles":
-
-            pass
-
-        if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
-
-            pass
-
-        if sceneProperties.tlm_lightmap_engine == "OctaneRender":
-
-            pass
 
         #Timer start here bound to global
 
@@ -100,7 +87,7 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
 
         if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
-            pass
+            setup.init(self, previous_settings)
 
         if sceneProperties.tlm_lightmap_engine == "OctaneRender":
 
@@ -305,7 +292,6 @@ def begin_build():
         pass
 
     #Denoiser
-
     if sceneProperties.tlm_denoise_use:
 
         if sceneProperties.tlm_denoise_engine == "Integrated":
@@ -381,6 +367,7 @@ def begin_build():
 
         filter.init(dirpath, useDenoise)
 
+    #Encoding
     if sceneProperties.tlm_encoding_use and scene.TLM_EngineProperties.tlm_bake_mode != "Background":
 
         if sceneProperties.tlm_encoding_device == "CPU":
@@ -649,6 +636,63 @@ def manage_build(background_pass=False):
         if not background_pass:
             nodes.exchangeLightmapsToPostfix("_baked", end, formatEnc)
 
+        if scene.TLM_EngineProperties.tlm_setting_supersample == "2x":
+            supersampling_scale = 2
+        elif scene.TLM_EngineProperties.tlm_setting_supersample == "4x":
+            supersampling_scale = 4
+        else:
+            supersampling_scale = 1
+
+        pack.postpack()
+
+        for image in bpy.data.images:
+            if image.users < 1:
+                bpy.data.images.remove(image)
+
+        if scene.TLM_SceneProperties.tlm_headless:
+
+            filepath = bpy.data.filepath
+            dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_EngineProperties.tlm_lightmap_savedir)
+
+            for obj in bpy.data.objects:
+                if obj.type == "MESH":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                        cache.backup_material_restore(obj)
+
+            for obj in bpy.data.objects:
+                if obj.type == "MESH":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                        cache.backup_material_rename(obj)
+
+            for mat in bpy.data.materials:
+                if mat.users < 1:
+                    bpy.data.materials.remove(mat)
+
+            for mat in bpy.data.materials:
+                if mat.name.startswith("."):
+                    if "_Original" in mat.name:
+                        bpy.data.materials.remove(mat)
+
+            for obj in bpy.data.objects:
+
+                if obj.type == "MESH":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                        img_name = obj.name + '_baked'
+                        Lightmapimage = bpy.data.images[img_name]
+                        obj["Lightmap"] = Lightmapimage.filepath_raw
+
+            for image in bpy.data.images:
+                if image.name.endswith("_baked"):
+                    bpy.data.images.remove(image, do_unlink=True)
+
+        total_time = sec_to_hours((time() - start_time))
+        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+            print(total_time)
+
+        bpy.context.scene["TLM_Buildstat"] = total_time
+
+        reset_settings(previous_settings["settings"])
+
     if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
         pass
@@ -659,63 +703,6 @@ def manage_build(background_pass=False):
 
     if bpy.context.scene.TLM_EngineProperties.tlm_bake_mode == "Background":
         pass
-
-    if scene.TLM_EngineProperties.tlm_setting_supersample == "2x":
-        supersampling_scale = 2
-    elif scene.TLM_EngineProperties.tlm_setting_supersample == "4x":
-        supersampling_scale = 4
-    else:
-        supersampling_scale = 1
-
-    pack.postpack()
-
-    for image in bpy.data.images:
-        if image.users < 1:
-            bpy.data.images.remove(image)
-
-    if scene.TLM_SceneProperties.tlm_headless:
-
-        filepath = bpy.data.filepath
-        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_EngineProperties.tlm_lightmap_savedir)
-
-        for obj in bpy.data.objects:
-            if obj.type == "MESH":
-                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                    cache.backup_material_restore(obj)
-
-        for obj in bpy.data.objects:
-            if obj.type == "MESH":
-                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                    cache.backup_material_rename(obj)
-
-        for mat in bpy.data.materials:
-            if mat.users < 1:
-                bpy.data.materials.remove(mat)
-
-        for mat in bpy.data.materials:
-            if mat.name.startswith("."):
-                if "_Original" in mat.name:
-                    bpy.data.materials.remove(mat)
-
-        for obj in bpy.data.objects:
-
-            if obj.type == "MESH":
-                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                    img_name = obj.name + '_baked'
-                    Lightmapimage = bpy.data.images[img_name]
-                    obj["Lightmap"] = Lightmapimage.filepath_raw
-
-        for image in bpy.data.images:
-            if image.name.endswith("_baked"):
-                bpy.data.images.remove(image, do_unlink=True)
-
-    total_time = sec_to_hours((time() - start_time))
-    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-        print(total_time)
-
-    bpy.context.scene["TLM_Buildstat"] = total_time
-
-    reset_settings(previous_settings["settings"])
 
     if scene.TLM_SceneProperties.tlm_alert_on_finish:
 
@@ -757,6 +744,8 @@ def manage_build(background_pass=False):
 
         if postprocess_shutdown:
             sys.exit()
+
+#TODO - SET BELOW TO UTILITY
 
 def reset_settings(prev_settings):
     scene = bpy.context.scene
@@ -925,4 +914,3 @@ def checkAtlasSize():
         return True
     else:
         return False
-

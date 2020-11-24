@@ -5,7 +5,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     engines = [('Cycles', 'Cycles', 'Use Cycles for lightmapping')]
 
-    #engines.append(('LuxCoreRender', 'LuxCoreRender', 'Use LuxCoreRender for lightmapping'))
+    engines.append(('LuxCoreRender', 'LuxCoreRender', 'Use LuxCoreRender for lightmapping'))
     #engines.append(('OctaneRender', 'Octane Render', 'Use Octane Render for lightmapping'))
 
     tlm_atlas_pointer : StringProperty(
@@ -410,5 +410,3 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 name = "Probe Render Engine", 
                 description="TODO", 
                 default='BLENDER_EEVEE')
-
-    

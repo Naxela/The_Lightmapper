@@ -142,4 +142,36 @@ Changes:
 0.4.4.3 - Probe resolution
 0.4.4.4 - SH coefficients option
 0.4.4.5 - Add clean environment probe
+
+- 06.10.2020
+0.4.4.6 - Fix for environment probe direction
+0.4.4.7 - Begin radiance maps
+0.4.4.8 - Begin texel density integration
+0.4.4.9 - Begin merge adjacent actors
+
+- 10.10.2020
+0.4.5.0 - Add shutdown parameter
+0.4.5.1 - Remove matplotlib dependency
+
+- 15.10.2020
+0.4.5.2 - Begin imagetools
+0.4.5.3 - Begin GPU shaders
+0.4.5.4 - Extend RGBD Range
+
+- 19.10.2020
+0.4.5.5 - Update RGBD CPU encoding
+
+- 26.10.2020
+0.4.5.6 - Fixes for RGBD encoding
+
+- 01.11.2020
+0.4.5.7 - Node fixes
+
+- 15.11.2020
+0.4.5.8 - Fixes for postpacking
+0.4.5.9 - Fix for CV2 check
+0.4.6.0 - Pack cleanup
+0.4.6.1 - Begin dilation
+
+
 '''

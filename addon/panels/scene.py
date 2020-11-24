@@ -123,20 +123,25 @@ class TLM_PT_Settings(bpy.types.Panel):
 
         elif sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
+            engineProperties = scene.TLM_Engine2Properties
+            row = layout.row(align=True)
+            row.prop(engineProperties, "tlm_luxcore_dir")
+            row = layout.row(align=True)
+            row.operator("tlm.build_lightmaps")
             #LUXCORE SETTINGS HERE
-            luxcore_available = False
+            #luxcore_available = False
 
             #Look for Luxcorerender in the renderengine classes
-            for engine in bpy.types.RenderEngine.__subclasses__():
-                if engine.bl_idname == "LUXCORE":
-                    luxcore_available = True
-                    break
+            # for engine in bpy.types.RenderEngine.__subclasses__():
+            #     if engine.bl_idname == "LUXCORE":
+            #         luxcore_available = True
+            #         break
 
-            row = layout.row(align=True)
-            if not luxcore_available:
-                row.label(text="Please install BlendLuxCore.")
-            else:
-                row.label(text="LuxCoreRender not yet available.")
+            # row = layout.row(align=True)
+            # if not luxcore_available:
+            #     row.label(text="Please install BlendLuxCore.")
+            # else:
+            #     row.label(text="LuxCoreRender not yet available.")
 
         elif sceneProperties.tlm_lightmap_engine == "OctaneRender":
 
