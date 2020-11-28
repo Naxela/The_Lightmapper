@@ -1,4 +1,4 @@
-import bpy
+import bpy, platform
 from os.path import basename, dirname
 from bpy.types import AddonPreferences
 from .. operators import installopencv
@@ -7,8 +7,6 @@ import importlib
 class TLM_AddonPreferences(AddonPreferences):
 
     bl_idname = "thelightmapper"
-
-    addon_keys = bpy.context.preferences.addons.keys()
 
     def draw(self, context):
 
@@ -23,14 +21,17 @@ class TLM_AddonPreferences(AddonPreferences):
         if cv2 is not None:
             row.label(text="OpenCV installed")
         else:
-            row.label(text="OpenCV not found - Install as administrator!", icon_value=2)
+            if platform.system() == "Windows":
+                row.label(text="OpenCV not found - Install as administrator!", icon_value=2)
+            else:
+                row.label(text="OpenCV not found - Click to install!", icon_value=2)
             row = box.row()
             row.operator("tlm.install_opencv_lightmaps", icon="PREFERENCES")
 
         box = layout.box()
         row = box.row()
         row.label(text="Blender Xatlas")
-        if "blender_xatlas" in self.addon_keys:
+        if "blender_xatlas" in bpy.context.preferences.addons.keys():
             row.label(text="Blender Xatlas installed and available")
         else:
             row.label(text="Blender Xatlas not installed", icon_value=2)
@@ -47,10 +48,21 @@ class TLM_AddonPreferences(AddonPreferences):
         row.label(text="UVPackmaster")
         row.label(text="Coming soon")
 
+        texel_density_addon = False
+        for addon in bpy.context.preferences.addons.keys():
+            if addon.startswith("Texel_Density"):
+                texel_density_addon = True
+
         box = layout.box()
         row = box.row()
         row.label(text="Texel Density Checker")
-        row.label(text="Coming soon")
+        if texel_density_addon:
+            row.label(text="Texel Density Checker installed and available")
+        else:
+            row.label(text="Texel Density Checker", icon_value=2)
+            row.label(text="Coming soon")
+        row = box.row()
+        row.label(text="Github: https://github.com/mrven/Blender-Texel-Density-Checker")
 
         box = layout.box()
         row = box.row()
@@ -61,12 +73,3 @@ class TLM_AddonPreferences(AddonPreferences):
         row = box.row()
         row.label(text="OctaneRender")
         row.label(text="Coming soon")
-
-        # row = layout.row()
-        # row.label(text="PIP")
-        # row = layout.row()
-        # row.label(text="OIDN / Optix")
-        # row = layout.row()
-        # row.label(text="UVPackmaster")
-        # row = layout.row()
-        # row.label(text="Texel Density")

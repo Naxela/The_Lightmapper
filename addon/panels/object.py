@@ -27,8 +27,34 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
                 row = layout.row()
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_unwrap_mode")
                 row = layout.row()
-                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroup":
-                    pass
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+
+                    if scene.TLM_AtlasListItem >= 0 and len(scene.TLM_AtlasList) > 0:
+                        row = layout.row()
+                        item = scene.TLM_AtlasList[scene.TLM_AtlasListItem]
+                        row.prop_search(obj.TLM_ObjectProperties, "tlm_atlas_pointer", scene, "TLM_AtlasList", text='Atlas Group')
+                        row = layout.row()
+                    else:
+                        row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
+                        row = layout.row()
+
+                else:
+                    row = layout.row()
+                    row.prop(obj.TLM_ObjectProperties, "tlm_postpack_object")
+                    row = layout.row()
+
+
+                if obj.TLM_ObjectProperties.tlm_postpack_object and obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode != "AtlasGroupA":
+                    if scene.TLM_PostAtlasListItem >= 0 and len(scene.TLM_PostAtlasList) > 0:
+                        row = layout.row()
+                        item = scene.TLM_PostAtlasList[scene.TLM_PostAtlasListItem]
+                        row.prop_search(obj.TLM_ObjectProperties, "tlm_postatlas_pointer", scene, "TLM_PostAtlasList", text='Atlas Group')
+                        row = layout.row()
+
+                    else:
+                        row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
+                        row = layout.row()
+
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_unwrap_margin")
                 row = layout.row()
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_filter_override")
@@ -57,3 +83,27 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
                         row.prop(obj.TLM_ObjectProperties, "tlm_mesh_filtering_median_kernel", expand=True)
                         row = layout.row(align=True)
                         row.prop(obj.TLM_ObjectProperties, "tlm_mesh_filtering_iterations")
+
+
+class TLM_PT_MaterialMenu(bpy.types.Panel):
+    bl_label = "The Lightmapper"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "material"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        obj = bpy.context.object
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        mat = bpy.context.material
+        if mat == None:
+            return
+
+        if obj.type == "MESH":
+
+            row = layout.row()
+            row.prop(mat, "TLM_ignore")
