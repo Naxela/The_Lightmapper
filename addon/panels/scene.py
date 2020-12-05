@@ -94,7 +94,9 @@ class TLM_PT_Settings(bpy.types.Panel):
             row.prop(engineProperties, "tlm_bake_mode")
             row = layout.row(align=True)
             row.prop(engineProperties, "tlm_lighting_mode")
-
+            # if scene.TLM_EngineProperties.tlm_lighting_mode == "combinedao" or scene.TLM_EngineProperties.tlm_lighting_mode == "indirectao":
+            #     row = layout.row(align=True)
+            #     row.prop(engineProperties, "tlm_premultiply_ao")
             if scene.TLM_EngineProperties.tlm_bake_mode == "Background":
                 row = layout.row(align=True)
                 row.label(text="Warning! Background mode is currently unstable", icon_value=2)
@@ -121,35 +123,37 @@ class TLM_PT_Settings(bpy.types.Panel):
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_metallic_clamp")
 
-        elif sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
+        # elif sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
-            engineProperties = scene.TLM_Engine2Properties
-            row = layout.row(align=True)
-            row.prop(engineProperties, "tlm_luxcore_dir")
-            row = layout.row(align=True)
-            row.operator("tlm.build_lightmaps")
-            #LUXCORE SETTINGS HERE
-            #luxcore_available = False
+        #     engineProperties = scene.TLM_Engine2Properties
+        #     row = layout.row(align=True)
+        #     row.prop(engineProperties, "tlm_luxcore_dir")
+        #     row = layout.row(align=True)
+        #     row.operator("tlm.build_lightmaps")
+        #     #LUXCORE SETTINGS HERE
+        #     #luxcore_available = False
 
-            #Look for Luxcorerender in the renderengine classes
-            # for engine in bpy.types.RenderEngine.__subclasses__():
-            #     if engine.bl_idname == "LUXCORE":
-            #         luxcore_available = True
-            #         break
+        #     #Look for Luxcorerender in the renderengine classes
+        #     # for engine in bpy.types.RenderEngine.__subclasses__():
+        #     #     if engine.bl_idname == "LUXCORE":
+        #     #         luxcore_available = True
+        #     #         break
 
-            # row = layout.row(align=True)
-            # if not luxcore_available:
-            #     row.label(text="Please install BlendLuxCore.")
-            # else:
-            #     row.label(text="LuxCoreRender not yet available.")
+        #     # row = layout.row(align=True)
+        #     # if not luxcore_available:
+        #     #     row.label(text="Please install BlendLuxCore.")
+        #     # else:
+        #     #     row.label(text="LuxCoreRender not yet available.")
 
-        elif sceneProperties.tlm_lightmap_engine == "OctaneRender":
+        # elif sceneProperties.tlm_lightmap_engine == "OctaneRender":
 
-            #LUXCORE SETTINGS HERE
-            octane_available = False
+        #     engineProperties = scene.TLM_Engine3Properties
 
-            row = layout.row(align=True)
-            row.label(text="Octane Render not yet available.")
+        #     #LUXCORE SETTINGS HERE
+        #     octane_available = False
+
+        #     row = layout.row(align=True)
+        #     row.operator("tlm.build_lightmaps")
 
 class TLM_PT_Denoise(bpy.types.Panel):
     bl_label = "Denoise"
@@ -456,12 +460,6 @@ class TLM_PT_Additional(bpy.types.Panel):
                                 amount = amount + 1
 
                 layout.label(text="Objects: " + str(amount))
-            
-            # layout.use_property_split = True
-            # layout.use_property_decorate = False
-            # layout.label(text="Enable for selection")
-            # layout.label(text="Disable for selection")
-            # layout.label(text="Something...")
 
         else:
 

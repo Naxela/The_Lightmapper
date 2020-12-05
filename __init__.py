@@ -173,5 +173,8 @@ Changes:
 0.4.6.0 - Pack cleanup
 0.4.6.1 - Begin dilation
 
-
+- 01.12.2020
+0.4.6.2 - Add metallic clamping features (limit, zero, ignore) for principled BSDF
+0.4.6.3 - Begin work on Octane Render implementation (Currently only way for dominant light information)
+0.4.6.4 - Fixes for 2.91 API changes
 '''

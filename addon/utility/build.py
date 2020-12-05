@@ -3,6 +3,7 @@ import threading
 from . import encoding, pack
 from . cycles import lightmap, prepare, nodes, cache
 from . luxcore import setup
+from . octane import configure
 from . denoiser import integrated, oidn, optix
 from . filtering import opencv
 from .. network import client
@@ -53,12 +54,6 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
                 self.report({'INFO'}, "Error:Filtering - OpenCV not installed")
                 return{'FINISHED'}
 
-        #TODO DO some resolution change
-        #if checkAtlasSize():
-        #    print("Error: AtlasGroup overflow")
-        #    self.report({'INFO'}, "Error: AtlasGroup overflow - Too many objects")
-        #    return{'FINISHED'}
-
         setMode()
 
         dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
@@ -67,19 +62,6 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
 
         #Naming check
         naming_check()
-
-        # if sceneProperties.tlm_reset_uv or sceneProperties.tlm_atlas_mode == "Postpack":
-        #     for obj in bpy.data.objects:
-        #         if obj.type == "MESH":
-        #             uv_layers = obj.data.uv_layers
-
-
-
-                    #for uvlayer in uv_layers:
-                    #    if uvlayer.name == "UVMap_Lightmap":
-                    #        uv_layers.remove(uvlayer)
-
-        ## RENDER DEPENDENCY FROM HERE
 
         if sceneProperties.tlm_lightmap_engine == "Cycles":
 
@@ -91,17 +73,13 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
 
         if sceneProperties.tlm_lightmap_engine == "OctaneRender":
 
-            pass
-
-        #Renderer - Store settings
-
-        #Renderer - Set settings
-
-        #Renderer - Config objects, lights, world
+            configure.init(self, previous_settings)
 
         begin_build()
 
     else:
+
+        print("Baking in background")
 
         filepath = bpy.data.filepath
 
@@ -169,22 +147,11 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
 
             client.connect_client(HOST, PORT, bpy.data.filepath, 0)
 
-            # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            #     s.connect((HOST, PORT))
-            #     message = {
-            #                         "call" : 1,
-            #                         "command" : 1,
-            #                         "enquiry" : 0,
-            #                         "args" : bpy.data.filepath
-            #             }
-
-            #     s.sendall(json.dumps(message).encode())
-            #     data = s.recv(1024)
-            #     print(data.decode())
-
             finish_assemble()
 
         else:
+
+            print("Background driver process")
 
             bpy.app.driver_namespace["alpha"] = 0
 
@@ -196,6 +163,8 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
             bpy.app.timers.register(distribute_building)
 
 def distribute_building():
+
+    print("Distributing lightmap building")
 
     #CHECK IF THERE'S AN EXISTING SUBPROCESS 
 
@@ -216,7 +185,12 @@ def distribute_building():
         with open(os.path.join(write_directory, "process.tlm"), 'w') as file:
             json.dump(process_status, file, indent=2)
 
-        bpy.app.driver_namespace["tlm_process"] = subprocess.Popen([sys.executable,"-b", blendPath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=False, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        if (2, 91, 0) > bpy.app.version:
+            bpy.app.driver_namespace["tlm_process"] = subprocess.Popen([sys.executable,"-b", blendPath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=False, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        else:
+            bpy.app.driver_namespace["tlm_process"] = subprocess.Popen([bpy.app.binary_path,"-b", blendPath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=False, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+
+
 
         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
             print("Started process: " + str(bpy.app.driver_namespace["tlm_process"]) + " at " + str(datetime.datetime.now()))
@@ -269,6 +243,10 @@ def finish_assemble(self=0):
 
     if sceneProperties.tlm_lightmap_engine == "OctaneRender":
         pass
+
+    if not 'start_time' in globals():
+        global start_time
+        start_time = time()
 
     manage_build(True)
 

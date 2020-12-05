@@ -118,22 +118,6 @@ def apply_materials():
                         #Find mainnode
                         mainNode = outputNode.inputs[0].links[0].from_node
 
-                        #Clamp metallic
-
-                        # if scene.TLM_SceneProperties.tlm_metallic_clamp != "ignore":
-                        #     if mainNode.type == "BSDF_PRINCIPLED":
-                                
-                        #         if len(mainNode.inputs[4].links) == 0:
-
-                        #             if scene.TLM_SceneProperties.tlm_metallic_clamp == "zero":
-                        #                 mainNode.inputs[4].default_value = 0.0
-                        #             else:
-                        #                 mainNode.inputs[4].default_value = 0.99
-
-                        #         else:
-
-                        #             pass
-
                         #Add all nodes first
                         #Add lightmap multipliction texture
                         mixNode = node_tree.nodes.new(type="ShaderNodeMixRGB")
@@ -234,6 +218,12 @@ def apply_materials():
                             mat.node_tree.links.new(baseColorNode.outputs[0], mixNode.inputs[2]) #Connect basecolor to pbr node
                             mat.node_tree.links.new(mixNode.outputs[0], mainNode.inputs[0]) #Connect mixnode to pbr node
                             mat.node_tree.links.new(UVLightmap.outputs[0], lightmapNode.inputs[0]) #Connect uvnode to lightmapnode
+
+                        #If skip metallic
+                        if scene.TLM_SceneProperties.tlm_metallic_clamp == "skip":
+                            if mainNode.inputs[4].default_value > 0.1: #DELIMITER
+                                moutput = mainNode.inputs[0].links[0].from_node
+                                mat.node_tree.links.remove(moutput.outputs[0].links[0])
 
 def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
 

@@ -88,8 +88,15 @@ class TLM_CyclesSceneProperties(bpy.types.PropertyGroup):
 
     tlm_lighting_mode : EnumProperty(
         items = [('combined', 'Combined', 'Bake combined lighting'),
+#                ('combinedao', 'Combined+AO', 'Bake combined lighting with Ambient Occlusion'),
                 ('indirect', 'Indirect', 'Bake indirect lighting'),
+#                ('indirectao', 'Indirect+AO', 'Bake indirect lighting with Ambient Occlusion'),
                 ('ao', 'AO', 'Bake only Ambient Occlusion')],
                 name = "Lighting mode", 
                 description="TODO.", 
                 default="combined")
+
+    tlm_premultiply_ao : BoolProperty(
+        name="Premultiply AO", 
+        description="Ambient Occlusion will be premultiplied together with lightmaps, requiring less textures.", 
+        default=True)

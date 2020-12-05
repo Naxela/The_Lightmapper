@@ -1,4 +1,4 @@
-import bpy
+import bpy, math
 
 from . import cache
 from .. utility import *
@@ -62,6 +62,7 @@ def configure_meshes(self):
     for obj in bpy.data.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                obj.hide_select = False #Remember to toggle this back
                 for slot in obj.material_slots:
                     if "." + slot.name + '_Original' in bpy.data.materials:
                         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
@@ -99,7 +100,7 @@ def configure_meshes(self):
                 obj.select_set(True)
 
         if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
-            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+            bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
         if atlasgroup.tlm_atlas_lightmap_unwrap_mode == "SmartProject":
             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
@@ -112,7 +113,12 @@ def configure_meshes(self):
 
             bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.mesh.select_all(action='SELECT')
-            bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=atlasgroup.tlm_atlas_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+            #API changes in 2.91 causes errors:
+            if (2, 91, 0) > bpy.app.version:
+                bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+            else:
+                angle = math.radians(45.0)
+                bpy.ops.uv.smart_project(angle_limit=angle, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, area_weight=1.0, correct_aspect=True, scale_to_bounds=False)
             bpy.ops.mesh.select_all(action='DESELECT')
             bpy.ops.object.mode_set(mode='OBJECT')
         elif atlasgroup.tlm_atlas_lightmap_unwrap_mode == "Lightmap":
@@ -186,6 +192,7 @@ def configure_meshes(self):
                         
                         #If smart project
                         elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "SmartProject":
+
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                                 print("Smart Project B")
                             if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
@@ -193,9 +200,14 @@ def configure_meshes(self):
                             bpy.ops.object.select_all(action='DESELECT')
                             obj.select_set(True)
                             bpy.ops.object.mode_set(mode='EDIT')
+                            #API changes in 2.91 causes errors:
+                            if (2, 91, 0) > bpy.app.version:
+                                bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+                            else:
+                                angle = math.radians(45.0)
+                                bpy.ops.uv.smart_project(angle_limit=angle, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, area_weight=1.0, correct_aspect=True, scale_to_bounds=False)
                             bpy.ops.mesh.select_all(action='DESELECT')
                             bpy.ops.object.mode_set(mode='OBJECT')
-                            bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
                         
                         elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Xatlas":
 
@@ -276,8 +288,35 @@ def configure_meshes(self):
                                 nodetree.links.remove(noutput.outputs[0].links[0])
 
                         #Clamp metallic
-                        if(mainNode.inputs[4].default_value == 1):
-                            mainNode.inputs[4].default_value = 0.0
+                        if bpy.context.scene.TLM_SceneProperties.tlm_metallic_clamp == "limit":
+                            MainMetNodeSocket = mainNode.inputs[4]
+                            if not len(MainMetNodeSocket.links) == 0:
+                                nodes = nodetree.nodes
+                                MetClampNode = nodes.new('ShaderNodeClamp')
+                                MetClampNode.location = (-200,150)
+                                MetClampNode.inputs[2].default_value = 0.9
+                                minput = mainNode.inputs[4].links[0] #Metal input socket
+                                moutput = mainNode.inputs[4].links[0].from_node #Metal output node
+                                nodetree.links.remove(moutput.outputs[0].links[0]) #Works
+                                nodetree.links.new(moutput.outputs[0], MetClampNode.inputs[0]) #minput node to clamp node
+                                nodetree.links.new(MetClampNode.outputs[0],MainMetNodeSocket) #clamp node to metinput
+                            else:
+                                if mainNode.inputs[4].default_value > 0.9:
+                                    mainNode.inputs[4].default_value = 0.9
+                        elif bpy.context.scene.TLM_SceneProperties.tlm_metallic_clamp == "zero":
+                            MainMetNodeSocket = mainNode.inputs[4]
+                            if not len(MainMetNodeSocket.links) == 0:
+                                nodes = nodetree.nodes
+                                MetClampNode = nodes.new('ShaderNodeClamp')
+                                MetClampNode.location = (-200,150)
+                                MetClampNode.inputs[2].default_value = 0.0
+                                minput = mainNode.inputs[4].links[0] #Metal input socket
+                                moutput = mainNode.inputs[4].links[0].from_node #Metal output node
+                                nodetree.links.remove(moutput.outputs[0].links[0]) #Works
+                                nodetree.links.new(moutput.outputs[0], MetClampNode.inputs[0]) #minput node to clamp node
+                                nodetree.links.new(MetClampNode.outputs[0],MainMetNodeSocket) #clamp node to metinput
+                            else:
+                                mainNode.inputs[4].default_value = 0.0
 
                     if (mainNode.type == "BSDF_DIFFUSE"):
                         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:

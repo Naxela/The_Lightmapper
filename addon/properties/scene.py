@@ -5,8 +5,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     engines = [('Cycles', 'Cycles', 'Use Cycles for lightmapping')]
 
-    engines.append(('LuxCoreRender', 'LuxCoreRender', 'Use LuxCoreRender for lightmapping'))
-    #engines.append(('OctaneRender', 'Octane Render', 'Use Octane Render for lightmapping'))
+    #engines.append(('LuxCoreRender', 'LuxCoreRender', 'Use LuxCoreRender for lightmapping'))
+    engines.append(('OctaneRender', 'Octane Render', 'Use Octane Render for lightmapping'))
 
     tlm_atlas_pointer : StringProperty(
             name = "Atlas Group",
@@ -182,6 +182,17 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         min=1, 
         max=5)
 
+    tlm_clamp_hdr : BoolProperty(
+        name="Enable HDR Clamp", 
+        description="Clamp HDR Value", 
+        default=False)
+
+    tlm_clamp_hdr_value : IntProperty(
+        name="HDR Clamp value", 
+        default=10, 
+        min=0, 
+        max=20)
+
     #Encoding properties
     tlm_encoding_use : BoolProperty(
         name="Enable encoding", 
@@ -317,6 +328,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     tlm_metallic_clamp : EnumProperty(
         items = [('ignore', 'Ignore', 'Ignore clamping'),
+                ('skip', 'Skip', 'Skip baking metallic materials'),
                 ('zero', 'Zero', 'Set zero'),
                 ('limit', 'Limit', 'Clamp to 0.9')],
                 name = "Metallic clamping", 
