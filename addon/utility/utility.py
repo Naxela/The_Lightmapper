@@ -81,14 +81,7 @@ def save_image(image):
 
     image.filepath_raw = savepath
     
-    # if "Normal" in image.name:
-    #     bpy.context.scene.render.image_settings.quality = 90
-    #     image.save_render( filepath = image.filepath_raw, scene = bpy.context.scene )
-    # else:
     image.save()
-
-  
-
 
 def get_file_size(filepath):
     size = "Unpack Files"
@@ -341,7 +334,15 @@ def Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj):
         uv_layers = obj.data.uv_layers
 
         #setup the lightmap uvs
-        uvName = "UVMap_Lightmap"
+
+        if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+            uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+        else:
+            uv_channel = "UVMap_Lightmap"
+
+        uv_channel = "UVMap_Lightmap"
+
+
         if sharedProperties.lightmapUVChoiceType == "NAME":
             uvName = sharedProperties.lightmapUVName
         elif sharedProperties.lightmapUVChoiceType == "INDEX":

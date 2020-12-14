@@ -82,18 +82,22 @@ def configure_meshes(self):
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
 
                 uv_layers = obj.data.uv_layers
-                if not "UVMap_Lightmap" in uv_layers:
+
+                if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+                    uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+                else:
+                    uv_channel = "UVMap_Lightmap"
+
+                if not uv_channel in uv_layers:
                     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                        print("UVMap made A")
-                    uvmap = uv_layers.new(name="UVMap_Lightmap")
+                        print("UV map created for object: " + obj.name)
+                    uvmap = uv_layers.new(name=uv_channel)
                     uv_layers.active_index = len(uv_layers) - 1
                 else:
-                    print("Existing found...skipping")
+                    print("Existing UV map found for object: " + obj.name)
                     for i in range(0, len(uv_layers)):
                         if uv_layers[i].name == 'UVMap_Lightmap':
                             uv_layers.active_index = i
-                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                print("Lightmap shift A")
                             break
 
                 atlas_items.append(obj)
@@ -104,7 +108,7 @@ def configure_meshes(self):
 
         if atlasgroup.tlm_atlas_lightmap_unwrap_mode == "SmartProject":
             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                print("Smart Project A for: " + str(atlas_items))
+                print("Atlasgroup Smart Project for: " + str(atlas_items))
             for obj in atlas_items:
                 print(obj.name + ": Active UV: " + obj.data.uv_layers[obj.data.uv_layers.active_index].name)
 
@@ -130,7 +134,7 @@ def configure_meshes(self):
 
         elif atlasgroup.tlm_atlas_lightmap_unwrap_mode == "Xatlas":
             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                print("Temporary skip: COPYING SMART PROJECT")
+                print("Temporary skip: COPYING SMART PROJECT - TODO XATLAS FOR ATLAS GROUP")
 
             for obj in atlas_items:
                 obj.select_set(True)
@@ -145,7 +149,7 @@ def configure_meshes(self):
 
         else:
             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                print("Copied Existing A")
+                print("Copied Existing UV Map for Atlas Group: " + atlas)
 
     for obj in bpy.data.objects:
         if obj.type == "MESH":
@@ -178,10 +182,16 @@ def configure_meshes(self):
                 #UV Layer management here
                 if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
                     uv_layers = obj.data.uv_layers
-                    if not "UVMap_Lightmap" in uv_layers:
+
+                    if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+                        uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+                    else:
+                        uv_channel = "UVMap_Lightmap"
+
+                    if not uv_channel in uv_layers:
                         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                            print("UVMap made B")
-                        uvmap = uv_layers.new(name="UVMap_Lightmap")
+                            print("UV map created for obj: " + obj.name)
+                        uvmap = uv_layers.new(name=uv_channel)
                         uv_layers.active_index = len(uv_layers) - 1
 
                         #If lightmap
@@ -214,10 +224,6 @@ def configure_meshes(self):
                             if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
                                 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
                             
-                            #import blender_xatlas
-                            #blender_xatlas.Unwrap_Lightmap_Group_Xatlas_2(bpy.context)
-
-                            #bpy.ops.object.setup_unwrap()
                             Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj)
 
                         elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
@@ -228,16 +234,14 @@ def configure_meshes(self):
                         else: #if copy existing
 
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                print("Copied Existing B")
+                                print("Copied Existing UV Map for object: " + obj.name)
 
                     else:
                         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                            print("Existing found...skipping")
+                            print("Existing UV map found for obj: " + obj.name)
                         for i in range(0, len(uv_layers)):
-                            if uv_layers[i].name == 'UVMap_Lightmap':
+                            if uv_layers[i].name == uv_channel:
                                 uv_layers.active_index = i
-                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                    print("Lightmap shift B")
                                 break
 
                 #Sort out nodes

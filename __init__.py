@@ -177,4 +177,9 @@ Changes:
 0.4.6.2 - Add metallic clamping features (limit, zero, ignore) for principled BSDF
 0.4.6.3 - Begin work on Octane Render implementation (Currently only way for dominant light information)
 0.4.6.4 - Fixes for 2.91 API changes
+
+- 14.12.2020
+0.4.6.5 - Add option for select uv channels for lightmaps
+0.4.6.6 - Limited time decimals
+0.4.6.7 - Added options for interpolation and extrapolation
 '''

@@ -92,14 +92,17 @@ class TLM_CleanLightmaps(bpy.types.Operator):
                             bpy.ops.object.select_all(action='DESELECT')
                             obj.select_set(True)
                             bpy.context.view_layer.objects.active = obj
-                            #print(x)
 
                             uv_layers = obj.data.uv_layers
+
+                            if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+                                uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+                            else:
+                                uv_channel = "UVMap_Lightmap"
+                            
                             for i in range(0, len(uv_layers)):
-                                if uv_layers[i].name == 'UVMap_Lightmap':
+                                if uv_layers[i].name == uv_channel:
                                     uv_layers.active_index = i
-                                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                        print("Lightmap shift A")
                                     break
 
                             bpy.ops.object.mode_set(mode='EDIT')
@@ -111,7 +114,6 @@ class TLM_CleanLightmaps(bpy.types.Operator):
                             bpy.ops.object.mode_set(mode='OBJECT')
 
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                #print(obj.name + ": Active UV: " + obj.data.uv_layers[obj.data.uv_layers.active_index].name)
                                 print("Resized for obj: " + obj.name)
 
         return {'FINISHED'}
@@ -207,8 +209,13 @@ class TLM_RemoveLightmapUV(bpy.types.Operator):
             if obj.type == "MESH":
                 uv_layers = obj.data.uv_layers
 
+                if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+                    uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+                else:
+                    uv_channel = "UVMap_Lightmap"
+
                 for uvlayer in uv_layers:
-                    if uvlayer.name == "UVMap_Lightmap":
+                    if uvlayer.name == uv_channel:
                         uv_layers.remove(uvlayer)
 
         return{'FINISHED'}

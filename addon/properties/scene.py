@@ -286,8 +286,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
     tlm_mesh_lightmap_unwrap_mode : EnumProperty(
         items = [('Lightmap', 'Lightmap', 'TODO'),
                  ('SmartProject', 'Smart Project', 'TODO'),
-                 ('CopyExisting', 'Copy Existing', 'TODO'),
-                 ('AtlasGroupA', 'Atlas Group (Prepack)', 'TODO'),
+                 ('AtlasGroupA', 'Atlas Group (Prepack)', 'Attaches the object to a prepack Atlas group. Will overwrite UV map on build.'),
                  ('Xatlas', 'Xatlas', 'TODO')],
                 name = "Unwrap Mode", 
                 description="TODO", 
@@ -334,6 +333,23 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 name = "Metallic clamping", 
                 description="TODO.", 
                 default="ignore")
+
+    tlm_texture_interpolation : EnumProperty(
+        items = [('Smart', 'Smart', 'Bicubic when magnifying.'),
+                ('Cubic', 'Cubic', 'Cubic interpolation'),
+                ('Closest', 'Closest', 'No interpolation'),
+                ('Linear', 'Linear', 'Linear')],
+                name = "Texture interpolation", 
+                description="Texture interpolation.", 
+                default="Linear")
+
+    tlm_texture_extrapolation : EnumProperty(
+        items = [('REPEAT', 'Repeat', 'Repeat in both direction.'),
+                ('EXTEND', 'Extend', 'Extend by repeating edge pixels.'),
+                ('CLIP', 'Clip', 'Clip to image size')],
+                name = "Texture extrapolation", 
+                description="Texture extrapolation.", 
+                default="EXTEND")
 
     tlm_verbose : BoolProperty(
         name="Verbose", 

@@ -23,6 +23,14 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
                 row = layout.row()
+                row.prop(obj.TLM_ObjectProperties, "tlm_use_default_channel")
+
+                if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+
+                    row = layout.row()
+                    row.prop_search(obj.TLM_ObjectProperties, "tlm_uv_channel", obj.data, "uv_layers", text='UV Channel')
+
+                row = layout.row()
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_resolution")
                 row = layout.row()
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_unwrap_mode")

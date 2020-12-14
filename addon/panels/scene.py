@@ -122,6 +122,10 @@ class TLM_PT_Settings(bpy.types.Panel):
             row.prop(engineProperties, "tlm_setting_supersample")
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_metallic_clamp")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_texture_interpolation")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_texture_extrapolation")
 
         # elif sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 

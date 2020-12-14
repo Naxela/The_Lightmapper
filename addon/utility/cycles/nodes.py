@@ -100,7 +100,8 @@ def apply_materials():
                             lightmapNode = node_tree.nodes.new(type="ShaderNodeTexImage")
                             lightmapNode.location = -300, 300
                             lightmapNode.name = "TLM_Lightmap"
-                            lightmapNode.interpolation = "Smart"
+                            lightmapNode.interpolation = bpy.context.scene.TLM_SceneProperties.tlm_texture_interpolation
+                            lightmapNode.extension = bpy.context.scene.TLM_SceneProperties.tlm_texture_extrapolation
 
                             if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
                                 lightmapNode.image = bpy.data.images[obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"]
@@ -130,7 +131,14 @@ def apply_materials():
                         mixNode.inputs[0].default_value = 1.0
 
                         UVLightmap = node_tree.nodes.new(type="ShaderNodeUVMap")
-                        UVLightmap.uv_map = "UVMap_Lightmap"
+
+                        if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+                            uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+                        else:
+                            uv_channel = "UVMap_Lightmap"
+
+                        UVLightmap.uv_map = uv_channel
+
                         UVLightmap.name = "Lightmap_UV"
                         UVLightmap.location = -1000, 300
 

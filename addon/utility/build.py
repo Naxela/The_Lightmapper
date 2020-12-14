@@ -847,7 +847,7 @@ def check_materials():
 def sec_to_hours(seconds):
     a=str(seconds//3600)
     b=str((seconds%3600)//60)
-    c=str((seconds%3600)%60)
+    c=str(round((seconds%3600)%60,1))
     d=["{} hours {} mins {} seconds".format(a, b, c)]
     return d
 
