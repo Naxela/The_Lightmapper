@@ -127,6 +127,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_texture_extrapolation")
 
+        
+        
         # elif sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
         #     engineProperties = scene.TLM_Engine2Properties
@@ -149,15 +151,24 @@ class TLM_PT_Settings(bpy.types.Panel):
         #     # else:
         #     #     row.label(text="LuxCoreRender not yet available.")
 
-        # elif sceneProperties.tlm_lightmap_engine == "OctaneRender":
+        elif sceneProperties.tlm_lightmap_engine == "OctaneRender":
 
-        #     engineProperties = scene.TLM_Engine3Properties
+            engineProperties = scene.TLM_Engine3Properties
 
-        #     #LUXCORE SETTINGS HERE
-        #     octane_available = False
+            #LUXCORE SETTINGS HERE
+            octane_available = False
 
-        #     row = layout.row(align=True)
-        #     row.operator("tlm.build_lightmaps")
+            row = layout.row(align=True)
+            row.operator("tlm.build_lightmaps")
+            row = layout.row(align=True)
+            row.operator("tlm.clean_lightmaps")
+            row = layout.row(align=True)
+            row.operator("tlm.explore_lightmaps")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_verbose")
+            row = layout.row(align=True)
+            row.prop(engineProperties, "tlm_lightmap_savedir")
+            row = layout.row(align=True)
 
 class TLM_PT_Denoise(bpy.types.Panel):
     bl_label = "Denoise"

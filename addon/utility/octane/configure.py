@@ -46,25 +46,102 @@ def configure_meshes(self):
         if image.name.endswith("_baked"):
             bpy.data.images.remove(image, do_unlink=True)
 
-    iterNum = 0
+    iterNum = 1
     currentIterNum = 0
 
     scene = bpy.context.scene
 
-    for obj in bpy.data.objects:
+    for obj in scene.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 obj.hide_select = False #Remember to toggle this back
 
                 currentIterNum = currentIterNum + 1
 
-                obj.octane.baking_group_id = currentIterNum
+                obj.octane.baking_group_id = 1 + currentIterNum #0 doesn't exist, 1 is neutral and 2 is first baked object
+
+                print("Obj: " + obj.name + " set to baking group: " + str(obj.octane.baking_group_id))
 
                 for slot in obj.material_slots:
                     if "." + slot.name + '_Original' in bpy.data.materials:
                         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                             print("The material: " + slot.name + " shifted to " + "." + slot.name + '_Original')
                         slot.material = bpy.data.materials["." + slot.name + '_Original']
+
+                
+                objWasHidden = False
+
+                #For some reason, a Blender bug might prevent invisible objects from being smart projected
+                #We will turn the object temporarily visible
+                obj.hide_viewport = False
+                obj.hide_set(False)
+
+                #Configure selection
+                bpy.ops.object.select_all(action='DESELECT')
+                bpy.context.view_layer.objects.active = obj
+                obj.select_set(True)
+                obs = bpy.context.view_layer.objects
+                active = obs.active
+
+                uv_layers = obj.data.uv_layers
+                if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+                    uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+                else:
+                    uv_channel = "UVMap_Lightmap"
+
+                    if not uv_channel in uv_layers:
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("UV map created for obj: " + obj.name)
+                        uvmap = uv_layers.new(name=uv_channel)
+                        uv_layers.active_index = len(uv_layers) - 1
+
+                        #If lightmap
+                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
+                            bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
+                        
+                        #If smart project
+                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "SmartProject":
+
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("Smart Project B")
+                            bpy.ops.object.select_all(action='DESELECT')
+                            obj.select_set(True)
+                            bpy.ops.object.mode_set(mode='EDIT')
+                            bpy.ops.mesh.select_all(action='SELECT')
+                            #API changes in 2.91 causes errors:
+                            if (2, 91, 0) > bpy.app.version:
+                                bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+                            else:
+                                angle = math.radians(45.0)
+                                bpy.ops.uv.smart_project(angle_limit=angle, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, area_weight=1.0, correct_aspect=True, scale_to_bounds=False)
+                            bpy.ops.mesh.select_all(action='DESELECT')
+                            bpy.ops.object.mode_set(mode='OBJECT')
+                        
+                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Xatlas":
+                            
+                            Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj)
+
+                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("ATLAS GROUP: " + obj.TLM_ObjectProperties.tlm_atlas_pointer)
+                            
+                        else: #if copy existing
+
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("Copied Existing UV Map for object: " + obj.name)
+
+                    else:
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("Existing UV map found for obj: " + obj.name)
+                        for i in range(0, len(uv_layers)):
+                            if uv_layers[i].name == uv_channel:
+                                uv_layers.active_index = i
+                                break
+
+def set_camera():
+
+    pass
 
 def set_settings():
 

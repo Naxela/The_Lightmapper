@@ -31,12 +31,12 @@ def configure_lights():
 
 def configure_meshes(self):
 
-    for obj in bpy.data.objects:
+    for obj in bpy.context.scene.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 cache.backup_material_restore(obj)
 
-    for obj in bpy.data.objects:
+    for obj in bpy.context.scene.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 cache.backup_material_rename(obj)
@@ -59,9 +59,17 @@ def configure_meshes(self):
 
     scene = bpy.context.scene
 
-    for obj in bpy.data.objects:
+    for obj in bpy.context.scene.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
+                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                        print("Applying transform to: " + obj.name)
+                    bpy.context.view_layer.objects.active = obj
+                    obj.select_set(True)
+                    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+
                 obj.hide_select = False #Remember to toggle this back
                 for slot in obj.material_slots:
                     if "." + slot.name + '_Original' in bpy.data.materials:
@@ -78,7 +86,8 @@ def configure_meshes(self):
 
         bpy.ops.object.select_all(action='DESELECT')
 
-        for obj in bpy.data.objects:
+        for obj in bpy.context.scene.objects:
+
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
 
                 uv_layers = obj.data.uv_layers
@@ -102,9 +111,6 @@ def configure_meshes(self):
 
                 atlas_items.append(obj)
                 obj.select_set(True)
-
-        if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
-            bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
         if atlasgroup.tlm_atlas_lightmap_unwrap_mode == "SmartProject":
             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
@@ -151,12 +157,12 @@ def configure_meshes(self):
             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                 print("Copied Existing UV Map for Atlas Group: " + atlas)
 
-    for obj in bpy.data.objects:
+    for obj in bpy.context.scene.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 iterNum = iterNum + 1
 
-    for obj in bpy.data.objects:
+    for obj in bpy.context.scene.objects:
         if obj.type == "MESH":
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
@@ -196,8 +202,6 @@ def configure_meshes(self):
 
                         #If lightmap
                         if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
-                            if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
-                                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
                             bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
                         
                         #If smart project
@@ -205,11 +209,10 @@ def configure_meshes(self):
 
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                                 print("Smart Project B")
-                            if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
-                                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
                             bpy.ops.object.select_all(action='DESELECT')
                             obj.select_set(True)
                             bpy.ops.object.mode_set(mode='EDIT')
+                            bpy.ops.mesh.select_all(action='SELECT')
                             #API changes in 2.91 causes errors:
                             if (2, 91, 0) > bpy.app.version:
                                 bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
@@ -220,9 +223,6 @@ def configure_meshes(self):
                             bpy.ops.object.mode_set(mode='OBJECT')
                         
                         elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Xatlas":
-
-                            if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
-                                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
                             
                             Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj)
 
@@ -325,6 +325,10 @@ def configure_meshes(self):
                     if (mainNode.type == "BSDF_DIFFUSE"):
                         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                             print("BSDF_Diffuse")
+
+                    # if (mainNode.type == "BSDF_DIFFUSE"):
+                    #     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    #         print("BSDF_Diffuse")
 
                 for slot in obj.material_slots:
 
@@ -580,7 +584,7 @@ def store_existing(prev_container):
 
     selected = []
 
-    for obj in bpy.data.objects:
+    for obj in bpy.context.scene.objects:
         if obj.select_get():
             selected.append(obj.name)
 

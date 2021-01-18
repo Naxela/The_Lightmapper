@@ -116,6 +116,9 @@ class TLM_CleanLightmaps(bpy.types.Operator):
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                                 print("Resized for obj: " + obj.name)
 
+                    if "Lightmap" in obj:
+                        del obj["Lightmap"]
+
         return {'FINISHED'}
 
 class TLM_ExploreLightmaps(bpy.types.Operator):
@@ -507,7 +510,7 @@ class TLM_BuildEnvironmentProbes(bpy.types.Operator):
                         cam.rotation_euler = positions[val]
                         
                         filename = os.path.join(directory, val) + "_" + camobj_name + ".hdr"
-                        bpy.data.scenes['Scene'].render.filepath = filename
+                        bpy.context.scene.render.filepath = filename
                         print("Writing out: " + val)
                         bpy.ops.render.render(write_still=True)
 

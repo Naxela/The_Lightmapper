@@ -32,8 +32,9 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
 
                 row = layout.row()
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_resolution")
-                row = layout.row()
-                row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_unwrap_mode")
+                if obj.TLM_ObjectProperties.tlm_use_default_channel:
+                    row = layout.row()
+                    row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_unwrap_mode")
                 row = layout.row()
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
 

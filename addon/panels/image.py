@@ -1,4 +1,4 @@
-import bpy, os, math
+import bpy, os, math, importlib
 
 from bpy.types import Menu, Operator, Panel, UIList
 
@@ -21,7 +21,7 @@ class TLM_PT_Imagetools(bpy.types.Panel):
     def draw_header(self, _):
         layout = self.layout
         row = layout.row(align=True)
-        row.label(text ="TexTools")
+        row.label(text ="Image Tools")
 
     def draw(self, context):
         layout = self.layout
@@ -33,25 +33,26 @@ class TLM_PT_Imagetools(bpy.types.Panel):
                 activeImg = area.spaces.active.image
 
         if activeImg is not None and activeImg.name != "Render Result" and activeImg.name != "Viewer Node":
-                print(activeImg)
+
+            cv2 = importlib.util.find_spec("cv2")
+
+            if cv2 is None:
+                row = layout.row(align=True)
+                row.label(text ="OpenCV not installed.")
+            else:
+
+                row = layout.row(align=True)
+                row.label(text ="Method")
+                row = layout.row(align=True)
+                row.prop(activeImg.TLM_ImageProperties, "tlm_image_scale_engine")
                 row = layout.row(align=True)
                 row.operator("tlm.image_upscale")
                 row = layout.row(align=True)
                 row.operator("tlm.image_downscale")
-                row = layout.row(align=True)
-                row.label(text ="Method")
-                row = layout.row(align=True)
-                row.label(text ="If hdr: Exposure")
-                row = layout.row(align=True)
-                row.label(text ="Select an image")
-                row = layout.row(align=True)
-                row.label(text ="ORM Combine")
-                row = layout.row(align=True)
-                row.label(text ="Filter image")
-                row = layout.row(align=True)
-                row.label(text ="Denoise image")
-                row = layout.row(align=True)
-                row.label(text ="Adjust exposure")
+                if activeImg.TLM_ImageProperties.tlm_image_scale_engine == "OpenCV":
+                    row = layout.row(align=True)
+                    row.prop(activeImg.TLM_ImageProperties, "tlm_image_scale_method")
+
         else:
             row = layout.row(align=True)
             row.label(text ="Select an image")
