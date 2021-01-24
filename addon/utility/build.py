@@ -1,12 +1,14 @@
 import bpy, os, subprocess, sys, platform, aud, json, datetime, socket
-import threading
+
 from . import encoding, pack
 from . cycles import lightmap, prepare, nodes, cache
 from . luxcore import setup
-from . octane import configure
+from . octane import configure, lightmap2
 from . denoiser import integrated, oidn, optix
 from . filtering import opencv
+from . gui import Viewport
 from .. network import client
+
 from os import listdir
 from os.path import isfile, join
 from time import time, sleep
@@ -30,6 +32,9 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
 
         scene = bpy.context.scene
         sceneProperties = scene.TLM_SceneProperties
+
+        if not background_mode:
+            setGui(1)
 
         #Timer start here bound to global
 
@@ -186,12 +191,15 @@ def distribute_building():
             json.dump(process_status, file, indent=2)
 
         if (2, 91, 0) > bpy.app.version:
-            bpy.app.driver_namespace["tlm_process"] = subprocess.Popen([sys.executable,"-b", blendPath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=False, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                bpy.app.driver_namespace["tlm_process"] = subprocess.Popen([sys.executable,"-b", blendPath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=False, stdout=subprocess.PIPE)
+            else:
+                bpy.app.driver_namespace["tlm_process"] = subprocess.Popen([sys.executable,"-b", blendPath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=False, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
         else:
-            bpy.app.driver_namespace["tlm_process"] = subprocess.Popen([bpy.app.binary_path,"-b", blendPath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=False, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-
-
-
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                bpy.app.driver_namespace["tlm_process"] = subprocess.Popen([bpy.app.binary_path,"-b", blendPath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=False, stdout=subprocess.PIPE)
+            else:
+                bpy.app.driver_namespace["tlm_process"] = subprocess.Popen([bpy.app.binary_path,"-b", blendPath,"--python-expr",'import bpy; import thelightmapper; thelightmapper.addon.utility.build.prepare_build(0, True);'], shell=False, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
             print("Started process: " + str(bpy.app.driver_namespace["tlm_process"]) + " at " + str(datetime.datetime.now()))
 
@@ -267,7 +275,8 @@ def begin_build():
         pass
 
     if sceneProperties.tlm_lightmap_engine == "OctaneRender":
-        pass
+
+        lightmap2.bake()
 
     #Denoiser
     if sceneProperties.tlm_denoise_use:
@@ -704,6 +713,9 @@ def manage_build(background_pass=False):
 
     print("Lightmap building finished")
 
+    if not background_pass:
+        setGui(0)
+
     if bpy.app.background:
 
         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
@@ -852,9 +864,33 @@ def sec_to_hours(seconds):
     return d
 
 def setMode():
+
+    obj = bpy.context.scene.objects[0]
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+
     bpy.ops.object.mode_set(mode='OBJECT')
 
     #TODO Make some checks that returns to previous selection
+
+def setGui(mode):
+
+    if mode == 0:
+
+        context = bpy.context
+        driver = bpy.app.driver_namespace
+
+        if "TLM_UI" in driver:
+            driver["TLM_UI"].remove_handle()
+
+    if mode == 1:
+
+        bpy.context.area.tag_redraw()
+        context = bpy.context
+        driver = bpy.app.driver_namespace
+        driver["TLM_UI"] = Viewport.ViewportDraw(context, "Building Lightmaps")
+
+        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
 def checkAtlasSize():
 

@@ -94,6 +94,7 @@ def configure_meshes(self):
                             print("UV map created for obj: " + obj.name)
                         uvmap = uv_layers.new(name=uv_channel)
                         uv_layers.active_index = len(uv_layers) - 1
+                        print("Setting active UV to: " + uv_layers.active_index)
 
                         #If lightmap
                         if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
@@ -139,9 +140,20 @@ def configure_meshes(self):
                                 uv_layers.active_index = i
                                 break
 
+    set_camera()
+
 def set_camera():
 
-    pass
+    cam_name = "TLM-BakeCam"
+
+    if not cam_name in bpy.context.scene:
+        camera = bpy.data.cameras.new(cam_name)
+        camobj_name = "TLM-BakeCam-obj"
+        cam_obj = bpy.data.objects.new(camobj_name, camera)
+        bpy.context.collection.objects.link(cam_obj)
+        cam_obj.location = ((0,0,0))
+
+        bpy.context.scene.camera = cam_obj 
 
 def set_settings():
 

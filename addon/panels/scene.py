@@ -156,7 +156,9 @@ class TLM_PT_Settings(bpy.types.Panel):
             engineProperties = scene.TLM_Engine3Properties
 
             #LUXCORE SETTINGS HERE
-            octane_available = False
+            octane_available = True
+
+            
 
             row = layout.row(align=True)
             row.operator("tlm.build_lightmaps")
@@ -479,49 +481,59 @@ class TLM_PT_Additional(bpy.types.Panel):
         else:
 
             layout.label(text="Postpacking is unstable.")
-            rows = 2
-            if len(atlasList) > 1:
-                rows = 4
-            row = layout.row()
-            row.template_list("TLM_UL_PostAtlasList", "PostList", scene, "TLM_PostAtlasList", scene, "TLM_PostAtlasListItem", rows=rows)
-            col = row.column(align=True)
-            col.operator("tlm_postatlaslist.new_item", icon='ADD', text="")
-            col.operator("tlm_postatlaslist.delete_item", icon='REMOVE', text="")
 
-            if postatlasListItem >= 0 and len(postatlasList) > 0:
-                item = postatlasList[postatlasListItem]
-                layout.prop(item, "tlm_atlas_lightmap_resolution")
+            cv2 = importlib.util.find_spec("cv2")
 
-                #Below list object counter
-                amount = 0
-                utilized = 0
-                atlasUsedArea = 0
-                atlasSize = item.tlm_atlas_lightmap_resolution
+            if cv2 is None:
 
-                for obj in bpy.data.objects:
-                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                        if obj.TLM_ObjectProperties.tlm_postpack_object:
-                            if obj.TLM_ObjectProperties.tlm_postatlas_pointer == item.name:
-                                amount = amount + 1
-                                
-                                atlasUsedArea += int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) ** 2
+                row = layout.row(align=True)
+                row.label(text="OpenCV is not installed. Install it through preferences.")
 
+            else:
+
+                rows = 2
+                if len(atlasList) > 1:
+                    rows = 4
                 row = layout.row()
-                row.prop(item, "tlm_atlas_repack_on_cleanup")
+                row.template_list("TLM_UL_PostAtlasList", "PostList", scene, "TLM_PostAtlasList", scene, "TLM_PostAtlasListItem", rows=rows)
+                col = row.column(align=True)
+                col.operator("tlm_postatlaslist.new_item", icon='ADD', text="")
+                col.operator("tlm_postatlaslist.delete_item", icon='REMOVE', text="")
 
-                #TODO SET A CHECK FOR THIS! ADD A CV2 CHECK TO UTILITY!
-                cv2 = True
+                if postatlasListItem >= 0 and len(postatlasList) > 0:
+                    item = postatlasList[postatlasListItem]
+                    layout.prop(item, "tlm_atlas_lightmap_resolution")
 
-                if cv2:
+                    #Below list object counter
+                    amount = 0
+                    utilized = 0
+                    atlasUsedArea = 0
+                    atlasSize = item.tlm_atlas_lightmap_resolution
+
+                    for obj in bpy.data.objects:
+                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                            if obj.TLM_ObjectProperties.tlm_postpack_object:
+                                if obj.TLM_ObjectProperties.tlm_postatlas_pointer == item.name:
+                                    amount = amount + 1
+                                    
+                                    atlasUsedArea += int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) ** 2
+
                     row = layout.row()
-                    row.prop(item, "tlm_atlas_dilation")
-                layout.label(text="Objects: " + str(amount))
+                    row.prop(item, "tlm_atlas_repack_on_cleanup")
 
-                utilized = atlasUsedArea / (int(atlasSize) ** 2)
-                layout.label(text="Utilized: " + str(utilized * 100) + "%")
+                    #TODO SET A CHECK FOR THIS! ADD A CV2 CHECK TO UTILITY!
+                    cv2 = True
 
-                if (utilized * 100) > 100:
-                    layout.label(text="Warning! Overflow not yet supported")
+                    if cv2:
+                        row = layout.row()
+                        row.prop(item, "tlm_atlas_dilation")
+                    layout.label(text="Objects: " + str(amount))
+
+                    utilized = atlasUsedArea / (int(atlasSize) ** 2)
+                    layout.label(text="Utilized: " + str(utilized * 100) + "%")
+
+                    if (utilized * 100) > 100:
+                        layout.label(text="Warning! Overflow not yet supported")
 
         row = layout.row()
         row.label(text="Build Environment Probes")
@@ -537,7 +549,9 @@ class TLM_PT_Additional(bpy.types.Panel):
         row.prop(sceneProperties, "tlm_environment_probe_resolution")
         row = layout.row()
         row.prop(sceneProperties, "tlm_create_spherical")
+
         if sceneProperties.tlm_create_spherical:
+
             row = layout.row()
             row.prop(sceneProperties, "tlm_invert_direction")
             row = layout.row()

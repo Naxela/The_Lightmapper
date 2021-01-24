@@ -1,4 +1,4 @@
-import bpy, os, time, cv2
+import bpy, os, time, importlib
 
 class TLM_ImageUpscale(bpy.types.Operator):
     bl_idname = "tlm.image_upscale"
@@ -7,6 +7,14 @@ class TLM_ImageUpscale(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def invoke(self, context, event):
+
+        cv2 = importlib.util.find_spec("cv2")
+
+        if cv2 is None:
+            print("CV2 not found - Ignoring filtering")
+            return 0
+        else:
+            cv2 = importlib.__import__("cv2")
 
         for area in bpy.context.screen.areas:
             if area.type == "IMAGE_EDITOR":
@@ -133,5 +141,45 @@ class TLM_ImageDownscale(bpy.types.Operator):
             print("Please save image")
 
         print("Upscale")
+
+        return {'RUNNING_MODAL'}
+
+class TLM_ImageSwitchUp(bpy.types.Operator):
+    bl_idname = "tlm.image_switchup"
+    bl_label = "Quickswitch Up"
+    bl_description = "Switches to a cached upscaled image"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def invoke(self, context, event):
+
+        for area in bpy.context.screen.areas:
+            if area.type == "IMAGE_EDITOR":
+                active_image = area.spaces.active.image
+
+        if active_image.source == "FILE":
+            img_path = active_image.filepath_raw
+            filename = os.path.basename(img_path)
+
+        print("Switch up")
+
+        return {'RUNNING_MODAL'}
+
+class TLM_ImageSwitchDown(bpy.types.Operator):
+    bl_idname = "tlm.image_switchdown"
+    bl_label = "Quickswitch Down"
+    bl_description = "Switches to a cached downscaled image"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def invoke(self, context, event):
+
+        for area in bpy.context.screen.areas:
+            if area.type == "IMAGE_EDITOR":
+                active_image = area.spaces.active.image
+
+        if active_image.source == "FILE":
+            img_path = active_image.filepath_raw
+            filename = os.path.basename(img_path)
+
+        print("Switch Down")
 
         return {'RUNNING_MODAL'}

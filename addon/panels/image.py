@@ -46,9 +46,17 @@ class TLM_PT_Imagetools(bpy.types.Panel):
                 row = layout.row(align=True)
                 row.prop(activeImg.TLM_ImageProperties, "tlm_image_scale_engine")
                 row = layout.row(align=True)
+                row.prop(activeImg.TLM_ImageProperties, "tlm_image_cache_switch")
+                row = layout.row(align=True)
                 row.operator("tlm.image_upscale")
+                if activeImg.TLM_ImageProperties.tlm_image_cache_switch:
+                    row = layout.row(align=True)
+                    row.label(text ="Switch up.")
                 row = layout.row(align=True)
                 row.operator("tlm.image_downscale")
+                if activeImg.TLM_ImageProperties.tlm_image_cache_switch:
+                    row = layout.row(align=True)
+                    row.label(text ="Switch down.")
                 if activeImg.TLM_ImageProperties.tlm_image_scale_engine == "OpenCV":
                     row = layout.row(align=True)
                     row.prop(activeImg.TLM_ImageProperties, "tlm_image_scale_method")

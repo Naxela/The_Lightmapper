@@ -20,3 +20,7 @@ class TLM_ImageProperties(bpy.types.PropertyGroup):
                 description="TODO", 
                 default='Lanczos')
 
+    tlm_image_cache_switch : BoolProperty(
+        name="Cache for quickswitch", 
+        description="Caches scaled images for quick switching", 
+        default=True)
