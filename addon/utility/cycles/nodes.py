@@ -90,7 +90,7 @@ def apply_materials():
                         for node in nodes:
                             if node.name == "Baked Image":
                                 lightmapNode = node
-                                lightmapNode.location = -800, 300
+                                lightmapNode.location = -1200, 300
                                 lightmapNode.name = "TLM_Lightmap"
                                 foundBakedNode = True
                         
@@ -98,7 +98,7 @@ def apply_materials():
 
                         if not foundBakedNode:
                             lightmapNode = node_tree.nodes.new(type="ShaderNodeTexImage")
-                            lightmapNode.location = -300, 300
+                            lightmapNode.location = -1200, 300
                             lightmapNode.name = "TLM_Lightmap"
                             lightmapNode.interpolation = bpy.context.scene.TLM_SceneProperties.tlm_texture_interpolation
                             lightmapNode.extension = bpy.context.scene.TLM_SceneProperties.tlm_texture_extrapolation
@@ -123,7 +123,7 @@ def apply_materials():
                         #Add lightmap multipliction texture
                         mixNode = node_tree.nodes.new(type="ShaderNodeMixRGB")
                         mixNode.name = "Lightmap_Multiplication"
-                        mixNode.location = -300, 300
+                        mixNode.location = -800, 300
                         if scene.TLM_EngineProperties.tlm_lighting_mode == "indirect" or scene.TLM_EngineProperties.tlm_lighting_mode == "indirectAO":
                             mixNode.blend_type = 'ADD'
                         else:
@@ -140,7 +140,7 @@ def apply_materials():
                         UVLightmap.uv_map = uv_channel
 
                         UVLightmap.name = "Lightmap_UV"
-                        UVLightmap.location = -1000, 300
+                        UVLightmap.location = -1500, 300
 
                         if(scene.TLM_SceneProperties.tlm_decoder_setup):
                             if scene.TLM_SceneProperties.tlm_encoding_device == "CPU":
@@ -188,7 +188,7 @@ def apply_materials():
                             baseColorValue = mainNode.inputs[0].default_value
                             baseColorNode = node_tree.nodes.new(type="ShaderNodeRGB")
                             baseColorNode.outputs[0].default_value = baseColorValue
-                            baseColorNode.location = ((mainNode.location[0] - 500, mainNode.location[1] - 300))
+                            baseColorNode.location = ((mainNode.location[0] - 1100, mainNode.location[1] - 300))
                             baseColorNode.name = "Lightmap_BasecolorNode_A"
                         else:
                             baseColorNode = mainNode.inputs[0].links[0].from_node
@@ -264,6 +264,53 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
 
     for image in bpy.data.images:
         image.reload()
+
+def applyAOPass():
+
+    for obj in bpy.data.objects:
+        if obj.type == "MESH":
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                for slot in obj.material_slots:
+                    mat = slot.material
+                    node_tree = mat.node_tree
+                    nodes = mat.node_tree.nodes
+
+                    for node in nodes:
+                        if node.name == "Baked Image" or node.name == "TLM_Lightmap":
+
+                            filepath = bpy.data.filepath
+                            dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+
+                            LightmapPath = node.image.filepath_raw
+
+                            filebase = os.path.basename(LightmapPath)
+                            filename = os.path.splitext(filebase)[0]
+                            extension = os.path.splitext(filebase)[1]
+                            AOImagefile = filename[:-4] + "_ao"
+                            AOImagePath = os.path.join(dirpath, AOImagefile + extension)
+
+                            AOMap = nodes.new('ShaderNodeTexImage')
+                            AOMap.name = "TLM_AOMap"
+                            AOImage = bpy.data.images.load(AOImagePath)
+                            AOMap.image = AOImage
+                            AOMap.location = -800, 0
+
+                            AOMult = nodes.new(type="ShaderNodeMixRGB")
+                            AOMult.name = "TLM_AOMult"
+                            AOMult.blend_type = 'MULTIPLY'
+                            AOMult.inputs[0].default_value = 1.0
+                            AOMult.location = -300, 300
+
+                            multyNode = nodes["Lightmap_Multiplication"]
+                            mainNode = nodes["Principled BSDF"]
+                            UVMapNode = nodes["Lightmap_UV"]
+
+                            node_tree.links.remove(multyNode.outputs[0].links[0])
+
+                            node_tree.links.new(multyNode.outputs[0], AOMult.inputs[1])
+                            node_tree.links.new(AOMap.outputs[0], AOMult.inputs[2])
+                            node_tree.links.new(AOMult.outputs[0], mainNode.inputs[0])
+                            node_tree.links.new(UVMapNode.outputs[0], AOMap.inputs[0])
 
 def load_library(asset_name):
 

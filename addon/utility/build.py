@@ -15,7 +15,6 @@ from time import time, sleep
 from importlib import util
 
 previous_settings = {}
-
 postprocess_shutdown = False
 
 def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
@@ -24,6 +23,11 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
         postprocess_shutdown = True
 
     print("Building lightmaps")
+
+    if bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode == "combinedao":
+        if not "tlm_plus_mode" in bpy.app.driver_namespace or bpy.app.driver_namespace["tlm_plus_mode"] == 0:
+            bpy.app.driver_namespace["tlm_plus_mode"] = 1
+            print("Plus Mode")
 
     if bpy.context.scene.TLM_EngineProperties.tlm_bake_mode == "Foreground" or background_mode==True:
 
@@ -34,9 +38,8 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
         sceneProperties = scene.TLM_SceneProperties
 
         if not background_mode:
-            setGui(1)
-
-        #Timer start here bound to global
+            pass
+            #setGui(1)
 
         if check_save():
             print("Please save your file first")
@@ -95,22 +98,7 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
         scene = bpy.context.scene
         sceneProperties = scene.TLM_SceneProperties
 
-        #We dynamically load the renderer and denoiser, instead of loading something we don't use
-
-        if sceneProperties.tlm_lightmap_engine == "Cycles":
-
-            pass
-
-        if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
-
-            pass
-
-        if sceneProperties.tlm_lightmap_engine == "OctaneRender":
-
-            pass
-
         #Timer start here bound to global
-
         if check_save():
             print("Please save your file first")
             self.report({'INFO'}, "Please save your file first")
@@ -672,68 +660,157 @@ def manage_build(background_pass=False):
                 if image.name.endswith("_baked"):
                     bpy.data.images.remove(image, do_unlink=True)
 
-        total_time = sec_to_hours((time() - start_time))
-        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-            print(total_time)
+        if "tlm_plus_mode" in bpy.app.driver_namespace: #First DIR pass
 
-        bpy.context.scene["TLM_Buildstat"] = total_time
+            if bpy.app.driver_namespace["tlm_plus_mode"] == 1: #First DIR pass
 
-        reset_settings(previous_settings["settings"])
+                filepath = bpy.data.filepath
+                dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_EngineProperties.tlm_lightmap_savedir)
 
-    if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
+                for obj in bpy.data.objects:
+                    if obj.type == "MESH":
+                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                            cache.backup_material_restore(obj)
 
-        pass
+                for obj in bpy.data.objects:
+                    if obj.type == "MESH":
+                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                            cache.backup_material_rename(obj)
 
-    if sceneProperties.tlm_lightmap_engine == "OctaneRender":
+                for mat in bpy.data.materials:
+                    if mat.users < 1:
+                        bpy.data.materials.remove(mat)
 
-        pass
+                for mat in bpy.data.materials:
+                    if mat.name.startswith("."):
+                        if "_Original" in mat.name:
+                            bpy.data.materials.remove(mat)
 
-    if bpy.context.scene.TLM_EngineProperties.tlm_bake_mode == "Background":
-        pass
+                for image in bpy.data.images:
+                    if image.name.endswith("_baked"):
+                        bpy.data.images.remove(image, do_unlink=True)
 
-    if scene.TLM_SceneProperties.tlm_alert_on_finish:
+                dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
 
-        alertSelect = scene.TLM_SceneProperties.tlm_alert_sound
+                files = os.listdir(dirpath)
 
-        if alertSelect == "dash":
-            soundfile = "dash.ogg"
-        elif alertSelect == "pingping":
-            soundfile = "pingping.ogg"  
-        elif alertSelect == "gentle":
-            soundfile = "gentle.ogg"
+                for index, file in enumerate(files):
+
+                    filename = extension = os.path.splitext(file)[0]
+                    extension = os.path.splitext(file)[1]
+
+                    os.rename(os.path.join(dirpath, file), os.path.join(dirpath, filename + "_dir" + extension))
+                
+                print("First DIR pass complete")
+
+                bpy.app.driver_namespace["tlm_plus_mode"] = 2
+
+                prepare_build(self=0, background_mode=False, shutdown_after_build=False)
+
+                if not background_pass:
+                    pass
+                    #setGui(0)
+
+            elif bpy.app.driver_namespace["tlm_plus_mode"] == 2:
+
+                filepath = bpy.data.filepath
+
+                dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+
+                files = os.listdir(dirpath)
+
+                for index, file in enumerate(files):
+
+                    filename = os.path.splitext(file)[0]
+                    extension = os.path.splitext(file)[1]
+
+                    if not filename.endswith("_dir"):
+                        os.rename(os.path.join(dirpath, file), os.path.join(dirpath, filename + "_ao" + extension))
+                
+                print("Second AO pass complete")
+
+                total_time = sec_to_hours((time() - start_time))
+                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    print(total_time)
+
+                bpy.context.scene["TLM_Buildstat"] = total_time
+
+                reset_settings(previous_settings["settings"])
+
+                bpy.app.driver_namespace["tlm_plus_mode"] = 0
+
+                if not background_pass:
+                    nodes.exchangeLightmapsToPostfix("_filtered", "_filtered_dir", formatEnc)
+
+                    nodes.applyAOPass()
+                    print("Nodes exchanged")
+
+                print("Assemble here...")
+
         else:
-            soundfile = "noot.ogg"
 
-        scriptDir = os.path.dirname(os.path.realpath(__file__))
-        sound_path = os.path.abspath(os.path.join(scriptDir, '..', 'assets/'+soundfile))
+            total_time = sec_to_hours((time() - start_time))
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print(total_time)
 
-        device = aud.Device()
-        sound = aud.Sound.file(sound_path)
-        device.play(sound)
+            bpy.context.scene["TLM_Buildstat"] = total_time
 
-    print("Lightmap building finished")
+            reset_settings(previous_settings["settings"])
 
-    if not background_pass:
-        setGui(0)
+            print("Lightmap building finished")
 
-    if bpy.app.background:
+            if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
-        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-            print("Writing background process report")
-        
-        write_directory = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+                pass
 
-        if os.path.exists(os.path.join(write_directory, "process.tlm")):
+            if sceneProperties.tlm_lightmap_engine == "OctaneRender":
 
-            process_status = json.loads(open(os.path.join(write_directory, "process.tlm")).read())
+                pass
 
-            process_status[1]["completed"] = True
+            if bpy.context.scene.TLM_EngineProperties.tlm_bake_mode == "Background":
+                pass
 
-            with open(os.path.join(write_directory, "process.tlm"), 'w') as file:
-                json.dump(process_status, file, indent=2)
+            if scene.TLM_SceneProperties.tlm_alert_on_finish:
 
-        if postprocess_shutdown:
-            sys.exit()
+                alertSelect = scene.TLM_SceneProperties.tlm_alert_sound
+
+                if alertSelect == "dash":
+                    soundfile = "dash.ogg"
+                elif alertSelect == "pingping":
+                    soundfile = "pingping.ogg"  
+                elif alertSelect == "gentle":
+                    soundfile = "gentle.ogg"
+                else:
+                    soundfile = "noot.ogg"
+
+                scriptDir = os.path.dirname(os.path.realpath(__file__))
+                sound_path = os.path.abspath(os.path.join(scriptDir, '..', 'assets/'+soundfile))
+
+                device = aud.Device()
+                sound = aud.Sound.file(sound_path)
+                device.play(sound)
+
+            if not background_pass:
+                setGui(0)
+
+        if bpy.app.background:
+
+            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("Writing background process report")
+            
+            write_directory = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+
+            if os.path.exists(os.path.join(write_directory, "process.tlm")):
+
+                process_status = json.loads(open(os.path.join(write_directory, "process.tlm")).read())
+
+                process_status[1]["completed"] = True
+
+                with open(os.path.join(write_directory, "process.tlm"), 'w') as file:
+                    json.dump(process_status, file, indent=2)
+
+            if postprocess_shutdown:
+                sys.exit()
 
 #TODO - SET BELOW TO UTILITY
 
@@ -928,3 +1005,4 @@ def checkAtlasSize():
         return True
     else:
         return False
+

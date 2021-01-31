@@ -1,6 +1,6 @@
 import bpy, os
 
-def bake():
+def bake(plus_pass=0):
 
     for obj in bpy.data.objects:
         bpy.ops.object.select_all(action='DESELECT')
@@ -35,16 +35,22 @@ def bake():
                 if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                     print("Baking " + str(currentIterNum) + "/" + str(iterNum) + " (" + str(round(currentIterNum/iterNum*100, 2)) + "%) : " + obj.name)
 
-                if scene.TLM_EngineProperties.tlm_lighting_mode == "combined" or scene.TLM_EngineProperties.tlm_lighting_mode == "combinedAO":
+                if scene.TLM_EngineProperties.tlm_lighting_mode == "combined":
                     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
-                elif scene.TLM_EngineProperties.tlm_lighting_mode == "indirect" or scene.TLM_EngineProperties.tlm_lighting_mode == "indirectAO":
+                elif scene.TLM_EngineProperties.tlm_lighting_mode == "indirect":
                     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
                 elif scene.TLM_EngineProperties.tlm_lighting_mode == "ao":
                     bpy.ops.object.bake(type="AO", margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
-                elif scene.TLM_EngineProperties.tlm_lighting_mode == "complete":
-                    bpy.ops.object.bake(type="COMBINED", margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)         
+                elif scene.TLM_EngineProperties.tlm_lighting_mode == "combinedao":
+
+                    if bpy.app.driver_namespace["tlm_plus_mode"] == 1:
+                        bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
+                    elif bpy.app.driver_namespace["tlm_plus_mode"] == 2:
+                        bpy.ops.object.bake(type="AO", margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
+
                 else:
                     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
+
                 
                 bpy.ops.object.select_all(action='DESELECT')
                 currentIterNum = currentIterNum + 1

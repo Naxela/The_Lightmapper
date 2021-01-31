@@ -163,199 +163,201 @@ def configure_meshes(self):
                 iterNum = iterNum + 1
 
     for obj in bpy.context.scene.objects:
-        if obj.type == "MESH":
-            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+        if obj.name in bpy.context.view_layer.objects: #Possible fix for view layer error
+            if obj.type == "MESH":
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
-                objWasHidden = False
+                    objWasHidden = False
 
-                #For some reason, a Blender bug might prevent invisible objects from being smart projected
-                #We will turn the object temporarily visible
-                obj.hide_viewport = False
-                obj.hide_set(False)
+                    #For some reason, a Blender bug might prevent invisible objects from being smart projected
+                    #We will turn the object temporarily visible
+                    obj.hide_viewport = False
+                    obj.hide_set(False)
 
-                currentIterNum = currentIterNum + 1
+                    currentIterNum = currentIterNum + 1
 
-                #Configure selection
-                bpy.ops.object.select_all(action='DESELECT')
-                bpy.context.view_layer.objects.active = obj
-                obj.select_set(True)
-                obs = bpy.context.view_layer.objects
-                active = obs.active
+                    #Configure selection
+                    bpy.ops.object.select_all(action='DESELECT')
+                    bpy.context.view_layer.objects.active = obj
+                    obj.select_set(True)
 
-                #Provide material if none exists
-                preprocess_material(obj, scene)
+                    obs = bpy.context.view_layer.objects
+                    active = obs.active
 
-                #UV Layer management here
-                if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
-                    uv_layers = obj.data.uv_layers
+                    #Provide material if none exists
+                    preprocess_material(obj, scene)
 
-                    if not obj.TLM_ObjectProperties.tlm_use_default_channel:
-                        uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
-                    else:
-                        uv_channel = "UVMap_Lightmap"
+                    #UV Layer management here
+                    if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+                        uv_layers = obj.data.uv_layers
 
-                    if not uv_channel in uv_layers:
-                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                            print("UV map created for obj: " + obj.name)
-                        uvmap = uv_layers.new(name=uv_channel)
-                        uv_layers.active_index = len(uv_layers) - 1
+                        if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+                            uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+                        else:
+                            uv_channel = "UVMap_Lightmap"
 
-                        #If lightmap
-                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
-                            bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
-                        
-                        #If smart project
-                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "SmartProject":
-
+                        if not uv_channel in uv_layers:
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                print("Smart Project B")
-                            bpy.ops.object.select_all(action='DESELECT')
-                            obj.select_set(True)
-                            bpy.ops.object.mode_set(mode='EDIT')
-                            bpy.ops.mesh.select_all(action='SELECT')
-                            #API changes in 2.91 causes errors:
-                            if (2, 91, 0) > bpy.app.version:
-                                bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+                                print("UV map created for obj: " + obj.name)
+                            uvmap = uv_layers.new(name=uv_channel)
+                            uv_layers.active_index = len(uv_layers) - 1
+
+                            #If lightmap
+                            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
+                                bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
+                            
+                            #If smart project
+                            elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "SmartProject":
+
+                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                    print("Smart Project B")
+                                bpy.ops.object.select_all(action='DESELECT')
+                                obj.select_set(True)
+                                bpy.ops.object.mode_set(mode='EDIT')
+                                bpy.ops.mesh.select_all(action='SELECT')
+                                #API changes in 2.91 causes errors:
+                                if (2, 91, 0) > bpy.app.version:
+                                    bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
+                                else:
+                                    angle = math.radians(45.0)
+                                    bpy.ops.uv.smart_project(angle_limit=angle, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, area_weight=1.0, correct_aspect=True, scale_to_bounds=False)
+                                bpy.ops.mesh.select_all(action='DESELECT')
+                                bpy.ops.object.mode_set(mode='OBJECT')
+                            
+                            elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Xatlas":
+                                
+                                Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj)
+
+                            elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+
+                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                    print("ATLAS GROUP: " + obj.TLM_ObjectProperties.tlm_atlas_pointer)
+                                
+                            else: #if copy existing
+
+                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                    print("Copied Existing UV Map for object: " + obj.name)
+
+                        else:
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("Existing UV map found for obj: " + obj.name)
+                            for i in range(0, len(uv_layers)):
+                                if uv_layers[i].name == uv_channel:
+                                    uv_layers.active_index = i
+                                    break
+
+                    #Sort out nodes
+                    for slot in obj.material_slots:
+
+                        nodetree = slot.material.node_tree
+
+                        outputNode = nodetree.nodes[0] #Presumed to be material output node
+
+                        if(outputNode.type != "OUTPUT_MATERIAL"):
+                            for node in nodetree.nodes:
+                                if node.type == "OUTPUT_MATERIAL":
+                                    outputNode = node
+                                    break
+
+                        mainNode = outputNode.inputs[0].links[0].from_node
+
+                        if mainNode.type not in ['BSDF_PRINCIPLED','BSDF_DIFFUSE','GROUP']:
+
+                            #TODO! FIND THE PRINCIPLED PBR
+                            self.report({'INFO'}, "The primary material node is not supported. Seeking first principled.")
+
+                            if len(find_node_by_type(nodetree.nodes, Node_Types.pbr_node)) > 0: 
+                                mainNode = find_node_by_type(nodetree.nodes, Node_Types.pbr_node)[0]
                             else:
-                                angle = math.radians(45.0)
-                                bpy.ops.uv.smart_project(angle_limit=angle, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, area_weight=1.0, correct_aspect=True, scale_to_bounds=False)
-                            bpy.ops.mesh.select_all(action='DESELECT')
-                            bpy.ops.object.mode_set(mode='OBJECT')
-                        
-                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Xatlas":
-                            
-                            Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj)
+                                self.report({'INFO'}, "No principled found. Seeking diffuse")
+                                if len(find_node_by_type(nodetree.nodes, Node_Types.diffuse)) > 0: 
+                                    mainNode = find_node_by_type(nodetree.nodes, Node_Types.diffuse)[0]
+                                else:
+                                    self.report({'INFO'}, "No supported nodes. Continuing anyway.")
 
-                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+                        if mainNode.type == 'GROUP':
+                            if mainNode.node_tree != "Armory PBR":
+                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                    print("The material group is not supported!")
 
+                        if (mainNode.type == "BSDF_PRINCIPLED"):
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                print("ATLAS GROUP: " + obj.TLM_ObjectProperties.tlm_atlas_pointer)
-                            
-                        else: #if copy existing
+                                print("BSDF_Principled")
+                            if scene.TLM_EngineProperties.tlm_directional_mode == "None":
+                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                    print("Directional mode")
+                                if not len(mainNode.inputs[19].links) == 0:
+                                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                        print("NOT LEN 0")
+                                    ninput = mainNode.inputs[19].links[0]
+                                    noutput = mainNode.inputs[19].links[0].from_node
+                                    nodetree.links.remove(noutput.outputs[0].links[0])
 
+                            #Clamp metallic
+                            if bpy.context.scene.TLM_SceneProperties.tlm_metallic_clamp == "limit":
+                                MainMetNodeSocket = mainNode.inputs[4]
+                                if not len(MainMetNodeSocket.links) == 0:
+                                    nodes = nodetree.nodes
+                                    MetClampNode = nodes.new('ShaderNodeClamp')
+                                    MetClampNode.location = (-200,150)
+                                    MetClampNode.inputs[2].default_value = 0.9
+                                    minput = mainNode.inputs[4].links[0] #Metal input socket
+                                    moutput = mainNode.inputs[4].links[0].from_node #Metal output node
+                                    nodetree.links.remove(moutput.outputs[0].links[0]) #Works
+                                    nodetree.links.new(moutput.outputs[0], MetClampNode.inputs[0]) #minput node to clamp node
+                                    nodetree.links.new(MetClampNode.outputs[0],MainMetNodeSocket) #clamp node to metinput
+                                else:
+                                    if mainNode.inputs[4].default_value > 0.9:
+                                        mainNode.inputs[4].default_value = 0.9
+                            elif bpy.context.scene.TLM_SceneProperties.tlm_metallic_clamp == "zero":
+                                MainMetNodeSocket = mainNode.inputs[4]
+                                if not len(MainMetNodeSocket.links) == 0:
+                                    nodes = nodetree.nodes
+                                    MetClampNode = nodes.new('ShaderNodeClamp')
+                                    MetClampNode.location = (-200,150)
+                                    MetClampNode.inputs[2].default_value = 0.0
+                                    minput = mainNode.inputs[4].links[0] #Metal input socket
+                                    moutput = mainNode.inputs[4].links[0].from_node #Metal output node
+                                    nodetree.links.remove(moutput.outputs[0].links[0]) #Works
+                                    nodetree.links.new(moutput.outputs[0], MetClampNode.inputs[0]) #minput node to clamp node
+                                    nodetree.links.new(MetClampNode.outputs[0],MainMetNodeSocket) #clamp node to metinput
+                                else:
+                                    mainNode.inputs[4].default_value = 0.0
+
+                        if (mainNode.type == "BSDF_DIFFUSE"):
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                print("Copied Existing UV Map for object: " + obj.name)
+                                print("BSDF_Diffuse")
 
-                    else:
-                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                            print("Existing UV map found for obj: " + obj.name)
-                        for i in range(0, len(uv_layers)):
-                            if uv_layers[i].name == uv_channel:
-                                uv_layers.active_index = i
-                                break
+                        # if (mainNode.type == "BSDF_DIFFUSE"):
+                        #     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                        #         print("BSDF_Diffuse")
 
-                #Sort out nodes
-                for slot in obj.material_slots:
+                    for slot in obj.material_slots:
 
-                    nodetree = slot.material.node_tree
+                        nodetree = bpy.data.materials[slot.name].node_tree
+                        nodes = nodetree.nodes
 
-                    outputNode = nodetree.nodes[0] #Presumed to be material output node
-
-                    if(outputNode.type != "OUTPUT_MATERIAL"):
+                        #First search to get the first output material type
                         for node in nodetree.nodes:
                             if node.type == "OUTPUT_MATERIAL":
-                                outputNode = node
+                                mainNode = node
                                 break
 
-                    mainNode = outputNode.inputs[0].links[0].from_node
+                        #Fallback to get search
+                        if not mainNode.type == "OUTPUT_MATERIAL":
+                            mainNode = nodetree.nodes.get("Material Output")
 
-                    if mainNode.type not in ['BSDF_PRINCIPLED','BSDF_DIFFUSE','GROUP']:
+                        #Last resort to first node in list
+                        if not mainNode.type == "OUTPUT_MATERIAL":
+                            mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
 
-                        #TODO! FIND THE PRINCIPLED PBR
-                        self.report({'INFO'}, "The primary material node is not supported. Seeking first principled.")
+                        for node in nodes:
+                            if "LM" in node.name:
+                                nodetree.links.new(node.outputs[0], mainNode.inputs[0])
 
-                        if len(find_node_by_type(nodetree.nodes, Node_Types.pbr_node)) > 0: 
-                            mainNode = find_node_by_type(nodetree.nodes, Node_Types.pbr_node)[0]
-                        else:
-                            self.report({'INFO'}, "No principled found. Seeking diffuse")
-                            if len(find_node_by_type(nodetree.nodes, Node_Types.diffuse)) > 0: 
-                                mainNode = find_node_by_type(nodetree.nodes, Node_Types.diffuse)[0]
-                            else:
-                                self.report({'INFO'}, "No supported nodes. Continuing anyway.")
-
-                    if mainNode.type == 'GROUP':
-                        if mainNode.node_tree != "Armory PBR":
-                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                print("The material group is not supported!")
-
-                    if (mainNode.type == "BSDF_PRINCIPLED"):
-                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                            print("BSDF_Principled")
-                        if scene.TLM_EngineProperties.tlm_directional_mode == "None":
-                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                print("Directional mode")
-                            if not len(mainNode.inputs[19].links) == 0:
-                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                    print("NOT LEN 0")
-                                ninput = mainNode.inputs[19].links[0]
-                                noutput = mainNode.inputs[19].links[0].from_node
-                                nodetree.links.remove(noutput.outputs[0].links[0])
-
-                        #Clamp metallic
-                        if bpy.context.scene.TLM_SceneProperties.tlm_metallic_clamp == "limit":
-                            MainMetNodeSocket = mainNode.inputs[4]
-                            if not len(MainMetNodeSocket.links) == 0:
-                                nodes = nodetree.nodes
-                                MetClampNode = nodes.new('ShaderNodeClamp')
-                                MetClampNode.location = (-200,150)
-                                MetClampNode.inputs[2].default_value = 0.9
-                                minput = mainNode.inputs[4].links[0] #Metal input socket
-                                moutput = mainNode.inputs[4].links[0].from_node #Metal output node
-                                nodetree.links.remove(moutput.outputs[0].links[0]) #Works
-                                nodetree.links.new(moutput.outputs[0], MetClampNode.inputs[0]) #minput node to clamp node
-                                nodetree.links.new(MetClampNode.outputs[0],MainMetNodeSocket) #clamp node to metinput
-                            else:
-                                if mainNode.inputs[4].default_value > 0.9:
-                                    mainNode.inputs[4].default_value = 0.9
-                        elif bpy.context.scene.TLM_SceneProperties.tlm_metallic_clamp == "zero":
-                            MainMetNodeSocket = mainNode.inputs[4]
-                            if not len(MainMetNodeSocket.links) == 0:
-                                nodes = nodetree.nodes
-                                MetClampNode = nodes.new('ShaderNodeClamp')
-                                MetClampNode.location = (-200,150)
-                                MetClampNode.inputs[2].default_value = 0.0
-                                minput = mainNode.inputs[4].links[0] #Metal input socket
-                                moutput = mainNode.inputs[4].links[0].from_node #Metal output node
-                                nodetree.links.remove(moutput.outputs[0].links[0]) #Works
-                                nodetree.links.new(moutput.outputs[0], MetClampNode.inputs[0]) #minput node to clamp node
-                                nodetree.links.new(MetClampNode.outputs[0],MainMetNodeSocket) #clamp node to metinput
-                            else:
-                                mainNode.inputs[4].default_value = 0.0
-
-                    if (mainNode.type == "BSDF_DIFFUSE"):
-                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                            print("BSDF_Diffuse")
-
-                    # if (mainNode.type == "BSDF_DIFFUSE"):
-                    #     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                    #         print("BSDF_Diffuse")
-
-                for slot in obj.material_slots:
-
-                    nodetree = bpy.data.materials[slot.name].node_tree
-                    nodes = nodetree.nodes
-
-                    #First search to get the first output material type
-                    for node in nodetree.nodes:
-                        if node.type == "OUTPUT_MATERIAL":
-                            mainNode = node
-                            break
-
-                    #Fallback to get search
-                    if not mainNode.type == "OUTPUT_MATERIAL":
-                        mainNode = nodetree.nodes.get("Material Output")
-
-                    #Last resort to first node in list
-                    if not mainNode.type == "OUTPUT_MATERIAL":
-                        mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
-
-                    for node in nodes:
-                        if "LM" in node.name:
-                            nodetree.links.new(node.outputs[0], mainNode.inputs[0])
-
-                    for node in nodes:
-                        if "Lightmap" in node.name:
-                                nodes.remove(node)
+                        for node in nodes:
+                            if "Lightmap" in node.name:
+                                    nodes.remove(node)
 
 def preprocess_material(obj, scene):
     if len(obj.material_slots) == 0:

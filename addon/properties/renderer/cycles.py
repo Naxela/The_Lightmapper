@@ -88,7 +88,7 @@ class TLM_CyclesSceneProperties(bpy.types.PropertyGroup):
 
     tlm_lighting_mode : EnumProperty(
         items = [('combined', 'Combined', 'Bake combined lighting'),
-#                ('combinedao', 'Combined+AO', 'Bake combined lighting with Ambient Occlusion'),
+                ('combinedao', 'Combined+AO', 'Bake combined lighting with Ambient Occlusion'),
                 ('indirect', 'Indirect', 'Bake indirect lighting'),
 #                ('indirectao', 'Indirect+AO', 'Bake indirect lighting with Ambient Occlusion'),
                 ('ao', 'AO', 'Bake only Ambient Occlusion')],

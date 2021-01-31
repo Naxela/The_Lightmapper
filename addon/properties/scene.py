@@ -6,7 +6,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
     engines = [('Cycles', 'Cycles', 'Use Cycles for lightmapping')]
 
     #engines.append(('LuxCoreRender', 'LuxCoreRender', 'Use LuxCoreRender for lightmapping'))
-    engines.append(('OctaneRender', 'Octane Render', 'Use Octane Render for lightmapping'))
+    #engines.append(('OctaneRender', 'Octane Render', 'Use Octane Render for lightmapping'))
 
     tlm_atlas_pointer : StringProperty(
             name = "Atlas Group",
