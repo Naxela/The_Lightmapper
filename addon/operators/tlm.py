@@ -170,18 +170,19 @@ class TLM_EnableSelection(bpy.types.Operator):
         scene = context.scene
 
         for obj in bpy.context.selected_objects:
-            obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
+            if obj.type == "MESH":
+                obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
 
-            if scene.TLM_SceneProperties.tlm_override_object_settings:
-                obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution = scene.TLM_SceneProperties.tlm_mesh_lightmap_resolution
-                obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode = scene.TLM_SceneProperties.tlm_mesh_lightmap_unwrap_mode
-                obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin = scene.TLM_SceneProperties.tlm_mesh_unwrap_margin
-                obj.TLM_ObjectProperties.tlm_postpack_object = scene.TLM_SceneProperties.tlm_postpack_object
+                if scene.TLM_SceneProperties.tlm_override_object_settings:
+                    obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution = scene.TLM_SceneProperties.tlm_mesh_lightmap_resolution
+                    obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode = scene.TLM_SceneProperties.tlm_mesh_lightmap_unwrap_mode
+                    obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin = scene.TLM_SceneProperties.tlm_mesh_unwrap_margin
+                    obj.TLM_ObjectProperties.tlm_postpack_object = scene.TLM_SceneProperties.tlm_postpack_object
 
-                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
-                    obj.TLM_ObjectProperties.tlm_atlas_pointer = scene.TLM_SceneProperties.tlm_atlas_pointer
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+                        obj.TLM_ObjectProperties.tlm_atlas_pointer = scene.TLM_SceneProperties.tlm_atlas_pointer
 
-                obj.TLM_ObjectProperties.tlm_postatlas_pointer = scene.TLM_SceneProperties.tlm_postatlas_pointer
+                    obj.TLM_ObjectProperties.tlm_postatlas_pointer = scene.TLM_SceneProperties.tlm_postatlas_pointer
 
         return{'FINISHED'}
 
@@ -195,7 +196,8 @@ class TLM_DisableSelection(bpy.types.Operator):
     def execute(self, context):
 
         for obj in bpy.context.selected_objects:
-            obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = False
+            if obj.type == "MESH":
+                obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = False
 
         return{'FINISHED'}
 

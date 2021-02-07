@@ -38,8 +38,8 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
         sceneProperties = scene.TLM_SceneProperties
 
         if not background_mode:
-            pass
-            #setGui(1)
+            #pass
+            setGui(1)
 
         if check_save():
             print("Please save your file first")
@@ -405,7 +405,7 @@ def begin_build():
                             print("Encoding:" + str(file))
                         encoding.encodeImageRGBMCPU(img, sceneProperties.tlm_encoding_range, dirpath, 0)
 
-            if sceneProperties.tlm_encoding_mode_b == "RGBD":
+            if sceneProperties.tlm_encoding_mode_a == "RGBD":
 
                 if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                     print("ENCODING RGBD")
@@ -430,6 +430,36 @@ def begin_build():
                         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                             print("Encoding:" + str(file))
                         encoding.encodeImageRGBDCPU(img, sceneProperties.tlm_encoding_range, dirpath, 0)
+
+            if sceneProperties.tlm_encoding_mode_a == "SDR":
+
+                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    print("EXR Format")
+
+                ren = bpy.context.scene.render
+                ren.image_settings.file_format = "PNG"
+                #ren.image_settings.exr_codec = "scene.TLM_SceneProperties.tlm_exr_codec"
+
+                end = "_baked"
+
+                baked_image_array = []
+
+                if sceneProperties.tlm_denoise_use:
+
+                    end = "_denoised"
+
+                if sceneProperties.tlm_filtering_use:
+
+                    end = "_filtered"
+                
+                #For each image in folder ending in denoised/filtered
+                dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+                for file in dirfiles:
+                    if file.endswith(end + ".hdr"):
+
+                        img = bpy.data.images.load(os.path.join(dirpath,file))
+                        img.save_render(img.filepath_raw[:-4] + ".png")
 
         else:
 
@@ -538,6 +568,33 @@ def begin_build():
                             print("Encoding:" + str(file))
                         encoding.encodeImageRGBDGPU(img, sceneProperties.tlm_encoding_range, dirpath, 0)
 
+            if sceneProperties.tlm_encoding_mode_b == "PNG":
+
+                ren = bpy.context.scene.render
+                ren.image_settings.file_format = "PNG"
+                #ren.image_settings.exr_codec = "scene.TLM_SceneProperties.tlm_exr_codec"
+
+                end = "_baked"
+
+                baked_image_array = []
+
+                if sceneProperties.tlm_denoise_use:
+
+                    end = "_denoised"
+
+                if sceneProperties.tlm_filtering_use:
+
+                    end = "_filtered"
+                
+                #For each image in folder ending in denoised/filtered
+                dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+                for file in dirfiles:
+                    if file.endswith(end + ".hdr"):
+
+                        img = bpy.data.images.load(os.path.join(dirpath,file))
+                        img.save_render(img.filepath_raw[:-4] + ".png")
+
     manage_build()
 
 def manage_build(background_pass=False):
@@ -586,6 +643,10 @@ def manage_build(background_pass=False):
 
                     formatEnc = "_encoded.png"
 
+                if sceneProperties.tlm_encoding_mode_a == "SDR":
+
+                    formatEnc = ".png"
+
             else:
 
                 print("GPU Encoding")
@@ -607,6 +668,10 @@ def manage_build(background_pass=False):
                 if sceneProperties.tlm_encoding_mode_b == "RGBD":
 
                     formatEnc = "_encoded.png"
+
+                if sceneProperties.tlm_encoding_mode_b == "SDR":
+
+                    formatEnc = ".png"
 
         if not background_pass:
             nodes.exchangeLightmapsToPostfix("_baked", end, formatEnc)
@@ -743,9 +808,6 @@ def manage_build(background_pass=False):
                     nodes.exchangeLightmapsToPostfix("_filtered", "_filtered_dir", formatEnc)
 
                     nodes.applyAOPass()
-                    print("Nodes exchanged")
-
-                print("Assemble here...")
 
         else:
 
@@ -770,28 +832,28 @@ def manage_build(background_pass=False):
             if bpy.context.scene.TLM_EngineProperties.tlm_bake_mode == "Background":
                 pass
 
-            if scene.TLM_SceneProperties.tlm_alert_on_finish:
-
-                alertSelect = scene.TLM_SceneProperties.tlm_alert_sound
-
-                if alertSelect == "dash":
-                    soundfile = "dash.ogg"
-                elif alertSelect == "pingping":
-                    soundfile = "pingping.ogg"  
-                elif alertSelect == "gentle":
-                    soundfile = "gentle.ogg"
-                else:
-                    soundfile = "noot.ogg"
-
-                scriptDir = os.path.dirname(os.path.realpath(__file__))
-                sound_path = os.path.abspath(os.path.join(scriptDir, '..', 'assets/'+soundfile))
-
-                device = aud.Device()
-                sound = aud.Sound.file(sound_path)
-                device.play(sound)
-
             if not background_pass:
                 setGui(0)
+
+        if scene.TLM_SceneProperties.tlm_alert_on_finish:
+
+            alertSelect = scene.TLM_SceneProperties.tlm_alert_sound
+
+            if alertSelect == "dash":
+                soundfile = "dash.ogg"
+            elif alertSelect == "pingping":
+                soundfile = "pingping.ogg"  
+            elif alertSelect == "gentle":
+                soundfile = "gentle.ogg"
+            else:
+                soundfile = "noot.ogg"
+
+            scriptDir = os.path.dirname(os.path.realpath(__file__))
+            sound_path = os.path.abspath(os.path.join(scriptDir, '..', 'assets/'+soundfile))
+
+            device = aud.Device()
+            sound = aud.Sound.file(sound_path)
+            device.play(sound)
 
         if bpy.app.background:
 

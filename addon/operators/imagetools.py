@@ -83,6 +83,14 @@ class TLM_ImageDownscale(bpy.types.Operator):
 
     def invoke(self, context, event):
 
+        cv2 = importlib.util.find_spec("cv2")
+
+        if cv2 is None:
+            print("CV2 not found - Ignoring filtering")
+            return 0
+        else:
+            cv2 = importlib.__import__("cv2")
+
         for area in bpy.context.screen.areas:
             if area.type == "IMAGE_EDITOR":
                 active_image = area.spaces.active.image

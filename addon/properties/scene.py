@@ -208,12 +208,14 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     encoding_modes_1 = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
                     ('RGBD', 'RGBD', '8-bit HDR encoding. Similar to RGBM.'),
-                    ('HDR', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.')]
+                    ('HDR', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.'),
+                    ('SDR', 'SDR', '8-bit flat encoding.')]
 
     encoding_modes_2 = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
                 ('RGBD', 'RGBD', '8-bit HDR encoding. Similar to RGBM.'),
                     ('LogLuv', 'LogLuv', '8-bit HDR encoding. Different.'),
-                    ('HDR', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.')]
+                    ('HDR', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.'),
+                    ('SDR', 'SDR', '8-bit flat encoding.')]
     
     tlm_encoding_mode_a : EnumProperty(
         items = encoding_modes_1,
