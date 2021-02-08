@@ -51,7 +51,7 @@ class TLM_UL_PostAtlasList(bpy.types.UIList):
             #In list object counter
             amount = 0
 
-            for obj in bpy.data.objects:
+            for obj in bpy.context.scene.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                     if obj.TLM_ObjectProperties.tlm_postpack_object:
                         if obj.TLM_ObjectProperties.tlm_postatlas_pointer == item.name:
@@ -111,7 +111,7 @@ class TLM_UL_AtlasList(bpy.types.UIList):
 
             amount = 0
 
-            for obj in bpy.data.objects:
+            for obj in bpy.context.scene.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                     if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
                         if obj.TLM_ObjectProperties.tlm_atlas_pointer == item.name:

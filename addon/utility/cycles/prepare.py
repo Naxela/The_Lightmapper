@@ -32,12 +32,12 @@ def configure_lights():
 def configure_meshes(self):
 
     for obj in bpy.context.scene.objects:
-        if obj.type == "MESH":
+        if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 cache.backup_material_restore(obj)
 
     for obj in bpy.context.scene.objects:
-        if obj.type == "MESH":
+        if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 cache.backup_material_rename(obj)
 
@@ -60,7 +60,7 @@ def configure_meshes(self):
     scene = bpy.context.scene
 
     for obj in bpy.context.scene.objects:
-        if obj.type == "MESH":
+        if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
                 if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
@@ -158,13 +158,13 @@ def configure_meshes(self):
                 print("Copied Existing UV Map for Atlas Group: " + atlas)
 
     for obj in bpy.context.scene.objects:
-        if obj.type == "MESH":
+        if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 iterNum = iterNum + 1
 
     for obj in bpy.context.scene.objects:
         if obj.name in bpy.context.view_layer.objects: #Possible fix for view layer error
-            if obj.type == "MESH":
+            if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
                     objWasHidden = False

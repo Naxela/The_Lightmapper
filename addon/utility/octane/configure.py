@@ -23,16 +23,6 @@ def configure_lights():
 
 def configure_meshes(self):
 
-    # for obj in bpy.data.objects:
-    #     if obj.type == "MESH":
-    #         if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-    #             cache.backup_material_restore(obj)
-
-    # for obj in bpy.data.objects:
-    #     if obj.type == "MESH":
-    #         if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-    #             cache.backup_material_rename(obj)
-
     for mat in bpy.data.materials:
         if mat.users < 1:
             bpy.data.materials.remove(mat)
@@ -231,7 +221,7 @@ def store_existing(prev_container):
 
     selected = []
 
-    for obj in bpy.data.objects:
+    for obj in bpy.context.scene.objects:
         if obj.select_get():
             selected.append(obj.name)
 

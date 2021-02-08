@@ -12,14 +12,14 @@ def bake():
 
         camera.data.octane.baking_camera = True
 
-        for obj in bpy.data.objects:
+        for obj in bpy.context.scene.objects:
             bpy.ops.object.select_all(action='DESELECT')
             obj.select_set(False)
 
         iterNum = 2
         currentIterNum = 1
 
-        for obj in bpy.data.objects:
+        for obj in bpy.context.scene.objects:
             if obj.type == "MESH":
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                     iterNum = iterNum + 1
@@ -27,8 +27,8 @@ def bake():
         if iterNum > 1:
             iterNum = iterNum - 1
 
-        for obj in bpy.data.objects:
-            if obj.type == 'MESH':
+        for obj in bpy.context.scene.objects:
+            if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
                     currentIterNum = currentIterNum + 1

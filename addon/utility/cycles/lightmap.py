@@ -2,24 +2,23 @@ import bpy, os
 
 def bake(plus_pass=0):
 
-    for obj in bpy.data.objects:
+    for obj in bpy.context.scene.objects:
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(False)
 
     iterNum = 0
     currentIterNum = 0
 
-    for obj in bpy.data.objects:
-        if obj.type == "MESH":
+    for obj in bpy.context.scene.objects:
+        if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 iterNum = iterNum + 1
 
     if iterNum > 1:
         iterNum = iterNum - 1
 
-    for obj in bpy.data.objects:
-        if obj.type == 'MESH':
-
+    for obj in bpy.context.scene.objects:
+        if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
                 scene = bpy.context.scene
@@ -34,6 +33,9 @@ def bake(plus_pass=0):
 
                 if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                     print("Baking " + str(currentIterNum) + "/" + str(iterNum) + " (" + str(round(currentIterNum/iterNum*100, 2)) + "%) : " + obj.name)
+
+                if scene.TLM_EngineProperties.tlm_target == "vertex":
+                    scene.render.bake_target = "VERTEX_COLORS"
 
                 if scene.TLM_EngineProperties.tlm_lighting_mode == "combined":
                     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)

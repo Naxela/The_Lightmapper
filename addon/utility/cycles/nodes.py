@@ -1,8 +1,8 @@
 import bpy, os
 
 def apply_lightmaps():
-    for obj in bpy.data.objects:
-        if obj.type == "MESH":
+    for obj in bpy.context.scene.objects:
+        if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 for slot in obj.material_slots:
                     mat = slot.material
@@ -32,8 +32,8 @@ def apply_lightmaps():
 
 
 def apply_materials():
-    for obj in bpy.data.objects:
-        if obj.type == "MESH":
+    for obj in bpy.context.scene.objects:
+        if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
                 uv_layers = obj.data.uv_layers
@@ -242,8 +242,8 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
         print(ext_postfix, new_postfix, formatHDR)
 
-    for obj in bpy.data.objects:
-        if obj.type == "MESH":
+    for obj in bpy.context.scene.objects:
+        if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 for slot in obj.material_slots:
                     mat = slot.material
@@ -271,8 +271,8 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
 
 def applyAOPass():
 
-    for obj in bpy.data.objects:
-        if obj.type == "MESH":
+    for obj in bpy.context.scene.objects:
+        if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 for slot in obj.material_slots:
                     mat = slot.material

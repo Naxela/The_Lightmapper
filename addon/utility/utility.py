@@ -134,7 +134,7 @@ def check_is_org_material(self,material):
 
 
 def clean_empty_materials(self):
-    for obj in bpy.data.objects:
+    for obj in bpy.context.scene.objects:
         for slot in obj.material_slots:
             mat = slot.material
             if mat is None:

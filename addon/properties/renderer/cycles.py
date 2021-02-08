@@ -21,6 +21,16 @@ class TLM_CyclesSceneProperties(bpy.types.PropertyGroup):
                 description="Select baking quality", 
                 default="0")
 
+    targets = [('texture', 'Image texture', 'Build to image texture')]
+    if (2, 92, 0) >= bpy.app.version:
+        targets.append(('vertex', 'Vertex colors', 'Build to vertex colors'))
+
+    tlm_target : EnumProperty(
+        items = targets,
+                name = "Build Target", 
+                description="Select target to build to", 
+                default="texture")
+
     tlm_resolution_scale : EnumProperty(
         items = [('1', '1/1', '1'),
                     ('2', '1/2', '2'),

@@ -52,13 +52,13 @@ class TLM_CleanLightmaps(bpy.types.Operator):
             for file in os.listdir(dirpath):
                 os.remove(os.path.join(dirpath + "/" + file))
 
-        for obj in bpy.data.objects:
-            if obj.type == "MESH":
+        for obj in bpy.context.scene.objects:
+            if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                     cache.backup_material_restore(obj)
 
-        for obj in bpy.data.objects:
-            if obj.type == "MESH":
+        for obj in bpy.context.scene.objects:
+            if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                     cache.backup_material_rename(obj)
 
@@ -75,8 +75,8 @@ class TLM_CleanLightmaps(bpy.types.Operator):
             if image.name.endswith("_baked"):
                 bpy.data.images.remove(image, do_unlink=True)
 
-        for obj in bpy.data.objects:
-            if obj.type == "MESH":
+        for obj in bpy.context.scene.objects:
+            if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                     if obj.TLM_ObjectProperties.tlm_postpack_object:
 
@@ -234,8 +234,8 @@ class TLM_SelectLightmapped(bpy.types.Operator):
 
     def execute(self, context):
 
-        for obj in bpy.data.objects:
-            if obj.type == "MESH":
+        for obj in bpy.context.scene.objects:
+            if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
                     obj.select_set(True)
@@ -290,7 +290,7 @@ class TLM_AtlastListDeleteItem(bpy.types.Operator):
         list = scene.TLM_AtlasList
         index = scene.TLM_AtlasListItem
 
-        for obj in bpy.data.objects:
+        for obj in bpy.context.scene.objects:
 
             atlasName = scene.TLM_AtlasList[index].name
 
@@ -322,7 +322,7 @@ class TLM_PostAtlastListDeleteItem(bpy.types.Operator):
         list = scene.TLM_PostAtlasList
         index = scene.TLM_PostAtlasListItem
 
-        for obj in bpy.data.objects:
+        for obj in bpy.context.scene.objects:
 
             atlasName = scene.TLM_PostAtlasList[index].name
 
@@ -449,7 +449,7 @@ class TLM_BuildEnvironmentProbes(bpy.types.Operator):
 
     def invoke(self, context, event):
 
-        for obj in bpy.data.objects:
+        for obj in bpy.context.scene.objects:
 
             if obj.type == "LIGHT_PROBE":
                 if obj.data.type == "CUBEMAP":
@@ -654,7 +654,7 @@ class TLM_BuildEnvironmentProbes(bpy.types.Operator):
 
                             subprocess.call([envpipe3], shell=True)
 
-                    for obj in bpy.data.objects:
+                    for obj in bpy.context.scene.objects:
                         obj.select_set(False)
 
                     cam_obj.select_set(True)

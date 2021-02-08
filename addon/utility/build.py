@@ -25,7 +25,15 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
     print("Building lightmaps")
 
     if bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode == "combinedao":
+
+        scene = bpy.context.scene
+
         if not "tlm_plus_mode" in bpy.app.driver_namespace or bpy.app.driver_namespace["tlm_plus_mode"] == 0:
+            filepath = bpy.data.filepath
+            dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_EngineProperties.tlm_lightmap_savedir)
+            if os.path.isdir(dirpath):
+                for file in os.listdir(dirpath):
+                    os.remove(os.path.join(dirpath + "/" + file))
             bpy.app.driver_namespace["tlm_plus_mode"] = 1
             print("Plus Mode")
 
@@ -38,8 +46,8 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
         sceneProperties = scene.TLM_SceneProperties
 
         if not background_mode:
-            #pass
-            setGui(1)
+            pass
+            #setGui(1)
 
         if check_save():
             print("Please save your file first")
@@ -694,13 +702,13 @@ def manage_build(background_pass=False):
             filepath = bpy.data.filepath
             dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_EngineProperties.tlm_lightmap_savedir)
 
-            for obj in bpy.data.objects:
-                if obj.type == "MESH":
+            for obj in bpy.context.scene.objects:
+                if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                     if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                         cache.backup_material_restore(obj)
 
-            for obj in bpy.data.objects:
-                if obj.type == "MESH":
+            for obj in bpy.context.scene.objects:
+                if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                     if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                         cache.backup_material_rename(obj)
 
@@ -713,9 +721,8 @@ def manage_build(background_pass=False):
                     if "_Original" in mat.name:
                         bpy.data.materials.remove(mat)
 
-            for obj in bpy.data.objects:
-
-                if obj.type == "MESH":
+            for obj in bpy.context.scene.objects:
+                if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                     if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                         img_name = obj.name + '_baked'
                         Lightmapimage = bpy.data.images[img_name]
@@ -732,13 +739,13 @@ def manage_build(background_pass=False):
                 filepath = bpy.data.filepath
                 dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_EngineProperties.tlm_lightmap_savedir)
 
-                for obj in bpy.data.objects:
-                    if obj.type == "MESH":
+                for obj in bpy.context.scene.objects:
+                    if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                         if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                             cache.backup_material_restore(obj)
 
-                for obj in bpy.data.objects:
-                    if obj.type == "MESH":
+                for obj in bpy.context.scene.objects:
+                    if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                         if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                             cache.backup_material_rename(obj)
 
@@ -805,7 +812,10 @@ def manage_build(background_pass=False):
                 bpy.app.driver_namespace["tlm_plus_mode"] = 0
 
                 if not background_pass:
-                    nodes.exchangeLightmapsToPostfix("_filtered", "_filtered_dir", formatEnc)
+
+                    #TODO CHANGE!
+
+                    nodes.exchangeLightmapsToPostfix(end, end + "_dir", formatEnc)
 
                     nodes.applyAOPass()
 
@@ -833,7 +843,8 @@ def manage_build(background_pass=False):
                 pass
 
             if not background_pass:
-                setGui(0)
+                pass
+                #setGui(0)
 
         if scene.TLM_SceneProperties.tlm_alert_on_finish:
 
@@ -900,9 +911,8 @@ def reset_settings(prev_settings):
 
 def naming_check():
 
-    for obj in bpy.data.objects:
-
-        if obj.type == "MESH":
+    for obj in bpy.context.scene.objects:
+        if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
 
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
@@ -977,8 +987,8 @@ def check_denoiser():
                 return 0
 
 def check_materials():
-    for obj in bpy.data.objects:
-        if obj.type == "MESH":
+    for obj in bpy.context.scene.objects:
+        if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 for slot in obj.material_slots:
                     mat = slot.material
@@ -1024,7 +1034,7 @@ def setGui(mode):
 
     if mode == 1:
 
-        bpy.context.area.tag_redraw()
+        #bpy.context.area.tag_redraw()
         context = bpy.context
         driver = bpy.app.driver_namespace
         driver["TLM_UI"] = Viewport.ViewportDraw(context, "Building Lightmaps")
@@ -1051,7 +1061,7 @@ def checkAtlasSize():
         utilized = 0
         atlasUsedArea = 0
 
-        for obj in bpy.data.objects:
+        for obj in bpy.context.scene.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                 if obj.TLM_ObjectProperties.tlm_postpack_object:
                     if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:

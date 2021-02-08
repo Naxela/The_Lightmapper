@@ -106,7 +106,7 @@ def postpack():
             rect = []
 
             #For each object that targets the atlas
-            for obj in bpy.data.objects:
+            for obj in bpy.context.scene.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                     if obj.TLM_ObjectProperties.tlm_postpack_object:
                         if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
@@ -200,7 +200,7 @@ def postpack():
             print("Written: " + str(os.path.join(lightmap_directory, atlas.name + end + formatEnc)))
 
             #Change the material for each material, slot
-            for obj in bpy.data.objects:
+            for obj in bpy.context.scene.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                     if obj.TLM_ObjectProperties.tlm_postpack_object:
                         if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:
@@ -225,7 +225,7 @@ def postpack():
                                         existing_image.user_clear()
 
             #Add dilation map here...
-            for obj in bpy.data.objects:
+            for obj in bpy.context.scene.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                     if obj.TLM_ObjectProperties.tlm_postpack_object:
                         if obj.TLM_ObjectProperties.tlm_postatlas_pointer == atlas.name:

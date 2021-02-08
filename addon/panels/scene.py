@@ -93,6 +93,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             row = layout.row(align=True)
             row.prop(engineProperties, "tlm_bake_mode")
             row = layout.row(align=True)
+            row.prop(engineProperties, "tlm_target")
+            row = layout.row(align=True)
             row.prop(engineProperties, "tlm_lighting_mode")
             # if scene.TLM_EngineProperties.tlm_lighting_mode == "combinedao" or scene.TLM_EngineProperties.tlm_lighting_mode == "indirectao":
             #     row = layout.row(align=True)
@@ -107,7 +109,6 @@ class TLM_PT_Settings(bpy.types.Panel):
                     row.prop(sceneProperties, "tlm_network_paths")
                     #row = layout.row(align=True)
                     #row.prop(sceneProperties, "tlm_network_dir")
-            row = layout.row(align=True)
             row = layout.row(align=True)
             row.prop(engineProperties, "tlm_caching_mode")
             row = layout.row(align=True)
@@ -470,7 +471,7 @@ class TLM_PT_Additional(bpy.types.Panel):
 
                 amount = 0
 
-                for obj in bpy.data.objects:
+                for obj in bpy.context.scene.objects:
                     if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                         if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
                             if obj.TLM_ObjectProperties.tlm_atlas_pointer == item.name:
@@ -510,7 +511,7 @@ class TLM_PT_Additional(bpy.types.Panel):
                     atlasUsedArea = 0
                     atlasSize = item.tlm_atlas_lightmap_resolution
 
-                    for obj in bpy.data.objects:
+                    for obj in bpy.context.scene.objects:
                         if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                             if obj.TLM_ObjectProperties.tlm_postpack_object:
                                 if obj.TLM_ObjectProperties.tlm_postatlas_pointer == item.name:
