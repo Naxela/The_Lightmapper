@@ -1,5 +1,13 @@
-import bpy
+import bpy, os
 from bpy.props import *
+from .. utility import utility
+
+def transfer_load():
+    load_folder = bpy.context.scene.TLM_SceneProperties.tlm_load_folder
+    lightmap_folder = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+    print(load_folder)
+    print(lightmap_folder)
+    #transfer_assets(True, load_folder, lightmap_folder)
 
 class TLM_SceneProperties(bpy.types.PropertyGroup):
 
@@ -211,8 +219,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                     ('HDR', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.'),
                     ('SDR', 'SDR', '8-bit flat encoding.')]
 
-    encoding_modes_2 = [('RGBM', 'RGBM', '8-bit HDR encoding. Good for compatibility, good for memory but has banding issues.'),
-                ('RGBD', 'RGBD', '8-bit HDR encoding. Similar to RGBM.'),
+    encoding_modes_2 = [('RGBD', 'RGBD', '8-bit HDR encoding. Similar to RGBM.'),
                     ('LogLuv', 'LogLuv', '8-bit HDR encoding. Different.'),
                     ('HDR', 'HDR', '32-bit HDR encoding. Best quality, but high memory usage and not compatible with all devices.'),
                     ('SDR', 'SDR', '8-bit flat encoding.')]
@@ -440,3 +447,51 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 name = "Probe Render Engine", 
                 description="TODO", 
                 default='BLENDER_EEVEE')
+
+    tlm_load_folder : StringProperty(
+        name="Load Folder",
+        description="Load existing lightmaps from folder",
+        subtype="DIR_PATH")
+
+    tlm_utility_set : EnumProperty(
+        items = [('Scene', 'Scene', 'Set for all objects in the scene.'),
+                 ('Selection', 'Selection', 'Set for selected objects.'),
+                 ('Enabled', 'Enabled', 'Set for objects that has been enabled for lightmapping.')],
+                name = "Set", 
+                description="Utility selection set", 
+                default='Scene')
+
+    tlm_resolution_weight : EnumProperty(
+        items = [('Single', 'Single', 'Set a single resolution for all objects.'),
+                 ('Dimension', 'Dimension', 'Distribute resolutions based on object dimensions.'),
+                 ('Surface', 'Surface', 'Distribute resolutions based on mesh surface area.'),
+                 ('Volume', 'Volume', 'Distribute resolutions based on mesh volume.')],
+                name = "Resolution weight", 
+                description="Method for setting resolution value", 
+                default='Single')
+        #Todo add vertex color option
+
+    tlm_resolution_min : EnumProperty(
+        items = [('32', '32', 'TODO'),
+                 ('64', '64', 'TODO'),
+                 ('128', '128', 'TODO'),
+                 ('256', '256', 'TODO'),
+                 ('512', '512', 'TODO'),
+                 ('1024', '1024', 'TODO'),
+                 ('2048', '2048', 'TODO'),
+                 ('4096', '4096', 'TODO')],
+                name = "Minimum resolution", 
+                description="Minimum distributed resolution", 
+                default='32')
+
+    tlm_resolution_max : EnumProperty(
+        items = [('64', '64', 'TODO'),
+                 ('128', '128', 'TODO'),
+                 ('256', '256', 'TODO'),
+                 ('512', '512', 'TODO'),
+                 ('1024', '1024', 'TODO'),
+                 ('2048', '2048', 'TODO'),
+                 ('4096', '4096', 'TODO')],
+                name = "Maximum resolution", 
+                description="Maximum distributed resolution", 
+                default='256')

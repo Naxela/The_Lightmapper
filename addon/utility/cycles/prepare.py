@@ -31,6 +31,9 @@ def configure_lights():
 
 def configure_meshes(self):
 
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print("Configuring meshes")
+
     for obj in bpy.context.scene.objects:
         if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
@@ -246,6 +249,8 @@ def configure_meshes(self):
                                     uv_layers.active_index = i
                                     break
 
+                    #print(x)
+
                     #Sort out nodes
                     for slot in obj.material_slots:
 
@@ -332,6 +337,8 @@ def configure_meshes(self):
                         #     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                         #         print("BSDF_Diffuse")
 
+                    #TODO FIX THIS PART!
+                    #THIS IS USED IN CASES WHERE FOR SOME REASON THE USER FORGETS TO CONNECT SOMETHING INTO THE OUTPUT MATERIAL
                     for slot in obj.material_slots:
 
                         nodetree = bpy.data.materials[slot.name].node_tree
@@ -351,13 +358,13 @@ def configure_meshes(self):
                         if not mainNode.type == "OUTPUT_MATERIAL":
                             mainNode = nodetree.nodes[0].inputs[0].links[0].from_node
 
-                        for node in nodes:
-                            if "LM" in node.name:
-                                nodetree.links.new(node.outputs[0], mainNode.inputs[0])
+                    #     for node in nodes:
+                    #         if "LM" in node.name:
+                    #             nodetree.links.new(node.outputs[0], mainNode.inputs[0])
 
-                        for node in nodes:
-                            if "Lightmap" in node.name:
-                                    nodes.remove(node)
+                    #     for node in nodes:
+                    #         if "Lightmap" in node.name:
+                    #                 nodes.remove(node)
 
 def preprocess_material(obj, scene):
     if len(obj.material_slots) == 0:

@@ -1,4 +1,6 @@
 import bpy, os
+from .. import build
+from time import time, sleep
 
 def bake(plus_pass=0):
 
@@ -31,8 +33,23 @@ def bake(plus_pass=0):
                 obj.hide_render = False
                 scene.render.bake.use_clear = False
 
-                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                    print("Baking " + str(currentIterNum) + "/" + str(iterNum) + " (" + str(round(currentIterNum/iterNum*100, 2)) + "%) : " + obj.name)
+                #os.system("cls")
+
+                #if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("Baking " + str(currentIterNum) + "/" + str(iterNum) + " (" + str(round(currentIterNum/iterNum*100, 2)) + "%) : " + obj.name)
+                #elapsed = build.sec_to_hours((time() - bpy.app.driver_namespace["tlm_start_time"]))
+                #print("Baked: " + str(currentIterNum) + " | Left: " + str(iterNum-currentIterNum))
+                elapsedSeconds = time() - bpy.app.driver_namespace["tlm_start_time"]
+                bakedObjects = currentIterNum
+                bakedLeft = iterNum-currentIterNum
+                if bakedObjects == 0:
+                    bakedObjects = 1
+                averagePrBake = elapsedSeconds / bakedObjects
+                remaining = averagePrBake * bakedLeft
+                #print(time() - bpy.app.driver_namespace["tlm_start_time"])
+                print("Elapsed time: " + str(round(elapsedSeconds, 2)) + "s | ETA remaining: " + str(round(remaining, 2)) + "s") #str(elapsed[0])
+                #print("Averaged: " + str(averagePrBake))
+                #print("Remaining: " + str(remaining))
 
                 if scene.TLM_EngineProperties.tlm_target == "vertex":
                     scene.render.bake_target = "VERTEX_COLORS"

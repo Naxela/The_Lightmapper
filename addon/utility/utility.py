@@ -1,5 +1,5 @@
 import bpy.ops as O
-import bpy, os, re, sys, importlib, struct, platform, subprocess, threading, string, bmesh
+import bpy, os, re, sys, importlib, struct, platform, subprocess, threading, string, bmesh, shutil, glob
 from io import StringIO
 from threading  import Thread
 from queue import Queue, Empty
@@ -621,3 +621,14 @@ def Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj):
     #End setting the quads back again------------------------------------------------------------
 
     print("Finished Xatlas----------------------------------------")
+
+def transfer_assets(copy, source, destination):
+    for filename in glob.glob(os.path.join(source, '*.*')):
+        shutil.copy(filename, destination)
+
+def transfer_load():
+    load_folder = bpy.path.abspath(os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_SceneProperties.tlm_load_folder))
+    lightmap_folder = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+    print(load_folder)
+    print(lightmap_folder)
+    transfer_assets(True, load_folder, lightmap_folder)

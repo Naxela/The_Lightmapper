@@ -41,13 +41,14 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
 
         global start_time
         start_time = time()
+        bpy.app.driver_namespace["tlm_start_time"] = time()
 
         scene = bpy.context.scene
         sceneProperties = scene.TLM_SceneProperties
 
-        if not background_mode:
-            pass
-            #setGui(1)
+        if not background_mode and bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode != "combinedao":
+            #pass
+            setGui(1)
 
         if check_save():
             print("Please save your file first")
@@ -779,9 +780,9 @@ def manage_build(background_pass=False):
 
                 prepare_build(self=0, background_mode=False, shutdown_after_build=False)
 
-                if not background_pass:
-                    pass
-                    #setGui(0)
+                if not background_pass and bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode != "combinedao":
+                    #pass
+                    setGui(0)
 
             elif bpy.app.driver_namespace["tlm_plus_mode"] == 2:
 
@@ -842,9 +843,9 @@ def manage_build(background_pass=False):
             if bpy.context.scene.TLM_EngineProperties.tlm_bake_mode == "Background":
                 pass
 
-            if not background_pass:
-                pass
-                #setGui(0)
+            if not background_pass and bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode != "combinedao":
+                #pass
+                setGui(0)
 
         if scene.TLM_SceneProperties.tlm_alert_on_finish:
 
@@ -968,6 +969,9 @@ def check_save():
         return 0
 
 def check_denoiser():
+
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print("Checking denoiser path")
 
     scene = bpy.context.scene
 

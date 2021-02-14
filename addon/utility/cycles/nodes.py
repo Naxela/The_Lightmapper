@@ -32,6 +32,10 @@ def apply_lightmaps():
 
 
 def apply_materials():
+
+    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+        print("Applying materials")
+
     for obj in bpy.context.scene.objects:
         if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:

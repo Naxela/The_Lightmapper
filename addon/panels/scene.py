@@ -317,40 +317,118 @@ class TLM_PT_Encoding(bpy.types.Panel):
             row.label(text="Encoding options disabled in background mode")
             row = layout.row(align=True)
 
-        row.prop(sceneProperties, "tlm_encoding_device", expand=True)
+        else:
+
+            row.prop(sceneProperties, "tlm_encoding_device", expand=True)
+            row = layout.row(align=True)
+
+            if sceneProperties.tlm_encoding_device == "CPU":
+                row.prop(sceneProperties, "tlm_encoding_mode_a", expand=True)
+            else:
+                row.prop(sceneProperties, "tlm_encoding_mode_b", expand=True)
+
+            if sceneProperties.tlm_encoding_device == "CPU":
+                if sceneProperties.tlm_encoding_mode_a == "RGBM":
+                    row = layout.row(align=True)
+                    row.prop(sceneProperties, "tlm_encoding_range")
+                    row = layout.row(align=True)
+                    row.prop(sceneProperties, "tlm_decoder_setup")
+                if sceneProperties.tlm_encoding_mode_a == "RGBD":
+                    pass
+                if sceneProperties.tlm_encoding_mode_a == "HDR":
+                    row = layout.row(align=True)
+                    row.prop(sceneProperties, "tlm_format")
+            else:
+
+                if sceneProperties.tlm_encoding_mode_b == "RGBM":
+                    row = layout.row(align=True)
+                    row.prop(sceneProperties, "tlm_encoding_range")
+                    row = layout.row(align=True)
+                    row.prop(sceneProperties, "tlm_decoder_setup")
+
+                if sceneProperties.tlm_encoding_mode_b == "LogLuv" and sceneProperties.tlm_encoding_device == "GPU":
+                    row = layout.row(align=True)
+                    row.prop(sceneProperties, "tlm_decoder_setup")
+                if sceneProperties.tlm_encoding_mode_b == "HDR":
+                    row = layout.row(align=True)
+                    row.prop(sceneProperties, "tlm_format")
+
+class TLM_PT_Utility(bpy.types.Panel):
+    bl_label = "Utilities"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "render"
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = "TLM_PT_Panel"
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        sceneProperties = scene.TLM_SceneProperties
+
+        row = layout.row(align=True)
+        row.label(text="Enable Lightmaps for set")
+        row = layout.row(align=True)
+        row.operator("tlm.enable_set")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_utility_set")
+        row = layout.row(align=True)
+        #row.label(text="ABCD")
+        row.prop(sceneProperties, "tlm_mesh_lightmap_unwrap_mode")
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_mesh_unwrap_margin")
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_postpack_object")
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_resolution_weight")
+
+        if sceneProperties.tlm_resolution_weight == "Single":
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_mesh_lightmap_resolution")
+        else:
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_resolution_min")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_resolution_max")
+
+        row = layout.row()
+        row.operator("tlm.disable_selection")
+        row = layout.row(align=True)
+        row.operator("tlm.select_lightmapped_objects")
         row = layout.row(align=True)
 
-        if sceneProperties.tlm_encoding_device == "CPU":
-            row.prop(sceneProperties, "tlm_encoding_mode_a", expand=True)
-        else:
-            row.prop(sceneProperties, "tlm_encoding_mode_b", expand=True)
 
-        if sceneProperties.tlm_encoding_device == "CPU":
-            if sceneProperties.tlm_encoding_mode_a == "RGBM":
-                row = layout.row(align=True)
-                row.prop(sceneProperties, "tlm_encoding_range")
-                row = layout.row(align=True)
-                row.prop(sceneProperties, "tlm_decoder_setup")
-            if sceneProperties.tlm_encoding_mode_a == "RGBD":
-                pass
-            if sceneProperties.tlm_encoding_mode_a == "HDR":
-                row = layout.row(align=True)
-                row.prop(sceneProperties, "tlm_format")
-        else:
+        row.label(text="Environment Probes")
+        row = layout.row()
+        row.operator("tlm.build_environmentprobe")
+        row = layout.row()
+        row.operator("tlm.clean_environmentprobe")
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_environment_probe_engine")
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_cmft_path")
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_environment_probe_resolution")
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_create_spherical")
 
-            if sceneProperties.tlm_encoding_mode_b == "RGBM":
-                row = layout.row(align=True)
-                row.prop(sceneProperties, "tlm_encoding_range")
-                row = layout.row(align=True)
-                row.prop(sceneProperties, "tlm_decoder_setup")
+        if sceneProperties.tlm_create_spherical:
 
-            if sceneProperties.tlm_encoding_mode_b == "LogLuv" and sceneProperties.tlm_encoding_device == "GPU":
-                row = layout.row(align=True)
-                row.prop(sceneProperties, "tlm_decoder_setup")
-            if sceneProperties.tlm_encoding_mode_b == "HDR":
-                row = layout.row(align=True)
-                row.prop(sceneProperties, "tlm_format")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_invert_direction")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_write_sh")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_write_radiance")
 
+        row = layout.row(align=True)
+        row.label(text="Load lightmaps")
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_load_folder")
+        row = layout.row()
+        row.operator("tlm.load_lightmaps")
 
 
 class TLM_PT_Selection(bpy.types.Panel):
@@ -416,7 +494,11 @@ class TLM_PT_Selection(bpy.types.Panel):
         row.operator("tlm.remove_uv_selection")
         row = layout.row(align=True)
         row.operator("tlm.select_lightmapped_objects")
-        row = layout.row(align=True)
+        # row = layout.row(align=True)
+        # for addon in bpy.context.preferences.addons.keys():
+        #     if addon.startswith("Texel_Density"):
+        #         row.operator("tlm.toggle_texel_density")
+        #         row = layout.row(align=True)
 
 class TLM_PT_Additional(bpy.types.Panel):
     bl_label = "Additional"
@@ -452,19 +534,9 @@ class TLM_PT_Additional(bpy.types.Panel):
             col = row.column(align=True)
             col.operator("tlm_atlaslist.new_item", icon='ADD', text="")
             col.operator("tlm_atlaslist.delete_item", icon='REMOVE', text="")
-            #col.menu("ARM_MT_BakeListSpecials", icon='DOWNARROW_HLT', text="")
-
-            # if len(scene.TLM_AtlasList) > 1:
-            #     col.separator()
-            #     op = col.operator("arm_bakelist.move_item", icon='TRIA_UP', text="")
-            #     op.direction = 'UP'
-            #     op = col.operator("arm_bakelist.move_item", icon='TRIA_DOWN', text="")
-            #     op.direction = 'DOWN'
 
             if atlasListItem >= 0 and len(atlasList) > 0:
                 item = atlasList[atlasListItem]
-                #layout.prop_search(item, "obj", bpy.data, "objects", text="Object")
-                #layout.prop(item, "res_x")
                 layout.prop(item, "tlm_atlas_lightmap_unwrap_mode")
                 layout.prop(item, "tlm_atlas_lightmap_resolution")
                 layout.prop(item, "tlm_atlas_unwrap_margin")
@@ -535,27 +607,3 @@ class TLM_PT_Additional(bpy.types.Panel):
 
                     if (utilized * 100) > 100:
                         layout.label(text="Warning! Overflow not yet supported")
-
-        row = layout.row()
-        row.label(text="Build Environment Probes")
-        row = layout.row()
-        row.operator("tlm.build_environmentprobe")
-        row = layout.row()
-        row.operator("tlm.clean_environmentprobe")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_environment_probe_engine")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_cmft_path")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_environment_probe_resolution")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_create_spherical")
-
-        if sceneProperties.tlm_create_spherical:
-
-            row = layout.row()
-            row.prop(sceneProperties, "tlm_invert_direction")
-            row = layout.row()
-            row.prop(sceneProperties, "tlm_write_sh")
-            row = layout.row()
-            row.prop(sceneProperties, "tlm_write_radiance")

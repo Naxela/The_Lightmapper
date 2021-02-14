@@ -55,10 +55,12 @@ class TLM_CyclesSceneProperties(bpy.types.PropertyGroup):
                 description="Select bake mode", 
                 default="Foreground")
 
+    caching_modes = [('Copy', 'Copy', 'More overhead; allows for network.')]
+    
+    #caching_modes.append(('Cache', 'Cache', 'Cache in separate blend'),('Node', 'Node restore', 'EXPERIMENTAL! Use with care'))
+
     tlm_caching_mode : EnumProperty(
-        items = [('Copy', 'Copy', 'More overhead; allows for network.'),
-                    ('Cache', 'Cache', 'Cache in separate blend'),
-                    ('Node', 'Node restore', 'EXPERIMENTAL! Use with care')],
+        items = caching_modes,
                 name = "Caching mode",
                 description="Select cache mode",
                 default="Copy")
