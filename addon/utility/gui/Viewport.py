@@ -48,14 +48,15 @@ class ViewportDraw:
 
     def draw_image_callback(self, context):
         
-        bgl.glEnable(bgl.GL_BLEND)
-        bgl.glActiveTexture(bgl.GL_TEXTURE0)
-        bgl.glBindTexture(bgl.GL_TEXTURE_2D, self.image.bindcode)
+        if self.image:
+            bgl.glEnable(bgl.GL_BLEND)
+            bgl.glActiveTexture(bgl.GL_TEXTURE0)
+            bgl.glBindTexture(bgl.GL_TEXTURE_2D, self.image.bindcode)
 
-        self.shader.bind()
-        self.shader.uniform_int("image", 0)
-        self.batch.draw(self.shader)
-        bgl.glDisable(bgl.GL_BLEND)
+            self.shader.bind()
+            self.shader.uniform_int("image", 0)
+            self.batch.draw(self.shader)
+            bgl.glDisable(bgl.GL_BLEND)
 
     def update_text(self, text):
 

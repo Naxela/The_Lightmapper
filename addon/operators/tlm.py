@@ -382,9 +382,31 @@ class TLM_DisableSelection(bpy.types.Operator):
 
     def execute(self, context):
 
-        for obj in bpy.context.selected_objects:
-            if obj.type == "MESH":
-                obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = False
+        scene = context.scene
+
+        weightList = {} #ObjName : [Dimension,Weight]
+        max = 0
+
+        if bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Scene":
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
+
+                    obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = False
+
+        elif bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Selection":
+            for obj in bpy.context.selected_objects:
+                if obj.type == "MESH":
+
+                    obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = False
+
+
+        else: #Enabled
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                        obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = False
+
 
         return{'FINISHED'}
 

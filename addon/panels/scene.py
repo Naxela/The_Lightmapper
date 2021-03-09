@@ -377,26 +377,53 @@ class TLM_PT_Utility(bpy.types.Panel):
         row = layout.row(align=True)
         #row.label(text="ABCD")
         row.prop(sceneProperties, "tlm_mesh_lightmap_unwrap_mode")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_mesh_unwrap_margin")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_postpack_object")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_resolution_weight")
 
-        if sceneProperties.tlm_resolution_weight == "Single":
-            row = layout.row()
-            row.prop(sceneProperties, "tlm_mesh_lightmap_resolution")
+        if sceneProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+
+            if scene.TLM_AtlasListItem >= 0 and len(scene.TLM_AtlasList) > 0:
+                row = layout.row()
+                item = scene.TLM_AtlasList[scene.TLM_AtlasListItem]
+                row.prop_search(sceneProperties, "tlm_atlas_pointer", scene, "TLM_AtlasList", text='Atlas Group')
+            else:
+                row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
+
         else:
+
             row = layout.row()
-            row.prop(sceneProperties, "tlm_resolution_min")
+            row.prop(sceneProperties, "tlm_postpack_object")
             row = layout.row()
-            row.prop(sceneProperties, "tlm_resolution_max")
+        
+            if sceneProperties.tlm_postpack_object and sceneProperties.tlm_mesh_lightmap_unwrap_mode != "AtlasGroupA":
+
+                if scene.TLM_PostAtlasListItem >= 0 and len(scene.TLM_PostAtlasList) > 0:
+                    row = layout.row()
+                    item = scene.TLM_PostAtlasList[scene.TLM_PostAtlasListItem]
+                    row.prop_search(sceneProperties, "tlm_postatlas_pointer", scene, "TLM_PostAtlasList", text='Atlas Group')
+                    row = layout.row()
+
+                else:
+                    row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
+                    row = layout.row()
+
+            row.prop(sceneProperties, "tlm_mesh_unwrap_margin")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_resolution_weight")
+
+            if sceneProperties.tlm_resolution_weight == "Single":
+                row = layout.row()
+                row.prop(sceneProperties, "tlm_mesh_lightmap_resolution")
+            else:
+                row = layout.row()
+                row.prop(sceneProperties, "tlm_resolution_min")
+                row = layout.row()
+                row.prop(sceneProperties, "tlm_resolution_max")
 
         row = layout.row()
         row.operator("tlm.disable_selection")
         row = layout.row(align=True)
         row.operator("tlm.select_lightmapped_objects")
+        row = layout.row(align=True)
+        row.operator("tlm.remove_uv_selection")
         row = layout.row(align=True)
 
 
