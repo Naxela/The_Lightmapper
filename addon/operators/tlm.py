@@ -411,26 +411,59 @@ class TLM_DisableSelection(bpy.types.Operator):
         return{'FINISHED'}
 
 class TLM_RemoveLightmapUV(bpy.types.Operator):
-    """Remove Lightmap UV for selection"""
+    """Remove Lightmap UV for set"""
     bl_idname = "tlm.remove_uv_selection"
     bl_label = "Remove Lightmap UV"
-    bl_description = "Remove Lightmap UV for selection"
+    bl_description = "Remove Lightmap UV for set"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
 
-        for obj in bpy.context.selected_objects:
-            if obj.type == "MESH":
-                uv_layers = obj.data.uv_layers
+        if bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Scene":
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
 
-                if not obj.TLM_ObjectProperties.tlm_use_default_channel:
-                    uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
-                else:
-                    uv_channel = "UVMap_Lightmap"
+                    uv_layers = obj.data.uv_layers
 
-                for uvlayer in uv_layers:
-                    if uvlayer.name == uv_channel:
-                        uv_layers.remove(uvlayer)
+                    if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+                        uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+                    else:
+                        uv_channel = "UVMap_Lightmap"
+
+                    for uvlayer in uv_layers:
+                        if uvlayer.name == uv_channel:
+                            uv_layers.remove(uvlayer)
+
+        elif bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Selection":
+            for obj in bpy.context.selected_objects:
+                if obj.type == "MESH":
+
+                    uv_layers = obj.data.uv_layers
+
+                    if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+                        uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+                    else:
+                        uv_channel = "UVMap_Lightmap"
+
+                    for uvlayer in uv_layers:
+                        if uvlayer.name == uv_channel:
+                            uv_layers.remove(uvlayer)
+
+        else: #Enabled
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                        uv_layers = obj.data.uv_layers
+
+                        if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+                            uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+                        else:
+                            uv_channel = "UVMap_Lightmap"
+
+                        for uvlayer in uv_layers:
+                            if uvlayer.name == uv_channel:
+                                uv_layers.remove(uvlayer)
 
         return{'FINISHED'}
 

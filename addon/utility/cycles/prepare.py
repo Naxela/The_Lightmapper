@@ -142,8 +142,9 @@ def configure_meshes(self):
             bpy.ops.object.mode_set(mode='OBJECT')
 
         elif atlasgroup.tlm_atlas_lightmap_unwrap_mode == "Xatlas":
+
             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                print("Temporary skip: COPYING SMART PROJECT - TODO XATLAS FOR ATLAS GROUP")
+                print("Using Xatlas on Atlas Group: " + atlas)
 
             for obj in atlas_items:
                 obj.select_set(True)
