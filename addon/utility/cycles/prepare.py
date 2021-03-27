@@ -65,6 +65,14 @@ def configure_meshes(self):
     for obj in bpy.context.scene.objects:
         if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                
+                if scene.TLM_SceneProperties.tlm_reset_uv:
+
+                    uv_layers = obj.data.uv_layers
+                    uv_channel = "UVMap_Lightmap"
+                    for uvlayer in uv_layers:
+                        if uvlayer.name == uv_channel:
+                            uv_layers.remove(uvlayer)
 
                 if scene.TLM_SceneProperties.tlm_apply_on_unwrap:
                     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
