@@ -52,7 +52,7 @@ def bake(plus_pass=0):
                 #print("Remaining: " + str(remaining))
 
                 if scene.TLM_EngineProperties.tlm_target == "vertex":
-                    scene.render.bake_target = "VERTEX_COLORS"
+                    scene.render.bake.target = "VERTEX_COLORS"
 
                 if scene.TLM_EngineProperties.tlm_lighting_mode == "combined":
                     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)

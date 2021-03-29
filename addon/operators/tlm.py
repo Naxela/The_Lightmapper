@@ -89,6 +89,13 @@ class TLM_CleanLightmaps(bpy.types.Operator):
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                     cache.backup_material_rename(obj)
 
+        for obj in bpy.context.scene.objects:
+            if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    for vertex_layer in obj.data.vertex_colors:
+                        if vertex_layer.name == "TLM":
+                            obj.data.vertex_colors.remove(vertex_layer)
+
         for mat in bpy.data.materials:
             if mat.users < 1:
                 bpy.data.materials.remove(mat)
