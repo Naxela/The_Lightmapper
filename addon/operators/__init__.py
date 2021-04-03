@@ -23,6 +23,12 @@ classes = [
     tlm.TLM_CleanBuildEnvironmentProbes,
     tlm.TLM_PrepareUVMaps,
     tlm.TLM_LoadLightmaps,
+    tlm.TLM_DisableSpecularity,
+    tlm.TLM_DisableMetallic,
+    tlm.TLM_AddCollectionsPost,
+    tlm.TLM_PostAtlasSpecialsMenu,
+    tlm.TLM_AddCollections,
+    tlm.TLM_AtlasSpecialsMenu,
     imagetools.TLM_ImageUpscale,
     imagetools.TLM_ImageDownscale
 

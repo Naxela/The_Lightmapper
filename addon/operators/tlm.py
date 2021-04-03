@@ -1036,6 +1036,182 @@ class TLM_ToggleTexelDensity(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class TLM_DisableSpecularity(bpy.types.Operator): 
+    bl_idname = "tlm.disable_specularity"
+    bl_label = "Disable specularity"
+    bl_description = "Disables specularity from set"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        if bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Scene":
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
+
+                    for slot in obj.material_slots:
+
+                        mat = slot.material
+
+                        for node in mat.node_tree.nodes:
+
+                            if node.type == "BSDF_PRINCIPLED":
+
+                                node.inputs[5].default_value = 0.0
+
+        elif bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Selection":
+            for obj in bpy.context.selected_objects:
+                if obj.type == "MESH":
+
+                    for slot in obj.material_slots:
+
+                        mat = slot.material
+
+                        for node in mat.node_tree.nodes:
+
+                            if node.type == "BSDF_PRINCIPLED":
+
+                                node.inputs[5].default_value = 0.0
+
+        else: #Enabled
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                        for slot in obj.material_slots:
+
+                            mat = slot.material
+
+                            for node in mat.node_tree.nodes:
+
+                                if node.type == "BSDF_PRINCIPLED":
+
+                                    node.inputs[5].default_value = 0.0
+
+        return{'FINISHED'}
+
+class TLM_DisableMetallic(bpy.types.Operator): 
+    bl_idname = "tlm.disable_metallic"
+    bl_label = "Disable metallic"
+    bl_description = "Disables metallic from set"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        if bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Scene":
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
+
+                    for slot in obj.material_slots:
+
+                        mat = slot.material
+
+                        for node in mat.node_tree.nodes:
+
+                            if node.type == "BSDF_PRINCIPLED":
+
+                                node.inputs[4].default_value = 0.0
+
+        elif bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Selection":
+            for obj in bpy.context.selected_objects:
+                if obj.type == "MESH":
+
+                    for slot in obj.material_slots:
+
+                        mat = slot.material
+
+                        for node in mat.node_tree.nodes:
+
+                            if node.type == "BSDF_PRINCIPLED":
+
+                                node.inputs[4].default_value = 0.0
+
+        else: #Enabled
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                        for slot in obj.material_slots:
+
+                            mat = slot.material
+
+                            for node in mat.node_tree.nodes:
+
+                                if node.type == "BSDF_PRINCIPLED":
+
+                                    node.inputs[4].default_value = 0.0
+
+        return{'FINISHED'}
+
+class TLM_PostAtlasSpecialsMenu(bpy.types.Menu):
+    bl_label = "Lightmap"
+    bl_idname = "TLM_MT_PostAtlasListSpecials"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator("tlm.add_collections_post")
+
+class TLM_AddCollectionsPost(bpy.types.Operator): 
+    bl_idname = "tlm.add_collections_post"
+    bl_label = "Add collections"
+    bl_description = "Adds all collections to atlases"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        
+        for collection in bpy.context.scene.collection.children:
+            
+            #Add a new atlas with collection name
+            #Traverse before adding
+            scene = bpy.context.scene
+            scene.TLM_PostAtlasList.add()
+            scene.TLM_PostAtlasListItem = len(scene.TLM_PostAtlasList) - 1
+
+            scene.TLM_PostAtlasList[len(scene.TLM_PostAtlasList) - 1].name = collection.name
+            
+            for obj in collection.objects:
+                if obj.type == "MESH":
+                    obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
+                    obj.TLM_ObjectProperties.tlm_postpack_object = True
+                    obj.TLM_ObjectProperties.tlm_postatlas_pointer = collection.name
+
+        return{'FINISHED'}
+
+class TLM_AtlasSpecialsMenu(bpy.types.Menu):
+    bl_label = "Lightmap"
+    bl_idname = "TLM_MT_AtlasListSpecials"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator("tlm.add_collections")
+
+class TLM_AddCollections(bpy.types.Operator): 
+    bl_idname = "tlm.add_collections"
+    bl_label = "Add collections"
+    bl_description = "Adds all collections to atlases"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        for collection in bpy.context.scene.collection.children:
+            
+            #Add a new atlas with collection name
+            #Traverse before adding
+            scene = bpy.context.scene
+            scene.TLM_AtlasList.add()
+            scene.TLM_AtlasListItem = len(scene.TLM_AtlasList) - 1
+
+            scene.TLM_AtlasList[len(scene.TLM_AtlasList) - 1].name = collection.name
+            
+            for obj in collection.objects:
+                if obj.type == "MESH":
+                    obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
+                    obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode = "AtlasGroupA"
+                    obj.TLM_ObjectProperties.tlm_atlas_pointer = collection.name
+
+        return{'FINISHED'}
+
+#Atlas disable objects
+
 
 def TLM_DoubleResolution():
     pass

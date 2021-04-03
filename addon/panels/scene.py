@@ -425,6 +425,9 @@ class TLM_PT_Utility(bpy.types.Panel):
         row = layout.row(align=True)
         row.operator("tlm.remove_uv_selection")
         row = layout.row(align=True)
+        row.operator("tlm.disable_specularity")
+        row.operator("tlm.disable_metallic")
+        row = layout.row(align=True)
 
 
         row.label(text="Environment Probes")
@@ -561,6 +564,7 @@ class TLM_PT_Additional(bpy.types.Panel):
             col = row.column(align=True)
             col.operator("tlm_atlaslist.new_item", icon='ADD', text="")
             col.operator("tlm_atlaslist.delete_item", icon='REMOVE', text="")
+            col.menu("TLM_MT_AtlasListSpecials", icon='DOWNARROW_HLT', text="")
 
             if atlasListItem >= 0 and len(atlasList) > 0:
                 item = atlasList[atlasListItem]
@@ -599,6 +603,7 @@ class TLM_PT_Additional(bpy.types.Panel):
                 col = row.column(align=True)
                 col.operator("tlm_postatlaslist.new_item", icon='ADD', text="")
                 col.operator("tlm_postatlaslist.delete_item", icon='REMOVE', text="")
+                col.menu("TLM_MT_PostAtlasListSpecials", icon='DOWNARROW_HLT', text="")
 
                 if postatlasListItem >= 0 and len(postatlasList) > 0:
                     item = postatlasList[postatlasListItem]
