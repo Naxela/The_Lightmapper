@@ -945,6 +945,8 @@ def naming_check():
                         obj.name = obj.name.replace("æ","ae")
                     if "å" in obj.name:
                         obj.name = obj.name.replace("å","aa")
+                    if "/" in obj.name:
+                        obj.name = obj.name.replace("/",".")
 
                     for slot in obj.material_slots:
                         if "_" in slot.material.name:
@@ -961,6 +963,8 @@ def naming_check():
                             slot.material.name = slot.material.name.replace("æ","ae")
                         if "å" in slot.material.name:
                             slot.material.name = slot.material.name.replace("å","aa")
+                        if "/" in slot.material.name:
+                            slot.material.name = slot.material.name.replace("/",".")
 
 def opencv_check():
 

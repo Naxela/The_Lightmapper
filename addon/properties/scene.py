@@ -385,6 +385,16 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Remove existing UV maps for lightmaps.", 
         default=False)
 
+    tlm_apply_modifiers : BoolProperty(
+        name="Apply modifiers", 
+        description="Apply all modifiers to objects.", 
+        default=True)
+
+    tlm_batch_mode : BoolProperty(
+        name="Batch mode", 
+        description="Batch collections.", 
+        default=False)
+
     tlm_network_render : BoolProperty(
         name="Enable network rendering", 
         description="Enable network rendering (Unstable).", 
