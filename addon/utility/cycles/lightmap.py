@@ -20,8 +20,31 @@ def bake(plus_pass=0):
         iterNum = iterNum - 1
 
     for obj in bpy.context.scene.objects:
+
+        hidden = False
+
+        #We check if the object is hidden
+        if obj.hide_get():
+            hidden = True
+        if obj.hide_viewport:
+            hidden = True
+        if obj.hide_render:
+            hidden = True
+
+        #We check if the object's collection is hidden
+        collections = obj.users_collection
+
+        for collection in collections:
+
+            if collection.hide_viewport:
+                hidden = True
+            if collection.hide_render:
+                hidden = True
+            if bpy.context.scene.view_layers[0].layer_collection.children[collection.name].hide_viewport:
+                hidden = True
+
         if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
-            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use and not hidden:
 
                 scene = bpy.context.scene
 

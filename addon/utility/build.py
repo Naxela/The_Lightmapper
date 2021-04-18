@@ -945,6 +945,8 @@ def naming_check():
                         obj.name = obj.name.replace("æ","ae")
                     if "å" in obj.name:
                         obj.name = obj.name.replace("å","aa")
+                    if "/" in obj.name:
+                        obj.name = obj.name.replace("/",".")
 
                     for slot in obj.material_slots:
                         if "_" in slot.material.name:
@@ -961,6 +963,8 @@ def naming_check():
                             slot.material.name = slot.material.name.replace("æ","ae")
                         if "å" in slot.material.name:
                             slot.material.name = slot.material.name.replace("å","aa")
+                        if "/" in slot.material.name:
+                            slot.material.name = slot.material.name.replace("/",".")
 
 def opencv_check():
 
@@ -1034,7 +1038,17 @@ def setMode():
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
 
-    bpy.ops.object.mode_set(mode='OBJECT')
+    hidden = False
+
+    if obj.hide_get():
+        hidden = True
+    if obj.hide_viewport:
+        hidden = True
+    if obj.hide_render:
+        hidden = True
+
+    if not hidden:
+        bpy.ops.object.mode_set(mode='OBJECT')
 
     #TODO Make some checks that returns to previous selection
 

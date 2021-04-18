@@ -26,9 +26,12 @@ classes = [
     tlm.TLM_DisableSpecularity,
     tlm.TLM_DisableMetallic,
     tlm.TLM_AddCollectionsPost,
+    tlm.TLM_AddSelectedCollectionsPost,
     tlm.TLM_PostAtlasSpecialsMenu,
     tlm.TLM_AddCollections,
+    tlm.TLM_AddSelectedCollections,
     tlm.TLM_AtlasSpecialsMenu,
+    tlm.TLM_Reset,
     imagetools.TLM_ImageUpscale,
     imagetools.TLM_ImageDownscale
 

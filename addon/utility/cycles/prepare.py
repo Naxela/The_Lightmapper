@@ -84,6 +84,14 @@ def configure_meshes(self):
                     obj.select_set(True)
                     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
+                if scene.TLM_SceneProperties.tlm_apply_modifiers:
+                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                        print("Applying modifiers to: " + obj.name)
+                    bpy.context.view_layer.objects.active = obj
+                    obj.select_set(True)
+                    bpy.ops.object.convert(target='MESH')
+                    
+
                 obj.hide_select = False #Remember to toggle this back
                 for slot in obj.material_slots:
                     if "." + slot.name + '_Original' in bpy.data.materials:

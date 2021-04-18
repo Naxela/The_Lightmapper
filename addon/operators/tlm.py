@@ -1149,12 +1149,50 @@ class TLM_PostAtlasSpecialsMenu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         layout.operator("tlm.add_collections_post")
+        layout.operator("tlm.add_selected_collections_post")
 
 class TLM_AddCollectionsPost(bpy.types.Operator): 
     bl_idname = "tlm.add_collections_post"
     bl_label = "Add collections"
     bl_description = "Adds all collections to atlases"
     bl_options = {'REGISTER', 'UNDO'}
+
+    resolution : bpy.props.EnumProperty(
+            items = [('32', '32', 'TODO'),
+                    ('64', '64', 'TODO'),
+                    ('128', '128', 'TODO'),
+                    ('256', '256', 'TODO'),
+                    ('512', '512', 'TODO'),
+                    ('1024', '1024', 'TODO'),
+                    ('2048', '2048', 'TODO'),
+                    ('4096', '4096', 'TODO'),
+                    ('8192', '8192', 'TODO')],
+                    name = "Atlas Lightmap Resolution", 
+                    description="Atlas lightmap resolution",
+                    default='256')
+
+    unwrap_modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
+                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm')]
+
+    if "blender_xatlas" in bpy.context.preferences.addons.keys():
+        unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))
+
+    unwrap : bpy.props.EnumProperty(
+        items = unwrap_modes,
+                name = "Unwrap Mode", 
+                description="Atlas unwrapping method", 
+                default='SmartProject')
+
+    margin : bpy.props.FloatProperty(
+        name="Unwrap Margin", 
+        default=0.1, 
+        min=0.0, 
+        max=1.0, 
+        subtype='FACTOR')
+
+    @classmethod
+    def poll(cls, context):
+        return True
 
     def execute(self, context):
         
@@ -1167,6 +1205,9 @@ class TLM_AddCollectionsPost(bpy.types.Operator):
             scene.TLM_PostAtlasListItem = len(scene.TLM_PostAtlasList) - 1
 
             scene.TLM_PostAtlasList[len(scene.TLM_PostAtlasList) - 1].name = collection.name
+            scene.TLM_PostAtlasList[collection.name].tlm_atlas_lightmap_unwrap_mode = self.unwrap
+            scene.TLM_PostAtlasList[collection.name].tlm_atlas_lightmap_resolution = self.resolution
+            scene.TLM_PostAtlasList[collection.name].tlm_atlas_unwrap_margin = self.margin
             
             for obj in collection.objects:
                 if obj.type == "MESH":
@@ -1176,6 +1217,104 @@ class TLM_AddCollectionsPost(bpy.types.Operator):
 
         return{'FINISHED'}
 
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        row = self.layout
+        row.prop(self, "unwrap", text="Unwrap mode")
+        row.prop(self, "resolution", text="Resolution")
+        row.prop(self, "margin", text="Margin")
+
+class TLM_AddSelectedCollectionsPost(bpy.types.Operator): 
+    bl_idname = "tlm.add_selected_collections_post"
+    bl_label = "Add selected collections"
+    bl_description = "Add the collections of the selected objects"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    resolution : bpy.props.EnumProperty(
+            items = [('32', '32', 'TODO'),
+                    ('64', '64', 'TODO'),
+                    ('128', '128', 'TODO'),
+                    ('256', '256', 'TODO'),
+                    ('512', '512', 'TODO'),
+                    ('1024', '1024', 'TODO'),
+                    ('2048', '2048', 'TODO'),
+                    ('4096', '4096', 'TODO'),
+                    ('8192', '8192', 'TODO')],
+                    name = "Atlas Lightmap Resolution", 
+                    description="Atlas lightmap resolution",
+                    default='256')
+
+    unwrap_modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
+                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm')]
+
+    if "blender_xatlas" in bpy.context.preferences.addons.keys():
+        unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))
+
+    unwrap : bpy.props.EnumProperty(
+        items = unwrap_modes,
+                name = "Unwrap Mode", 
+                description="Atlas unwrapping method", 
+                default='SmartProject')
+
+    margin : bpy.props.FloatProperty(
+        name="Unwrap Margin", 
+        default=0.1, 
+        min=0.0, 
+        max=1.0, 
+        subtype='FACTOR')
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+
+        collections = []
+
+        for obj in bpy.context.selected_objects:
+
+            obj_collection = obj.users_collection[0]
+
+            if obj_collection.name not in collections:
+
+                collections.append(obj_collection.name)
+
+        print("Collections:" + str(collections))
+        
+        for collection in bpy.context.scene.collection.children:
+
+            if collection.name in collections:
+                
+                #Add a new atlas with collection name
+                #Traverse before adding
+                scene = bpy.context.scene
+                scene.TLM_PostAtlasList.add()
+                scene.TLM_PostAtlasListItem = len(scene.TLM_PostAtlasList) - 1
+
+                scene.TLM_PostAtlasList[len(scene.TLM_PostAtlasList) - 1].name = collection.name
+                scene.TLM_PostAtlasList[collection.name].tlm_atlas_lightmap_unwrap_mode = self.unwrap
+                scene.TLM_PostAtlasList[collection.name].tlm_atlas_lightmap_resolution = self.resolution
+                scene.TLM_PostAtlasList[collection.name].tlm_atlas_unwrap_margin = self.margin
+                
+                for obj in collection.objects:
+                    if obj.type == "MESH":
+                        obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
+                        obj.TLM_ObjectProperties.tlm_postpack_object = True
+                        obj.TLM_ObjectProperties.tlm_postatlas_pointer = collection.name
+
+        return{'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        row = self.layout
+        row.prop(self, "unwrap", text="Unwrap mode")
+        row.prop(self, "resolution", text="Resolution")
+        row.prop(self, "margin", text="Margin")
+
 class TLM_AtlasSpecialsMenu(bpy.types.Menu):
     bl_label = "Lightmap"
     bl_idname = "TLM_MT_AtlasListSpecials"
@@ -1183,12 +1322,50 @@ class TLM_AtlasSpecialsMenu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         layout.operator("tlm.add_collections")
+        layout.operator("tlm.add_selected_collections")
 
 class TLM_AddCollections(bpy.types.Operator): 
     bl_idname = "tlm.add_collections"
-    bl_label = "Add collections"
+    bl_label = "Add all collections"
     bl_description = "Adds all collections to atlases"
     bl_options = {'REGISTER', 'UNDO'}
+
+    resolution : bpy.props.EnumProperty(
+            items = [('32', '32', 'TODO'),
+                    ('64', '64', 'TODO'),
+                    ('128', '128', 'TODO'),
+                    ('256', '256', 'TODO'),
+                    ('512', '512', 'TODO'),
+                    ('1024', '1024', 'TODO'),
+                    ('2048', '2048', 'TODO'),
+                    ('4096', '4096', 'TODO'),
+                    ('8192', '8192', 'TODO')],
+                    name = "Atlas Lightmap Resolution", 
+                    description="Atlas lightmap resolution",
+                    default='256')
+
+    unwrap_modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
+                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm')]
+
+    if "blender_xatlas" in bpy.context.preferences.addons.keys():
+        unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))
+
+    unwrap : bpy.props.EnumProperty(
+        items = unwrap_modes,
+                name = "Unwrap Mode", 
+                description="Atlas unwrapping method", 
+                default='SmartProject')
+
+    margin : bpy.props.FloatProperty(
+        name="Unwrap Margin", 
+        default=0.1, 
+        min=0.0, 
+        max=1.0, 
+        subtype='FACTOR')
+
+    @classmethod
+    def poll(cls, context):
+        return True
 
     def execute(self, context):
 
@@ -1201,6 +1378,9 @@ class TLM_AddCollections(bpy.types.Operator):
             scene.TLM_AtlasListItem = len(scene.TLM_AtlasList) - 1
 
             scene.TLM_AtlasList[len(scene.TLM_AtlasList) - 1].name = collection.name
+            scene.TLM_AtlasList[collection.name].tlm_atlas_lightmap_unwrap_mode = self.unwrap
+            scene.TLM_AtlasList[collection.name].tlm_atlas_lightmap_resolution = self.resolution
+            scene.TLM_AtlasList[collection.name].tlm_atlas_unwrap_margin = self.margin
             
             for obj in collection.objects:
                 if obj.type == "MESH":
@@ -1210,8 +1390,146 @@ class TLM_AddCollections(bpy.types.Operator):
 
         return{'FINISHED'}
 
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        row = self.layout
+        row.prop(self, "unwrap", text="Unwrap mode")
+        row.prop(self, "resolution", text="Resolution")
+        row.prop(self, "margin", text="Margin")
+
+class TLM_AddSelectedCollections(bpy.types.Operator): 
+    bl_idname = "tlm.add_selected_collections"
+    bl_label = "Add the collections of the selected objects"
+    bl_description = "Add the collections of the selected objects"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    resolution : bpy.props.EnumProperty(
+            items = [('32', '32', 'TODO'),
+                    ('64', '64', 'TODO'),
+                    ('128', '128', 'TODO'),
+                    ('256', '256', 'TODO'),
+                    ('512', '512', 'TODO'),
+                    ('1024', '1024', 'TODO'),
+                    ('2048', '2048', 'TODO'),
+                    ('4096', '4096', 'TODO'),
+                    ('8192', '8192', 'TODO')],
+                    name = "Atlas Lightmap Resolution", 
+                    description="Atlas lightmap resolution",
+                    default='256')
+
+    unwrap_modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
+                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm')]
+
+    if "blender_xatlas" in bpy.context.preferences.addons.keys():
+        unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))
+
+    unwrap : bpy.props.EnumProperty(
+        items = unwrap_modes,
+                name = "Unwrap Mode", 
+                description="Atlas unwrapping method", 
+                default='SmartProject')
+
+    margin : bpy.props.FloatProperty(
+        name="Unwrap Margin", 
+        default=0.1, 
+        min=0.0, 
+        max=1.0, 
+        subtype='FACTOR')
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+
+        collections = []
+
+        for obj in bpy.context.selected_objects:
+
+            obj_collection = obj.users_collection[0]
+
+            if obj_collection.name not in collections:
+
+                collections.append(obj_collection.name)
+
+        print("Collections:" + str(collections))
+
+        for collection in bpy.context.scene.collection.children:
+
+            if collection.name in collections:
+                
+                #Add a new atlas with collection name
+                #Traverse before adding
+                scene = bpy.context.scene
+                scene.TLM_AtlasList.add()
+                scene.TLM_AtlasListItem = len(scene.TLM_AtlasList) - 1
+
+                scene.TLM_AtlasList[len(scene.TLM_AtlasList) - 1].name = collection.name
+                scene.TLM_AtlasList[collection.name].tlm_atlas_lightmap_unwrap_mode = self.unwrap
+                scene.TLM_AtlasList[collection.name].tlm_atlas_lightmap_resolution = self.resolution
+                scene.TLM_AtlasList[collection.name].tlm_atlas_unwrap_margin = self.margin
+                
+                for obj in collection.objects:
+                    if obj.type == "MESH":
+                        obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
+                        obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode = "AtlasGroupA"
+                        obj.TLM_ObjectProperties.tlm_atlas_pointer = collection.name
+
+        return{'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        row = self.layout
+        row.prop(self, "unwrap", text="Unwrap mode")
+        row.prop(self, "resolution", text="Resolution")
+        row.prop(self, "margin", text="Margin")
+        
 #Atlas disable objects
 
+class TLM_Reset(bpy.types.Operator):
+    bl_idname = "tlm.reset"
+    bl_label = "Resets all UI and settings"
+    bl_description = "Reset UI and objects"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        self.report({'INFO'}, "YES!")
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
+# class TLM_Reset2(bpy.types.Operator):
+#     bl_idname = "tlm.reset2"
+#     bl_label = "Do you really want to do that?"
+#     bl_options = {'REGISTER', 'INTERNAL'}
+
+#     prop1: bpy.props.BoolProperty()
+#     prop2: bpy.props.BoolProperty()
+
+#     @classmethod
+#     def poll(cls, context):
+#         return True
+
+#     def execute(self, context):
+#         self.report({'INFO'}, "YES!")
+#         return {'FINISHED'}
+
+#     def invoke(self, context, event):
+#         return context.window_manager.invoke_props_dialog(self)
+
+#     def draw(self, context):
+#         row = self.layout
+#         row.prop(self, "prop1", text="Property A")
+#         row.prop(self, "prop2", text="Property B")
 
 def TLM_DoubleResolution():
     pass
