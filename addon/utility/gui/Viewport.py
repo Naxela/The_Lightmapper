@@ -7,7 +7,7 @@ class ViewportDraw:
 
         bakefile = "TLM_Overlay.png"
         scriptDir = os.path.dirname(os.path.realpath(__file__))
-        bakefile_path = os.path.abspath(os.path.join(scriptDir, '..', '..', 'assets/' + bakefile))
+        bakefile_path = os.path.abspath(os.path.join(scriptDir, '..', '..', 'assets', bakefile))
 
         image_name = "TLM_Overlay.png"
 
