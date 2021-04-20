@@ -75,6 +75,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             row.prop(sceneProperties, "tlm_reset_uv")
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_apply_modifiers")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_keep_baked_files")
 
             row = layout.row(align=True)
             try:

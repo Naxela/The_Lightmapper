@@ -45,6 +45,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Keep cache files (non-filtered and non-denoised)", 
         default=True)
 
+    tlm_keep_baked_files : BoolProperty(
+        name="Keep bake files", 
+        description="Keep the baked lightmap files when cleaning", 
+        default=False)
+
     tlm_setting_renderer : EnumProperty(
         items = [('CPU', 'CPU', 'Bake using the processor'),
                 ('GPU', 'GPU', 'Bake using the graphics card')],
