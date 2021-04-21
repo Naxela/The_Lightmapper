@@ -961,8 +961,6 @@ class TLM_PrepareUVMaps(bpy.types.Operator):
 
         scene = context.scene
 
-
-
         return {'FINISHED'}
 
 class TLM_LoadLightmaps(bpy.types.Operator): 
@@ -977,7 +975,9 @@ class TLM_LoadLightmaps(bpy.types.Operator):
 
         utility.transfer_load()
 
-        build.finish_assemble()
+        print("Transfer finished")
+
+        build.finish_assemble(self, 1, 1)
 
         return {'FINISHED'}
 

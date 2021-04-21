@@ -463,7 +463,8 @@ class TLM_PT_Utility(bpy.types.Panel):
         row.prop(sceneProperties, "tlm_load_folder")
         row = layout.row()
         row.operator("tlm.load_lightmaps")
-
+        row = layout.row()
+        row.prop(sceneProperties, "tlm_load_atlas")
 
 class TLM_PT_Selection(bpy.types.Panel):
     bl_label = "Selection"

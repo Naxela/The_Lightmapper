@@ -229,9 +229,12 @@ def distribute_building():
     return 1.0
 
 
-def finish_assemble(self=0):
+def finish_assemble(self=0, background_pass=0, load_atlas=0):
 
     print("Finishing assembly")
+
+    if load_atlas:
+        print("Assembly in Atlas load mode")
 
     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
         print("Background baking finished")
@@ -253,7 +256,10 @@ def finish_assemble(self=0):
         global start_time
         start_time = time()
 
-    manage_build(True)
+    if background_pass:
+        manage_build(True, load_atlas)
+    else:
+        manage_build(False, load_atlas)
 
 def begin_build():
 
@@ -606,9 +612,12 @@ def begin_build():
 
     manage_build()
 
-def manage_build(background_pass=False):
+def manage_build(background_pass=False, load_atlas=0):
 
     print("Managing build")
+
+    if load_atlas:
+        print("Managing in load atlas mode")
 
     scene = bpy.context.scene
     sceneProperties = scene.TLM_SceneProperties
@@ -616,9 +625,10 @@ def manage_build(background_pass=False):
     if sceneProperties.tlm_lightmap_engine == "Cycles":
 
         if background_pass:
+            print("In background pass")
             nodes.apply_lightmaps()
 
-        nodes.apply_materials() #From here the name is changed...
+        nodes.apply_materials(load_atlas) #From here the name is changed...
 
         end = "_baked"
 

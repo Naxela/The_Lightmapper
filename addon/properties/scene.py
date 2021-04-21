@@ -468,6 +468,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Load existing lightmaps from folder",
         subtype="DIR_PATH")
 
+    tlm_load_atlas : BoolProperty(
+        name="Load lightmaps based on atlas sets", 
+        description="Use the current Atlas list.", 
+        default=False)
+
     tlm_utility_set : EnumProperty(
         items = [('Scene', 'Scene', 'Set for all objects in the scene.'),
                  ('Selection', 'Selection', 'Set for selected objects.'),
