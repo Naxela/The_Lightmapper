@@ -178,6 +178,25 @@ def apply_materials(load_atlas=0):
                             #Find mainnode
                             mainNode = outputNode.inputs[0].links[0].from_node
 
+                            if (mainNode.type == "MIX_SHADER"):
+                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                    print("Mix shader found")
+
+                                #TODO SHIFT BETWEEN from node input 1 or 2 based on which type
+                                mainNode = outputNode.inputs[0].links[0].from_node.inputs[1].links[0].from_node
+
+                            if (mainNode.type == "ADD_SHADER"):
+                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                    print("Mix shader found")
+
+                                mainNode = outputNode.inputs[0].links[0].from_node.inputs[0].links[0].from_node
+
+                            if (mainNode.type == "ShaderNodeMixRGB"):
+                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                    print("Mix RGB shader found")
+                                
+                                mainNode = outputNode.inputs[0].links[0].from_node.inputs[0].links[0].from_node
+
                             #Add all nodes first
                             #Add lightmap multipliction texture
                             mixNode = node_tree.nodes.new(type="ShaderNodeMixRGB")

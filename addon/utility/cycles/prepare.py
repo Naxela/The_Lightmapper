@@ -90,7 +90,10 @@ def configure_meshes(self):
                     bpy.context.view_layer.objects.active = obj
                     obj.select_set(True)
                     bpy.ops.object.convert(target='MESH')
-                    
+
+                for slot in obj.material_slots:
+                    material = slot.material
+                    skipIncompatibleMaterials(material)
 
                 obj.hide_select = False #Remember to toggle this back
                 for slot in obj.material_slots:
@@ -304,6 +307,13 @@ def configure_meshes(self):
                             if mainNode.node_tree != "Armory PBR":
                                 if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                                     print("The material group is not supported!")
+
+                        if (mainNode.type == "ShaderNodeMixRGB"):
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("Mix shader found")
+
+                            #Skip for now
+                            slot.material.TLM_ignore = True
 
                         if (mainNode.type == "BSDF_PRINCIPLED"):
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
@@ -633,3 +643,38 @@ def store_existing(prev_container):
         selected,
         [scene.render.resolution_x, scene.render.resolution_y]
     ]
+
+def skipIncompatibleMaterials(material):
+    node_tree = material.node_tree
+    nodes = material.node_tree.nodes
+
+    #ADD OR MIX SHADER? CUSTOM/GROUP?
+    #IF Principled has emissive or transparency?
+
+    SkipMatList = ["EMISSION",
+                    "BSDF_TRANSPARENT",
+                    "BACKGROUND", 
+                    "BSDF_HAIR",
+                    "BSDF_HAIR_PRINCIPLED",
+                    "HOLDOUT",
+                    "PRINCIPLED_VOLUME",
+                    "BSDF_REFRACTION",
+                    "EEVEE_SPECULAR",
+                    "BSDF_TRANSLUCENT",
+                    "VOLUME_ABSORPTION",
+                    "VOLUME_SCATTER"]
+
+    #Find output node
+    outputNode = nodes[0]
+    if(outputNode.type != "OUTPUT_MATERIAL"):
+        for node in node_tree.nodes:
+            if node.type == "OUTPUT_MATERIAL":
+                outputNode = node
+                break
+
+    #Find mainnode
+    mainNode = outputNode.inputs[0].links[0].from_node
+
+    if mainNode.type in SkipMatList:
+        material.TLM_ignore = True
+        print("Ignored material: " + material.name)
