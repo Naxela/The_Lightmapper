@@ -40,9 +40,13 @@ def bake(plus_pass=0):
                 hidden = True
             if collection.hide_render:
                 hidden = True
-            if collection.name in bpy.context.scene.view_layers[0].layer_collection.children:
-                if bpy.context.scene.view_layers[0].layer_collection.children[collection.name].hide_viewport:
-                    hidden = True
+                
+            try:
+                if collection.name in bpy.context.scene.view_layers[0].layer_collection.children:
+                    if bpy.context.scene.view_layers[0].layer_collection.children[collection.name].hide_viewport:
+                        hidden = True
+            except:
+                print("Error: Could not find collection: " + collection.name)
 
         if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use and not hidden:
