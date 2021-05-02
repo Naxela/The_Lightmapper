@@ -51,7 +51,8 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
 
     unwrap_modes = [('Lightmap', 'Lightmap', 'TODO'),
                 ('SmartProject', 'Smart Project', 'TODO'),
-                ('AtlasGroupA', 'Atlas Group (Prepack)', 'Attaches the object to a prepack Atlas group. Will overwrite UV map on build.')]
+                ('AtlasGroupA', 'Atlas Group (Prepack)', 'Attaches the object to a prepack Atlas group. Will overwrite UV map on build.'),
+                 ('Copy', 'Copy existing', 'Use the existing UV channel')]
 
     tlm_postpack_object : BoolProperty( #CHECK INSTEAD OF ATLASGROUPB
         name="Postpack object", 

@@ -331,37 +331,43 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
             if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
-                    hidden = False
+                    try:
 
-                    if obj.hide_get():
-                        hidden = True
-                    if obj.hide_viewport:
-                        hidden = True
-                    if obj.hide_render:
-                        hidden = True
+                        hidden = False
 
-                    if not hidden:
+                        if obj.hide_get():
+                            hidden = True
+                        if obj.hide_viewport:
+                            hidden = True
+                        if obj.hide_render:
+                            hidden = True
 
-                        for slot in obj.material_slots:
-                            mat = slot.material
-                            node_tree = mat.node_tree
-                            nodes = mat.node_tree.nodes
+                        if not hidden:
 
-                            for node in nodes:
-                                if node.name == "Baked Image" or node.name == "TLM_Lightmap":
-                                    img_name = node.image.filepath_raw
-                                    cutLen = len(ext_postfix + formatHDR)
-                                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                        print("Len:" + str(len(ext_postfix + formatHDR)) + "|" + ext_postfix + ".." + formatHDR)
+                            for slot in obj.material_slots:
+                                mat = slot.material
+                                node_tree = mat.node_tree
+                                nodes = mat.node_tree.nodes
 
-                                    #Simple way to sort out objects with multiple materials
-                                    if formatHDR == ".hdr" or formatHDR == ".exr":
-                                        if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
-                                            node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
-                                    else:
-                                        cutLen = len(ext_postfix + ".hdr")
-                                        if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
-                                            node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
+                                for node in nodes:
+                                    if node.name == "Baked Image" or node.name == "TLM_Lightmap":
+                                        img_name = node.image.filepath_raw
+                                        cutLen = len(ext_postfix + formatHDR)
+                                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                            print("Len:" + str(len(ext_postfix + formatHDR)) + "|" + ext_postfix + ".." + formatHDR)
+
+                                        #Simple way to sort out objects with multiple materials
+                                        if formatHDR == ".hdr" or formatHDR == ".exr":
+                                            if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
+                                                node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
+                                        else:
+                                            cutLen = len(ext_postfix + ".hdr")
+                                            if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
+                                                node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
+
+                    except:
+
+                        print("Error occured with postfix change for obj: " + obj.name)
 
     for image in bpy.data.images:
         image.reload()

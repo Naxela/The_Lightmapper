@@ -221,8 +221,12 @@ def postpack():
 
                                         node.image = atlasImage
 
-                                        os.remove(os.path.join(lightmap_directory, obj.name + end + formatEnc))
-                                        existing_image.user_clear()
+                                        #print("Seeking for: " + atlasImage.filepath_raw)
+                                        #print(x)
+
+                                        if(os.path.exists(os.path.join(lightmap_directory, obj.name + end + formatEnc))):
+                                            os.remove(os.path.join(lightmap_directory, obj.name + end + formatEnc))
+                                            existing_image.user_clear()
 
             #Add dilation map here...
             for obj in bpy.context.scene.objects:

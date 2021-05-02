@@ -1347,7 +1347,8 @@ class TLM_AddCollections(bpy.types.Operator):
                     default='256')
 
     unwrap_modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
-                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm')]
+                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm'),
+                 ('Copy', 'Copy existing', 'Use the existing UV channel')]
 
     if "blender_xatlas" in bpy.context.preferences.addons.keys():
         unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))
@@ -1422,7 +1423,8 @@ class TLM_AddSelectedCollections(bpy.types.Operator):
                     default='256')
 
     unwrap_modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
-                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm')]
+                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm'),
+                 ('Copy', 'Copy existing', 'Use the existing UV channel')]
 
     if "blender_xatlas" in bpy.context.preferences.addons.keys():
         unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))

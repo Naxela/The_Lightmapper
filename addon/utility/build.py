@@ -272,7 +272,16 @@ def begin_build():
 
     if sceneProperties.tlm_lightmap_engine == "Cycles":
 
-        lightmap.bake()
+        try:
+            lightmap.bake()
+        except Exception as e:
+
+            print("An error occured during lightmap baking. See the line below for more detail:")
+
+            print(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
+
+            if not bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("Turn on verbose mode to get more detail.")
 
     if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
         pass
@@ -319,7 +328,16 @@ def begin_build():
 
             denoiser = oidn.TLM_OIDN_Denoise(oidnProperties, baked_image_array, dirpath)
 
-            denoiser.denoise()
+            try:
+                denoiser.denoise()
+            except Exception as e:
+
+                print("An error occured during denoising. See the line below for more detail:")
+
+                print(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
+
+                if not bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    print("Turn on verbose mode to get more detail.")
 
             denoiser.clean()
 
@@ -355,7 +373,17 @@ def begin_build():
 
         filter = opencv.TLM_CV_Filtering
 
-        filter.init(dirpath, useDenoise)
+        try:
+            filter.init(dirpath, useDenoise)
+
+        except Exception as e:
+
+            print("An error occured during filtering. See the line below for more detail:")
+
+            print(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
+
+            if not bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("Turn on verbose mode to get more detail.")
 
     #Encoding
     if sceneProperties.tlm_encoding_use and scene.TLM_EngineProperties.tlm_bake_mode != "Background":
@@ -626,9 +654,32 @@ def manage_build(background_pass=False, load_atlas=0):
 
         if background_pass:
             print("In background pass")
-            nodes.apply_lightmaps()
 
-        nodes.apply_materials(load_atlas) #From here the name is changed...
+            try:
+
+                nodes.apply_lightmaps()
+
+            except Exception as e:
+
+                print("An error occured during lightmap application. See the line below for more detail:")
+
+                print(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
+
+                if not bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    print("Turn on verbose mode to get more detail.")
+
+
+        try:
+            nodes.apply_materials(load_atlas) #From here the name is changed...
+
+        except Exception as e:
+
+            print("An error occured during material application. See the line below for more detail:")
+
+            print(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
+
+            if not bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                print("Turn on verbose mode to get more detail.")
 
         end = "_baked"
 
