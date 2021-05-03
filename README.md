@@ -2,10 +2,6 @@
 
 ![](img/a.png)
 
-### Support
-
-If you're in need of help, or have some questions feel free to send me an [mail](https://github.com/Naxela) or contact me on Discord (Username: Naxela#7255). If you've stumpled upon a bug, please open a new ticket here, and I'll try to get it solved as fast as possible: https://github.com/Naxela/The_Lightmapper/issues
-
 ### Description
 
 The Lightmapper is an addon for Blender that implements lightmapping and denoising capabilities for global illumination texture baking with support for 32-bit HDR Lightmaps. 
