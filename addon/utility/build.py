@@ -17,6 +17,7 @@ from importlib import util
 previous_settings = {}
 postprocess_shutdown = False
 logging = True
+tlm_log = log.TLM_Logman()
 
 def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
 
@@ -240,13 +241,11 @@ def distribute_building():
 
 
 def finish_assemble(self=0, background_pass=0, load_atlas=0):
-    
-    if not tlm_log:
-        global tlm_log
-        tlm_log = log.TLM_Logman()
-        tlm_log.append("Preparing build")
 
     print("Finishing assembly")
+
+    tlm_log = log.TLM_Logman()
+    tlm_log.append("Preparing build")
 
     if load_atlas:
         print("Assembly in Atlas load mode")
