@@ -240,6 +240,11 @@ def distribute_building():
 
 
 def finish_assemble(self=0, background_pass=0, load_atlas=0):
+    
+    if not tlm_log:
+        global tlm_log
+        tlm_log = log.TLM_Logman()
+        tlm_log.append("Preparing build")
 
     print("Finishing assembly")
 
