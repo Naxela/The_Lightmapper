@@ -520,3 +520,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 name = "Maximum resolution", 
                 description="Maximum distributed resolution", 
                 default='256')
+
+    tlm_remove_met_spec_link : BoolProperty(
+        name="Remove image link", 
+        description="Removes the connected node on metallic or specularity set disable", 
+        default=False)

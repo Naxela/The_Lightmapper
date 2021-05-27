@@ -434,6 +434,8 @@ class TLM_PT_Utility(bpy.types.Panel):
         row.operator("tlm.disable_specularity")
         row.operator("tlm.disable_metallic")
         row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_remove_met_spec_link")
+        row = layout.row(align=True)
 
 
         row.label(text="Environment Probes")
