@@ -50,6 +50,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Keep the baked lightmap files when cleaning", 
         default=False)
 
+    tlm_repartition_on_clean : BoolProperty(
+        name="Repartition on clean", 
+        description="Repartition material names on clean", 
+        default=True)
+
     tlm_setting_renderer : EnumProperty(
         items = [('CPU', 'CPU', 'Bake using the processor'),
                 ('GPU', 'GPU', 'Bake using the graphics card')],

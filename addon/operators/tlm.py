@@ -155,6 +155,22 @@ class TLM_CleanLightmaps(bpy.types.Operator):
                     if "Lightmap" in obj:
                         del obj["Lightmap"]
 
+        if bpy.context.scene.TLM_SceneProperties.tlm_repartition_on_clean:
+
+            mats = bpy.data.materials
+            
+            for obj in bpy.context.scene.objects:
+                if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                        print("Repartitioning materials")
+
+                        for slt in obj.material_slots:
+                            print("Repartitioning material: " + str(slt.name))
+                            part = slt.name.rpartition('.')
+                            if part[2].isnumeric() and part[0] in mats:
+                                slt.material = mats.get(part[0])
+
         return {'FINISHED'}
 
 class TLM_ExploreLightmaps(bpy.types.Operator):

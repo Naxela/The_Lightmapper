@@ -22,8 +22,8 @@ bl_info = {
     'name': 'The Lightmapper',
     'description': 'The Lightmapper is a lightmapping utility addon for Blender, made specifically for making lightmaps for game engines.',
     'author': 'Alexander Kleemann @ Naxela',
-    'version': (0, 4, 2, 8),
-    'blender': (2, 90, 0),
+    'version': (0, 5, 5, 0),
+    'blender': (2, 92, 0),
     'location': 'View3D',
     'category': '3D View'
 }

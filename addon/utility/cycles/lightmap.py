@@ -16,8 +16,36 @@ def bake(plus_pass=0):
 
     for obj in bpy.context.scene.objects:
         if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
-            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                iterNum = iterNum + 1
+
+            hidden = False
+
+            #We check if the object is hidden
+            if obj.hide_get():
+                hidden = True
+            if obj.hide_viewport:
+                hidden = True
+            if obj.hide_render:
+                hidden = True
+
+            #We check if the object's collection is hidden
+            collections = obj.users_collection
+
+            for collection in collections:
+
+                if collection.hide_viewport:
+                    hidden = True
+                if collection.hide_render:
+                    hidden = True
+                    
+                try:
+                    if collection.name in bpy.context.scene.view_layers[0].layer_collection.children:
+                        if bpy.context.scene.view_layers[0].layer_collection.children[collection.name].hide_viewport:
+                            hidden = True
+                except:
+                    print("Error: Could not find collection: " + collection.name)
+
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use and not hidden:
+                    iterNum = iterNum + 1
 
     if iterNum > 1:
         iterNum = iterNum - 1
@@ -25,7 +53,7 @@ def bake(plus_pass=0):
     for obj in bpy.context.scene.objects:
 
         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-            print("Checking status for object and collections: " + obj.name)
+            print("Checking visibility status for object and collections: " + obj.name)
 
         hidden = False
 
