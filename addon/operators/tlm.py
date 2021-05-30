@@ -171,6 +171,11 @@ class TLM_CleanLightmaps(bpy.types.Operator):
                             if part[2].isnumeric() and part[0] in mats:
                                 slt.material = mats.get(part[0])
 
+                        for slt in obj.material_slots:
+                            if slt.name.endswith(tuple(["001","002","003","004","005","006","007","008","009"])): #Do regex instead
+                                if not slt.name[:-4] in mats:
+                                    slt.material.name = slt.name[:-4]
+
         return {'FINISHED'}
 
 class TLM_ExploreLightmaps(bpy.types.Operator):
