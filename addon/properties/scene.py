@@ -189,7 +189,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         max=100)
 
     tlm_filtering_bilateral_coordinate_deviation : IntProperty(
-        name="Color deviation", 
+        name="Coordinate deviation", 
         default=75, 
         min=1, 
         max=100)
@@ -525,3 +525,13 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Remove image link", 
         description="Removes the connected node on metallic or specularity set disable", 
         default=False)
+
+    tlm_utility_context : EnumProperty(
+        items = [('SetBatching', 'Set Batching', 'Set batching options. Allows to set lightmap options for multiple objects.'),
+                 ('EnvironmentProbes', 'Environment Probes', 'Options for rendering environment probes. Cubemaps and panoramic HDRs for external engines'),
+                 ('LoadLightmaps', 'Load Lightmaps', 'Options for loading pre-built lightmaps.'),
+                 ('NetworkRender', 'Network Rendering', 'Distribute lightmap building across multiple machines.'),
+                 ('MaterialAdjustment', 'Material Adjustment', 'Allows adjustment of multiple materials at once.')],
+                name = "Utility Context", 
+                description="Set Utility Context", 
+                default='SetBatching')

@@ -377,98 +377,118 @@ class TLM_PT_Utility(bpy.types.Panel):
         row = layout.row(align=True)
         row.label(text="Enable Lightmaps for set")
         row = layout.row(align=True)
-        row.operator("tlm.enable_set")
+        row.prop(sceneProperties, "tlm_utility_context")
         row = layout.row(align=True)
-        row.prop(sceneProperties, "tlm_utility_set")
-        row = layout.row(align=True)
-        #row.label(text="ABCD")
-        row.prop(sceneProperties, "tlm_mesh_lightmap_unwrap_mode")
 
-        if sceneProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+        if sceneProperties.tlm_utility_context == "SetBatching":
 
-            if scene.TLM_AtlasListItem >= 0 and len(scene.TLM_AtlasList) > 0:
-                row = layout.row()
-                item = scene.TLM_AtlasList[scene.TLM_AtlasListItem]
-                row.prop_search(sceneProperties, "tlm_atlas_pointer", scene, "TLM_AtlasList", text='Atlas Group')
-            else:
-                row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
+            row.operator("tlm.enable_set")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_utility_set")
+            row = layout.row(align=True)
+            #row.label(text="ABCD")
+            row.prop(sceneProperties, "tlm_mesh_lightmap_unwrap_mode")
 
-        else:
+            if sceneProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
 
-            row = layout.row()
-            row.prop(sceneProperties, "tlm_postpack_object")
-            row = layout.row()
-        
-            if sceneProperties.tlm_postpack_object and sceneProperties.tlm_mesh_lightmap_unwrap_mode != "AtlasGroupA":
-
-                if scene.TLM_PostAtlasListItem >= 0 and len(scene.TLM_PostAtlasList) > 0:
+                if scene.TLM_AtlasListItem >= 0 and len(scene.TLM_AtlasList) > 0:
                     row = layout.row()
-                    item = scene.TLM_PostAtlasList[scene.TLM_PostAtlasListItem]
-                    row.prop_search(sceneProperties, "tlm_postatlas_pointer", scene, "TLM_PostAtlasList", text='Atlas Group')
-                    row = layout.row()
-
+                    item = scene.TLM_AtlasList[scene.TLM_AtlasListItem]
+                    row.prop_search(sceneProperties, "tlm_atlas_pointer", scene, "TLM_AtlasList", text='Atlas Group')
                 else:
                     row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
-                    row = layout.row()
 
-            row.prop(sceneProperties, "tlm_mesh_unwrap_margin")
-            row = layout.row()
-            row.prop(sceneProperties, "tlm_resolution_weight")
-
-            if sceneProperties.tlm_resolution_weight == "Single":
-                row = layout.row()
-                row.prop(sceneProperties, "tlm_mesh_lightmap_resolution")
             else:
+
                 row = layout.row()
-                row.prop(sceneProperties, "tlm_resolution_min")
+                row.prop(sceneProperties, "tlm_postpack_object")
                 row = layout.row()
-                row.prop(sceneProperties, "tlm_resolution_max")
+            
+                if sceneProperties.tlm_postpack_object and sceneProperties.tlm_mesh_lightmap_unwrap_mode != "AtlasGroupA":
 
-        row = layout.row()
-        row.operator("tlm.disable_selection")
-        row = layout.row(align=True)
-        row.operator("tlm.select_lightmapped_objects")
-        row = layout.row(align=True)
-        row.operator("tlm.remove_uv_selection")
-        row = layout.row(align=True)
-        row.operator("tlm.disable_specularity")
-        row.operator("tlm.disable_metallic")
-        row = layout.row(align=True)
-        row.prop(sceneProperties, "tlm_remove_met_spec_link")
-        row = layout.row(align=True)
+                    if scene.TLM_PostAtlasListItem >= 0 and len(scene.TLM_PostAtlasList) > 0:
+                        row = layout.row()
+                        item = scene.TLM_PostAtlasList[scene.TLM_PostAtlasListItem]
+                        row.prop_search(sceneProperties, "tlm_postatlas_pointer", scene, "TLM_PostAtlasList", text='Atlas Group')
+                        row = layout.row()
 
+                    else:
+                        row = layout.label(text="Add Atlas Groups from the scene lightmapping settings.")
+                        row = layout.row()
 
-        row.label(text="Environment Probes")
-        row = layout.row()
-        row.operator("tlm.build_environmentprobe")
-        row = layout.row()
-        row.operator("tlm.clean_environmentprobe")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_environment_probe_engine")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_cmft_path")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_environment_probe_resolution")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_create_spherical")
+                row.prop(sceneProperties, "tlm_mesh_unwrap_margin")
+                row = layout.row()
+                row.prop(sceneProperties, "tlm_resolution_weight")
 
-        if sceneProperties.tlm_create_spherical:
+                if sceneProperties.tlm_resolution_weight == "Single":
+                    row = layout.row()
+                    row.prop(sceneProperties, "tlm_mesh_lightmap_resolution")
+                else:
+                    row = layout.row()
+                    row.prop(sceneProperties, "tlm_resolution_min")
+                    row = layout.row()
+                    row.prop(sceneProperties, "tlm_resolution_max")
 
             row = layout.row()
-            row.prop(sceneProperties, "tlm_invert_direction")
-            row = layout.row()
-            row.prop(sceneProperties, "tlm_write_sh")
-            row = layout.row()
-            row.prop(sceneProperties, "tlm_write_radiance")
+            row.operator("tlm.disable_selection")
+            row = layout.row(align=True)
+            row.operator("tlm.select_lightmapped_objects")
+            row = layout.row(align=True)
+            row.operator("tlm.remove_uv_selection")
+        
+        elif sceneProperties.tlm_utility_context == "EnvironmentProbes":
 
-        row = layout.row(align=True)
-        row.label(text="Load lightmaps")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_load_folder")
-        row = layout.row()
-        row.operator("tlm.load_lightmaps")
-        row = layout.row()
-        row.prop(sceneProperties, "tlm_load_atlas")
+            row.label(text="Environment Probes")
+            row = layout.row()
+            row.operator("tlm.build_environmentprobe")
+            row = layout.row()
+            row.operator("tlm.clean_environmentprobe")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_environment_probe_engine")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_cmft_path")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_environment_probe_resolution")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_create_spherical")
+
+            if sceneProperties.tlm_create_spherical:
+
+                row = layout.row()
+                row.prop(sceneProperties, "tlm_invert_direction")
+                row = layout.row()
+                row.prop(sceneProperties, "tlm_write_sh")
+                row = layout.row()
+                row.prop(sceneProperties, "tlm_write_radiance")
+
+        elif sceneProperties.tlm_utility_context == "LoadLightmaps":
+
+            row = layout.row(align=True)
+            row.label(text="Load lightmaps")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_load_folder")
+            row = layout.row()
+            row.operator("tlm.load_lightmaps")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_load_atlas")
+
+        elif sceneProperties.tlm_utility_context == "MaterialAdjustment":
+        
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_utility_set")
+            row = layout.row(align=True)
+            row.operator("tlm.disable_specularity")
+            row.operator("tlm.disable_metallic")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_remove_met_spec_link")
+            row = layout.row(align=True)
+
+        elif sceneProperties.tlm_utility_context == "NetworkRender":
+
+            row.label(text="Network Rendering")
+            row = layout.row()
+            row.operator("tlm.start_server")
+            layout.label(text="Atlas Groups")
 
 class TLM_PT_Selection(bpy.types.Panel):
     bl_label = "Selection"
@@ -556,10 +576,6 @@ class TLM_PT_Additional(bpy.types.Panel):
         postatlasListItem = scene.TLM_PostAtlasListItem
         postatlasList = scene.TLM_PostAtlasList
 
-        layout.label(text="Network Rendering")
-        row = layout.row()
-        row.operator("tlm.start_server")
-        layout.label(text="Atlas Groups")
         row = layout.row()
         row.prop(sceneProperties, "tlm_atlas_mode", expand=True)
 

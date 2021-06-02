@@ -51,7 +51,11 @@ class ViewportDraw:
         if self.image:
             bgl.glEnable(bgl.GL_BLEND)
             bgl.glActiveTexture(bgl.GL_TEXTURE0)
-            bgl.glBindTexture(bgl.GL_TEXTURE_2D, self.image.bindcode)
+
+            try:
+                bgl.glBindTexture(bgl.GL_TEXTURE_2D, self.image.bindcode)
+            except:
+                bpy.types.SpaceView3D.draw_handler_remove(self.handle2, 'WINDOW')
 
             self.shader.bind()
             self.shader.uniform_int("image", 0)

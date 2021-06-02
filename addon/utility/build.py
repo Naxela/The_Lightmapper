@@ -1117,7 +1117,7 @@ def check_denoiser():
                 if not scene.TLM_OIDNEngineProperties.tlm_oidn_path.endswith(".exe"):
                     return 1
                 else:
-                    if os.path.isfile(scene.TLM_OIDNEngineProperties.tlm_oidn_path):
+                    if os.path.isfile(bpy.path.abspath(scene.TLM_OIDNEngineProperties.tlm_oidn_path)):
                         return 0
                     else:
                         return 1
