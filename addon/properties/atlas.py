@@ -41,6 +41,11 @@ class TLM_PostAtlasListItem(bpy.types.PropertyGroup):
     if "blender_xatlas" in bpy.context.preferences.addons.keys():
         unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))
 
+    tlm_atlas_merge_samemat : BoolProperty(
+        name="Merge materials", 
+        description="Merge objects with same materials.", 
+        default=True)
+
     tlm_postatlas_lightmap_unwrap_mode : EnumProperty(
         items = unwrap_modes,
                 name = "Unwrap Mode", 
@@ -109,6 +114,11 @@ class TLM_AtlasListItem(bpy.types.PropertyGroup):
                 name = "Unwrap Mode", 
                 description="Atlas unwrapping method", 
                 default='SmartProject')
+
+    tlm_atlas_merge_samemat : BoolProperty(
+        name="Merge materials", 
+        description="Merge objects with same materials.", 
+        default=True)
 
 class TLM_UL_AtlasList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):

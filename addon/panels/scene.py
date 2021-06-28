@@ -606,6 +606,7 @@ class TLM_PT_Additional(bpy.types.Panel):
                                 amount = amount + 1
 
                 layout.label(text="Objects: " + str(amount))
+                layout.prop(item, "tlm_atlas_merge_samemat")
 
         else:
 
