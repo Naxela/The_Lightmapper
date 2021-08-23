@@ -331,6 +331,29 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
             if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
+                    #Here
+                    #If the object is part of atlas
+                    print("CHECKING FOR REPART")
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA": #TODO, ALSO CONFIGURE FOR POSTATLAS
+
+                        if bpy.context.scene.TLM_AtlasList[obj.TLM_ObjectProperties.tlm_atlas_pointer].tlm_atlas_merge_samemat:
+
+                            #For each material we check if it ends with a number
+                            for slot in obj.material_slots:
+
+                                part = slot.name.rpartition('.')
+                                if part[2].isnumeric() and part[0] in bpy.data.materials:
+
+                                    print("Material for obj: " + obj.name + " was numeric, and the material: " + part[0] + " was found.")
+                                    slot.material = bpy.data.materials.get(part[0])
+
+
+                            
+                            # for slot in obj.material_slots:
+                            #     mat = slot.material
+                            #     node_tree = mat.node_tree
+                            #     nodes = mat.node_tree.nodes
+
                     try:
 
                         hidden = False

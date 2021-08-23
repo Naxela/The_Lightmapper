@@ -48,6 +48,21 @@ class TLM_AddonPreferences(AddonPreferences):
         row.label(text="UVPackmaster")
         row.label(text="Coming soon")
 
+        uvpacker_addon = False
+        for addon in bpy.context.preferences.addons.keys():
+            if addon.startswith("'UV-Packer"):
+                uvpacker_addon = True
+
+        box = layout.box()
+        row = box.row()
+        row.label(text="UV Packer")
+        if uvpacker_addon:
+            row.label(text="UV Packer installed and available")
+        else:
+            row.label(text="UV Packer not installed", icon_value=2)
+        row = box.row()
+        row.label(text="Github: https://www.uv-packer.com/blender/")
+
         texel_density_addon = False
         for addon in bpy.context.preferences.addons.keys():
             if addon.startswith("Texel_Density"):

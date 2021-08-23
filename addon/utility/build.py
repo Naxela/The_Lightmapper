@@ -52,7 +52,7 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
         scene = bpy.context.scene
         sceneProperties = scene.TLM_SceneProperties
 
-        if not background_mode and bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode != "combinedao":
+        if not background_mode and bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode != "combinedao" and bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode != "indirectao":
             #pass
             setGui(1)
 
@@ -965,7 +965,7 @@ def manage_build(background_pass=False, load_atlas=0):
             if bpy.context.scene.TLM_EngineProperties.tlm_bake_mode == "Background":
                 pass
 
-            if not background_pass and bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode != "combinedao":
+            if not background_pass and scene.TLM_EngineProperties.tlm_bake_mode != "Background" and bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode != "combinedao":
                 #pass
                 setGui(0)
 

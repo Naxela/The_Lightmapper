@@ -132,6 +132,15 @@ def bake(plus_pass=0):
                     elif bpy.app.driver_namespace["tlm_plus_mode"] == 2:
                         bpy.ops.object.bake(type="AO", margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
 
+                elif scene.TLM_EngineProperties.tlm_lighting_mode == "indirectao":
+
+                    print("IndirAO")
+                    
+                    if bpy.app.driver_namespace["tlm_plus_mode"] == 1:
+                        bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
+                    elif bpy.app.driver_namespace["tlm_plus_mode"] == 2:
+                        bpy.ops.object.bake(type="AO", margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
+                
                 elif scene.TLM_EngineProperties.tlm_lighting_mode == "complete":
                     bpy.ops.object.bake(type="COMBINED", margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
                 else:

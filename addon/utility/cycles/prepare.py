@@ -1,4 +1,4 @@
-import bpy, math
+import bpy, math, time
 
 from . import cache
 from .. utility import *
@@ -21,16 +21,19 @@ def init(self, prev_container):
 
     configure_lights()
 
-    try:
-        configure_meshes(self)
-    except Exception as e:
+    configure_meshes(self)
 
-        print("An error occured during mesh configuration. See error below:")
+    print("Config mesh catch omitted: REMEMBER TO SET IT BACK NAXELA")
+    # try:
+    #     configure_meshes(self)
+    # except Exception as e:
 
-        print(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
+    #     print("An error occured during mesh configuration. See error below:")
 
-        if not bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-            print("Turn on verbose mode to get more detail.")
+    #     print(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
+
+    #     if not bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+    #         print("Turn on verbose mode to get more detail.")
 
 def configure_world():
     pass
@@ -335,6 +338,9 @@ def configure_meshes(self):
 
                     #UV Layer management here
                     if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+
+                        print("Managing layer for Obj: " + obj.name)
+
                         uv_layers = obj.data.uv_layers
 
                         if not obj.TLM_ObjectProperties.tlm_use_default_channel:
@@ -367,6 +373,7 @@ def configure_meshes(self):
                                 else:
                                     angle = math.radians(45.0)
                                     bpy.ops.uv.smart_project(angle_limit=angle, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, area_weight=1.0, correct_aspect=True, scale_to_bounds=False)
+
                                 bpy.ops.mesh.select_all(action='DESELECT')
                                 bpy.ops.object.mode_set(mode='OBJECT')
                             
@@ -383,6 +390,46 @@ def configure_meshes(self):
 
                                 if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                                     print("Copied Existing UV Map for object: " + obj.name)
+
+                        if obj.TLM_ObjectProperties.tlm_use_uv_packer:
+                            bpy.ops.object.select_all(action='DESELECT')
+                            obj.select_set(True)
+                            bpy.context.view_layer.objects.active = obj
+                            bpy.ops.object.mode_set(mode='EDIT')
+                            bpy.ops.mesh.select_all(action='SELECT')
+
+                            bpy.context.scene.UVPackerProps.uvp_padding = obj.TLM_ObjectProperties.tlm_uv_packer_padding
+                            bpy.context.scene.UVPackerProps.uvp_engine = obj.TLM_ObjectProperties.tlm_uv_packer_packing_engine
+
+                            #print(x)
+
+                            print("!!!!!!!!!!!!!!!!!!!!! Using UV Packer on: " + obj.name)
+
+                            if uv_layers.active == "UVMap_Lightmap":
+                                print("YES")
+                            else:
+                                print("NO")
+                                uv_layers.active_index = len(uv_layers) - 1
+
+                            if uv_layers.active == "UVMap_Lightmap":
+                                print("YES")
+                            else:
+                                print("NO")
+                                uv_layers.active_index = len(uv_layers) - 1
+
+                            bpy.ops.uvpackeroperator.packbtn()
+
+                            if bpy.context.scene.UVPackerProps.uvp_engine == "OP0":
+                                time.sleep(1)
+                            else:
+                                time.sleep(2)
+
+                            #FIX THIS! MAKE A SEPARATE CALL. THIS IS A THREADED ASYNC
+
+                            bpy.ops.mesh.select_all(action='DESELECT')
+                            bpy.ops.object.mode_set(mode='OBJECT')
+
+                            #print(x)
 
                         else:
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
@@ -798,3 +845,9 @@ def skipIncompatibleMaterials(material):
     if mainNode.type in SkipMatList:
         material.TLM_ignore = True
         print("Ignored material: " + material.name)
+
+def packUVPack():
+
+
+
+    pass

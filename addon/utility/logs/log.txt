@@ -1,0 +1,5 @@
+2021-05-27 20:38:32.043943: Logger started.
+2021-05-27 20:38:32.043943: Preparing build
+2021-05-27 20:39:26.457357: ['Cube.011_baked.hdr', 'Cube_baked.hdr', 'Plane.001_baked.hdr', 'Plane.002_baked.hdr', 'Plane.003_baked.hdr', 'Plane.004_baked.hdr', 'Plane.005_baked.hdr', 'Plane.006_baked.hdr', 'Plane.007_baked.hdr', 'Plane_baked.hdr']
+2021-05-27 20:39:32.492617: ['0.0 hours 1.0 mins 0.4 seconds']
+2021-05-27 20:39:32.492617: Lightmap building finished

@@ -15,7 +15,13 @@ class ViewportDraw:
 
         print("Self path: " + bakefile_path)
 
-        image = bpy.data.images[image_name]
+        for img in bpy.data.images:
+            if img.filepath.endswith(image_name):
+                image = img
+                break
+
+        if not image:
+            image = bpy.data.images[image_name]
 
         x = 15
         y = 15
