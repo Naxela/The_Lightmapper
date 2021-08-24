@@ -50,7 +50,7 @@ class TLM_AddonPreferences(AddonPreferences):
 
         uvpacker_addon = False
         for addon in bpy.context.preferences.addons.keys():
-            if addon.startswith("'UV-Packer"):
+            if addon.startswith("UV-Packer"):
                 uvpacker_addon = True
 
         box = layout.box()
