@@ -275,6 +275,49 @@ def configure_meshes(self):
                     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                         print("Copied Existing UV Map for Atlas Group: " + atlas)
 
+                if atlasgroup.tlm_use_uv_packer:
+                    bpy.ops.object.select_all(action='DESELECT')
+                    for obj in atlas_items:
+                        obj.select_set(True)
+                    if len(atlas_items) > 0:
+                        bpy.context.view_layer.objects.active = atlas_items[0]
+                    bpy.ops.object.mode_set(mode='EDIT')
+                    bpy.ops.mesh.select_all(action='SELECT')
+
+                    bpy.context.scene.UVPackerProps.uvp_padding = atlasgroup.tlm_uv_packer_padding
+                    bpy.context.scene.UVPackerProps.uvp_engine = atlasgroup.tlm_uv_packer_packing_engine
+
+                    #print(x)
+
+                    print("!!!!!!!!!!!!!!!!!!!!! Using UV Packer on: " + obj.name)
+
+                    if uv_layers.active == "UVMap_Lightmap":
+                        print("YES")
+                    else:
+                        print("NO")
+                        uv_layers.active_index = len(uv_layers) - 1
+
+                    if uv_layers.active == "UVMap_Lightmap":
+                        print("YES")
+                    else:
+                        print("NO")
+                        uv_layers.active_index = len(uv_layers) - 1
+
+                    bpy.ops.uvpackeroperator.packbtn()
+
+                    # if bpy.context.scene.UVPackerProps.uvp_engine == "OP0":
+                    #     time.sleep(1)
+                    # else:
+                    #     time.sleep(2)
+                    time.sleep(2)
+
+                    #FIX THIS! MAKE A SEPARATE CALL. THIS IS A THREADED ASYNC
+
+                    bpy.ops.mesh.select_all(action='DESELECT')
+                    bpy.ops.object.mode_set(mode='OBJECT')
+
+                    #print(x)
+
     for obj in bpy.context.scene.objects:
         if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
@@ -497,6 +540,7 @@ def configure_meshes(self):
 
                             #Clamp metallic
                             if bpy.context.scene.TLM_SceneProperties.tlm_metallic_clamp == "limit":
+
                                 MainMetNodeSocket = mainNode.inputs[4]
                                 if not len(MainMetNodeSocket.links) == 0:
                                     nodes = nodetree.nodes
@@ -504,14 +548,19 @@ def configure_meshes(self):
                                     MetClampNode.location = (-200,150)
                                     MetClampNode.inputs[2].default_value = 0.9
                                     minput = mainNode.inputs[4].links[0] #Metal input socket
-                                    moutput = mainNode.inputs[4].links[0].from_node #Metal output node
-                                    nodetree.links.remove(moutput.outputs[0].links[0]) #Works
-                                    nodetree.links.new(moutput.outputs[0], MetClampNode.inputs[0]) #minput node to clamp node
-                                    nodetree.links.new(MetClampNode.outputs[0],MainMetNodeSocket) #clamp node to metinput
+                                    moutput = mainNode.inputs[4].links[0].from_socket #Output socket
+                                    
+                                    nodetree.links.remove(minput)
+
+                                    nodetree.links.new(moutput, MetClampNode.inputs[0]) #minput node to clamp node
+                                    nodetree.links.new(MetClampNode.outputs[0], MainMetNodeSocket) #clamp node to metinput
+
                                 else:
+
                                     if mainNode.inputs[4].default_value > 0.9:
                                         mainNode.inputs[4].default_value = 0.9
                             elif bpy.context.scene.TLM_SceneProperties.tlm_metallic_clamp == "zero":
+
                                 MainMetNodeSocket = mainNode.inputs[4]
                                 if not len(MainMetNodeSocket.links) == 0:
                                     nodes = nodetree.nodes
@@ -519,12 +568,17 @@ def configure_meshes(self):
                                     MetClampNode.location = (-200,150)
                                     MetClampNode.inputs[2].default_value = 0.0
                                     minput = mainNode.inputs[4].links[0] #Metal input socket
-                                    moutput = mainNode.inputs[4].links[0].from_node #Metal output node
-                                    nodetree.links.remove(moutput.outputs[0].links[0]) #Works
-                                    nodetree.links.new(moutput.outputs[0], MetClampNode.inputs[0]) #minput node to clamp node
-                                    nodetree.links.new(MetClampNode.outputs[0],MainMetNodeSocket) #clamp node to metinput
+                                    moutput = mainNode.inputs[4].links[0].from_socket #Output socket
+
+                                    nodetree.links.remove(minput)
+
+                                    nodetree.links.new(moutput, MetClampNode.inputs[0]) #minput node to clamp node
+                                    nodetree.links.new(MetClampNode.outputs[0], MainMetNodeSocket) #clamp node to metinput
                                 else:
                                     mainNode.inputs[4].default_value = 0.0
+
+                            else: #Skip
+                                pass
 
                         if (mainNode.type == "BSDF_DIFFUSE"):
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
