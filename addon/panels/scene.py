@@ -482,6 +482,8 @@ class TLM_PT_Utility(bpy.types.Panel):
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_remove_met_spec_link")
             row = layout.row(align=True)
+            row.operator("tlm.remove_empty_images")
+            row = layout.row(align=True)
 
         elif sceneProperties.tlm_utility_context == "NetworkRender":
 
@@ -607,6 +609,10 @@ class TLM_PT_Additional(bpy.types.Panel):
 
                 layout.label(text="Objects: " + str(amount))
                 layout.prop(item, "tlm_atlas_merge_samemat")
+
+                layout.prop(item, "tlm_use_uv_packer")
+                layout.prop(item, "tlm_uv_packer_padding")
+                layout.prop(item, "tlm_uv_packer_packing_engine")
 
         else:
 

@@ -120,6 +120,25 @@ class TLM_AtlasListItem(bpy.types.PropertyGroup):
         description="Merge objects with same materials.", 
         default=True)
 
+    tlm_use_uv_packer : BoolProperty(
+        name="Use UV Packer", 
+        description="UV Packer will be utilized after initial UV mapping for optimized packing.", 
+        default=False)
+
+    tlm_uv_packer_padding : FloatProperty(
+        name="Padding", 
+        default=2.0, 
+        min=0.0, 
+        max=100.0, 
+        subtype='FACTOR')
+
+    tlm_uv_packer_packing_engine : EnumProperty(
+        items = [('OP0', 'Efficient', 'Best compromise for speed and space usage.'),
+                ('OP1', 'High Quality', 'Slowest, but maximum space usage.')],
+                name = "Packing Engine", 
+                description="Which UV Packer engine to use.", 
+                default='OP0')
+
 class TLM_UL_AtlasList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         custom_icon = 'OBJECT_DATAMODE'

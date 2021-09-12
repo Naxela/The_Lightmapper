@@ -1189,6 +1189,32 @@ class TLM_DisableMetallic(bpy.types.Operator):
 
         return{'FINISHED'}
 
+class TLM_RemoveEmptyImages(bpy.types.Operator): 
+
+    bl_idname = "tlm.remove_empty_images"
+    bl_label = "Remove Empty Images"
+    bl_description = "Removes empty images from scene materials"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        for mat in bpy.data.materials:
+
+            nodetree = mat.node_tree
+
+            if nodetree:
+
+                for node in nodetree.nodes:
+
+                    if node.name == "Baked Image":
+
+                        print(node.name)
+
+                        nodetree.nodes.remove(node)
+
+        return{'FINISHED'}
+
+
 class TLM_PostAtlasSpecialsMenu(bpy.types.Menu):
     bl_label = "Lightmap"
     bl_idname = "TLM_MT_PostAtlasListSpecials"
