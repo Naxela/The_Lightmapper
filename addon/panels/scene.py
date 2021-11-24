@@ -79,6 +79,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             row.prop(sceneProperties, "tlm_keep_baked_files")
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_repartition_on_clean")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_save_preprocess_lightmaps")
 
             row = layout.row(align=True)
             try:

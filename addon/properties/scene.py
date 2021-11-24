@@ -113,6 +113,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Apply scale", 
         description="TODO", 
         default=False)
+        
+    tlm_save_preprocess_lightmaps : BoolProperty(
+        name="Save preprocessed lightmaps", 
+        description="TODO", 
+        default=False)
 
     #DENOISE SETTINGS GROUP
     tlm_denoise_use : BoolProperty(
