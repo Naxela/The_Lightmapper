@@ -776,13 +776,22 @@ def set_settings():
     sceneProperties = scene.TLM_SceneProperties
     engineProperties = scene.TLM_EngineProperties
     cycles.device = scene.TLM_EngineProperties.tlm_mode
-
-    if cycles.device == "GPU":
-        scene.render.tile_x = 256
-        scene.render.tile_y = 256
-    else:
-        scene.render.tile_x = 32
-        scene.render.tile_y = 32
+    
+    print(bpy.app.version)
+    
+    if (3, 0, 0) >= bpy.app.version:
+    
+        if cycles.device == "GPU":
+            scene.cycles.tile_size = 256
+        else:
+            scene.cycles.tile_size = 32
+    else:    
+        if cycles.device == "GPU":
+            scene.render.tile_x = 256
+            scene.render.tile_y = 256
+        else:
+            scene.render.tile_x = 32
+            scene.render.tile_y = 32
     
     if engineProperties.tlm_quality == "0":
         cycles.samples = 32
