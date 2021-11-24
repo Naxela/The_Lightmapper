@@ -1614,3 +1614,16 @@ def TLM_HalfResolution():
 
 def TLM_DivideLMGroups():
     pass
+
+class TLM_CalcTexDex(bpy.types.Operator):
+    bl_idname = "tlm.calctexdex"
+    bl_label = "Calculate Texel Density"
+    bl_description = "Calculates Texel Density of selected object"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        return {'FINISHED'}

@@ -531,7 +531,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                  ('EnvironmentProbes', 'Environment Probes', 'Options for rendering environment probes. Cubemaps and panoramic HDRs for external engines'),
                  ('LoadLightmaps', 'Load Lightmaps', 'Options for loading pre-built lightmaps.'),
                  ('NetworkRender', 'Network Rendering', 'Distribute lightmap building across multiple machines.'),
-                 ('MaterialAdjustment', 'Material Adjustment', 'Allows adjustment of multiple materials at once.')],
+                 ('MaterialAdjustment', 'Material Adjustment', 'Allows adjustment of multiple materials at once.'),
+                 ('TexelDensity', 'Texel Density', 'Allows setting texel densities of the UV.')],
                 name = "Utility Context", 
                 description="Set Utility Context", 
                 default='SetBatching')

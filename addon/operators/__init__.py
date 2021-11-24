@@ -33,6 +33,7 @@ classes = [
     tlm.TLM_AddSelectedCollections,
     tlm.TLM_AtlasSpecialsMenu,
     tlm.TLM_Reset,
+    tlm.TLM_CalcTexDex,
     imagetools.TLM_ImageUpscale,
     imagetools.TLM_ImageDownscale
 
