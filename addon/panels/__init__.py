@@ -4,6 +4,7 @@ from . import scene, object, light, world, image
 
 classes = [
     scene.TLM_PT_Panel,
+    scene.TLM_PT_Groups,
     scene.TLM_PT_Settings,
     scene.TLM_PT_Denoise,
     scene.TLM_PT_Filtering,

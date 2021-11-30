@@ -35,7 +35,9 @@ classes = [
     tlm.TLM_Reset,
     tlm.TLM_CalcTexDex,
     imagetools.TLM_ImageUpscale,
-    imagetools.TLM_ImageDownscale
+    imagetools.TLM_ImageDownscale,
+    tlm.TLM_AddGLTFNode,
+    tlm.TLM_ShiftMultiplyLinks
 
 ]
 

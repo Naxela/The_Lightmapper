@@ -537,7 +537,44 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                  ('LoadLightmaps', 'Load Lightmaps', 'Options for loading pre-built lightmaps.'),
                  ('NetworkRender', 'Network Rendering', 'Distribute lightmap building across multiple machines.'),
                  ('MaterialAdjustment', 'Material Adjustment', 'Allows adjustment of multiple materials at once.'),
-                 ('TexelDensity', 'Texel Density', 'Allows setting texel densities of the UV.')],
+                 ('TexelDensity', 'Texel Density', 'Allows setting texel densities of the UV.'),
+                 ('GLTFUtil', 'GLTF Utilities', 'GLTF related material utilities.')],
                 name = "Utility Context", 
                 description="Set Utility Context", 
                 default='SetBatching')
+
+    tlm_addon_uimode : EnumProperty(
+        items = [('Simple', 'Simple', 'TODO'),
+                 ('Advanced', 'Advanced', 'TODO')],
+                name = "UI Mode", 
+                description="TODO", 
+                default='Simple')
+
+class TLM_GroupListItem(bpy.types.PropertyGroup):
+    obj: PointerProperty(type=bpy.types.Object, description="The object to bake")
+
+class TLM_UL_GroupList(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        custom_icon = 'OBJECT_DATAMODE'
+
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+
+            amount = 0
+
+            for obj in bpy.context.scene.objects:
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+                        if obj.TLM_ObjectProperties.tlm_atlas_pointer == item.name:
+                            amount = amount + 1
+
+            row = layout.row()
+            row.prop(item, "name", text="", emboss=False, icon=custom_icon)
+            col = row.column()
+            col.label(text=item.tlm_atlas_lightmap_resolution)
+            col = row.column()
+            col.alignment = 'RIGHT'
+            col.label(text=str(amount))
+
+        elif self.layout_type in {'GRID'}:
+            layout.alignment = 'CENTER'
+            layout.label(text="", icon = custom_icon)

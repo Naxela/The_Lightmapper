@@ -514,6 +514,19 @@ class TLM_SelectLightmapped(bpy.types.Operator):
 
         return{'FINISHED'}
 
+class TLM_GroupListNewItem(bpy.types.Operator):
+    # Add a new item to the list
+    bl_idname = "tlm_grouplist.new_item"
+    bl_label = "Add a new lightmap group"
+    bl_description = "Create a new lightmap group"
+
+    def execute(self, context):
+        scene = context.scene
+        scene.TLM_GroupList.add()
+        scene.TLM_GroupListItem = len(scene.TLM_GroupList) - 1
+
+        scene.TLM_GroupList[len(scene.TLM_GroupList) - 1].name = "LightmapGroup"
+
 class TLM_AtlasListNewItem(bpy.types.Operator):
     # Add a new item to the list
     bl_idname = "tlm_atlaslist.new_item"
@@ -1626,4 +1639,63 @@ class TLM_CalcTexDex(bpy.types.Operator):
         return True
 
     def execute(self, context):
+        return {'FINISHED'}
+
+class TLM_AddGLTFNode(bpy.types.Operator):
+    bl_idname = "tlm.add_gltf_node"
+    bl_label = "Add GLTF Node"
+    bl_description = "Add to GLTF node to active material and connect lightmap if present"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        scene = context.scene
+        cycles = scene.cycles
+        material = bpy.context.active_object.active_material
+
+        nodes = material.node_tree.nodes
+        # create group data
+        gltf_settings = bpy.data.node_groups.get('glTF Settings')
+        if gltf_settings is None:
+            bpy.data.node_groups.new('glTF Settings', 'ShaderNodeTree')
+        
+        # add group to node tree
+        gltf_settings_node = nodes.get('glTF Settings')
+        if gltf_settings_node is None:
+            gltf_settings_node = nodes.new('ShaderNodeGroup')
+            gltf_settings_node.name = 'glTF Settings'
+            gltf_settings_node.node_tree = bpy.data.node_groups['glTF Settings']
+
+        # create group inputs
+        if gltf_settings_node.inputs.get('Occlusion') is None:
+            gltf_settings_node.inputs.new('NodeSocketFloat','Occlusion')
+
+        #return gltf_settings_node
+
+        return {'FINISHED'}
+
+class TLM_ShiftMultiplyLinks(bpy.types.Operator):
+    bl_idname = "tlm.shift_multiply_links"
+    bl_label = "Shift multiply links"
+    bl_description = "Shift multiply links for active material"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        scene = context.scene
+        cycles = scene.cycles
+        material = bpy.context.active_object.active_material
+
+        nodes = material.node_tree.nodes
+
+        LM_Node = nodes.get("TLM_Lightmap")
+        Multi_Node = nodes.get("Lightmap_Multiplication")
+        Base_Node = nodes.get("Lightmap_BasecolorNode_A")
+
+        material.node_tree.links.remove(LM_Node.outputs[0].links[0])
+        material.node_tree.links.remove(Base_Node.outputs[0].links[0])
+
+        material.node_tree.links.new(LM_Node.outputs[0], Multi_Node.inputs[2])
+        material.node_tree.links.new(Base_Node.outputs[0], Multi_Node.inputs[1])
+
         return {'FINISHED'}
