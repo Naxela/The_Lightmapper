@@ -18,6 +18,36 @@ class TLM_PT_Panel(bpy.types.Panel):
         layout.use_property_decorate = False
         sceneProperties = scene.TLM_SceneProperties
 
+class TLM_PT_Groups(bpy.types.Panel):
+    bl_label = "Lightmap Groups"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "render"
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = "TLM_PT_Panel"
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        sceneProperties = scene.TLM_SceneProperties
+
+        if sceneProperties.tlm_lightmap_engine == "Cycles":
+
+            rows = 2
+            #if len(atlasList) > 1:
+            #    rows = 4
+
+            row = layout.row(align=True)
+            row.label(text="Lightmap Group List")
+            row = layout.row(align=True)
+            row.template_list("TLM_UL_GroupList", "Lightmap Groups", scene, "TLM_GroupList", scene, "TLM_GroupListItem", rows=rows)
+            col = row.column(align=True)
+            col.operator("tlm_atlaslist.new_item", icon='ADD', text="")
+            #col.operator("tlm_atlaslist.delete_item", icon='REMOVE', text="")
+            #col.menu("TLM_MT_AtlasListSpecials", icon='DOWNARROW_HLT', text="")
+
 class TLM_PT_Settings(bpy.types.Panel):
     bl_label = "Settings"
     bl_space_type = "PROPERTIES"
@@ -493,6 +523,19 @@ class TLM_PT_Utility(bpy.types.Panel):
             row = layout.row()
             row.operator("tlm.start_server")
             layout.label(text="Atlas Groups")
+
+        elif sceneProperties.tlm_utility_context == "TexelDensity":
+
+            row.label(text="Texel Density Utilies")
+            row = layout.row()
+
+        elif sceneProperties.tlm_utility_context == "GLTFUtil":
+
+            row.label(text="GLTF material utilities")
+            row = layout.row()
+            row.operator("tlm.add_gltf_node")
+            row = layout.row()
+            row.operator("tlm.shift_multiply_links")
 
 class TLM_PT_Selection(bpy.types.Panel):
     bl_label = "Selection"
