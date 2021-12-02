@@ -1092,11 +1092,15 @@ class TLM_DisableSpecularity(bpy.types.Operator):
 
                             if node.type == "BSDF_PRINCIPLED":
 
-                                node.inputs[5].default_value = 0.0
+                                for inp in node.inputs:
 
-                                if node.inputs[5].links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+                                    if inp.name == "Specular":
 
-                                    mat.node_tree.links.remove(node.inputs[5].links[0])
+                                        inp.default_value = 0.0
+
+                                        if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+
+                                            mat.node_tree.links.remove(inp.links[0])
 
         elif bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Selection":
             for obj in bpy.context.selected_objects:
@@ -1110,11 +1114,15 @@ class TLM_DisableSpecularity(bpy.types.Operator):
 
                             if node.type == "BSDF_PRINCIPLED":
 
-                                node.inputs[5].default_value = 0.0
+                                for inp in node.inputs:
 
-                                if node.inputs[5].links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+                                    if inp.name == "Specular":
 
-                                    mat.node_tree.links.remove(node.inputs[5].links[0])
+                                        inp.default_value = 0.0
+
+                                        if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+
+                                            mat.node_tree.links.remove(inp.links[0])
 
         else: #Enabled
             for obj in bpy.context.scene.objects:
@@ -1129,11 +1137,15 @@ class TLM_DisableSpecularity(bpy.types.Operator):
 
                                 if node.type == "BSDF_PRINCIPLED":
 
-                                    node.inputs[5].default_value = 0.0
+                                    for inp in node.inputs:
 
-                                    if node.inputs[5].links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+                                        if inp.name == "Specular":
 
-                                        mat.node_tree.links.remove(node.inputs[5].links[0])
+                                            inp.default_value = 0.0
+
+                                            if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+
+                                                mat.node_tree.links.remove(inp.links[0])
 
         return{'FINISHED'}
 
@@ -1157,11 +1169,15 @@ class TLM_DisableMetallic(bpy.types.Operator):
 
                             if node.type == "BSDF_PRINCIPLED":
 
-                                node.inputs[4].default_value = 0.0
+                                for inp in node.inputs:
 
-                                if node.inputs[4].links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+                                    if inp.name == "Metallic":
 
-                                    mat.node_tree.links.remove(node.inputs[4].links[0])
+                                        inp.default_value = 0.0
+
+                                        if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+
+                                            mat.node_tree.links.remove(inp.links[0])
 
         elif bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Selection":
             for obj in bpy.context.selected_objects:
@@ -1175,11 +1191,15 @@ class TLM_DisableMetallic(bpy.types.Operator):
 
                             if node.type == "BSDF_PRINCIPLED":
 
-                                node.inputs[4].default_value = 0.0
+                                for inp in node.inputs:
 
-                                if node.inputs[4].links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+                                    if inp.name == "Metallic":
 
-                                    mat.node_tree.links.remove(node.inputs[4].links[0])
+                                        inp.default_value = 0.0
+
+                                        if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+
+                                            mat.node_tree.links.remove(inp.links[0])
 
         else: #Enabled
             for obj in bpy.context.scene.objects:
@@ -1194,11 +1214,15 @@ class TLM_DisableMetallic(bpy.types.Operator):
 
                                 if node.type == "BSDF_PRINCIPLED":
 
-                                    node.inputs[4].default_value = 0.0
+                                    for inp in node.inputs:
 
-                                    if node.inputs[4].links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+                                        if inp.name == "Metallic":
 
-                                        mat.node_tree.links.remove(node.inputs[4].links[0])
+                                            inp.default_value = 0.0
+
+                                            if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+
+                                                mat.node_tree.links.remove(inp.links[0])
 
         return{'FINISHED'}
 
