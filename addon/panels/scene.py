@@ -24,7 +24,7 @@ class TLM_PT_Groups(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "render"
     bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = "TLM_PT_Panel"
+    #bl_parent_id = "TLM_PT_Panel"
 
     def draw(self, context):
         layout = self.layout
@@ -387,6 +387,9 @@ class TLM_PT_Encoding(bpy.types.Panel):
                 if sceneProperties.tlm_encoding_mode_b == "LogLuv" and sceneProperties.tlm_encoding_device == "GPU":
                     row = layout.row(align=True)
                     row.prop(sceneProperties, "tlm_decoder_setup")
+                    if sceneProperties.tlm_decoder_setup:
+                        row = layout.row(align=True)
+                        row.prop(sceneProperties, "tlm_split_premultiplied")
                 if sceneProperties.tlm_encoding_mode_b == "HDR":
                     row = layout.row(align=True)
                     row.prop(sceneProperties, "tlm_format")

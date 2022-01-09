@@ -203,7 +203,7 @@ def apply_materials(load_atlas=0):
                             mixNode.name = "Lightmap_Multiplication"
                             mixNode.location = -800, 300
                             if scene.TLM_EngineProperties.tlm_lighting_mode == "indirect" or scene.TLM_EngineProperties.tlm_lighting_mode == "indirectAO":
-                                mixNode.blend_type = 'ADD'
+                                mixNode.blend_type = 'MULTIPLY'
                             else:
                                 mixNode.blend_type = 'MULTIPLY'
                             
@@ -258,6 +258,30 @@ def apply_materials(load_atlas=0):
                                         DecodeNode.name = "Lightmap_LogLuv_Decode"
                                         decoding = True
 
+                                        if scene.TLM_SceneProperties.tlm_split_premultiplied:
+
+                                            lightmapNodeExtra = node_tree.nodes.new(type="ShaderNodeTexImage")
+                                            lightmapNodeExtra.location = -1200, 800
+                                            lightmapNodeExtra.name = "TLM_Lightmap_Extra"
+                                            lightmapNodeExtra.interpolation = bpy.context.scene.TLM_SceneProperties.tlm_texture_interpolation
+                                            lightmapNodeExtra.extension = bpy.context.scene.TLM_SceneProperties.tlm_texture_extrapolation
+                                            lightmapNodeExtra.image = lightmapNode.image
+
+                                            # #IF OBJ IS USING ATLAS?
+                                            # if (obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA" and obj.TLM_ObjectProperties.tlm_atlas_pointer != ""):
+                                            #     #lightmapNode.image = bpy.data.images[obj.TLM_ObjectProperties.tlm_atlas_pointer + "_baked"]
+                                            #     #print("OBS! OBJ IS USING ATLAS, RESULT WILL BE WRONG!")
+                                            #     #bpy.app.driver_namespace["logman"].append("OBS! OBJ IS USING ATLAS, RESULT WILL BE WRONG!")
+                                            #     pass
+                                            # if (obj.TLM_ObjectProperties.tlm_postpack_object and obj.TLM_ObjectProperties.tlm_postatlas_pointer != ""):
+                                            #     #print("OBS! OBJ IS USING ATLAS, RESULT WILL BE WRONG!")
+                                            #     #bpy.app.driver_namespace["logman"].append("OBS! OBJ IS USING ATLAS, RESULT WILL BE WRONG!")
+                                            #     print()
+                                            #     lightmapNodeExtra.image = lightmapNode.image
+
+                                            #lightmapPath = lightmapNode.image.filepath_raw
+                                            #print("PREM: " + lightmapPath)
+
                             if(scene.TLM_EngineProperties.tlm_exposure_multiplier > 0):
                                 ExposureNode = node_tree.nodes.new(type="ShaderNodeGroup")
                                 ExposureNode.node_tree = bpy.data.node_groups["Exposure"]
@@ -277,22 +301,27 @@ def apply_materials(load_atlas=0):
                                 baseColorNode.name = "LM_P"
 
                             #Linking
-
-                            
-
                             if decoding and scene.TLM_SceneProperties.tlm_encoding_use:
 
                                 if(scene.TLM_EngineProperties.tlm_exposure_multiplier > 0):
                                     
-                                    mat.node_tree.links.new(lightmapNode.outputs[0], DecodeNode.inputs[0]) #Connect lightmap node to mixnode
-                                    mat.node_tree.links.new(lightmapNode.outputs[1], DecodeNode.inputs[1]) #Connect lightmap node to mixnode
+                                    mat.node_tree.links.new(lightmapNode.outputs[0], DecodeNode.inputs[0]) #Connect lightmap node to decodenode
 
-                                    mat.node_tree.links.new(DecodeNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
-                                    mat.node_tree.links.new(ExposureNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
+                                    if scene.TLM_SceneProperties.tlm_split_premultiplied:
+                                        mat.node_tree.links.new(lightmapNodeExtra.outputs[0], DecodeNode.inputs[1]) #Connect lightmap node to decodenode
+                                    else:
+                                        mat.node_tree.links.new(lightmapNode.outputs[1], DecodeNode.inputs[1]) #Connect lightmap node to decodenode
+
+                                    mat.node_tree.links.new(DecodeNode.outputs[0], mixNode.inputs[1]) #Connect decode node to mixnode
+                                    mat.node_tree.links.new(ExposureNode.outputs[0], mixNode.inputs[1]) #Connect exposure node to mixnode
                                 
                                 else:
-                                    mat.node_tree.links.new(lightmapNode.outputs[0], DecodeNode.inputs[0]) #Connect lightmap node to mixnode
-                                    mat.node_tree.links.new(lightmapNode.outputs[1], DecodeNode.inputs[1]) #Connect lightmap node to mixnode
+                                    
+                                    mat.node_tree.links.new(lightmapNode.outputs[0], DecodeNode.inputs[0]) #Connect lightmap node to decodenode
+                                    if scene.TLM_SceneProperties.tlm_split_premultiplied:
+                                        mat.node_tree.links.new(lightmapNodeExtra.outputs[0], DecodeNode.inputs[1]) #Connect lightmap node to decodenode
+                                    else:
+                                        mat.node_tree.links.new(lightmapNode.outputs[1], DecodeNode.inputs[1]) #Connect lightmap node to decodenode
 
                                     mat.node_tree.links.new(DecodeNode.outputs[0], mixNode.inputs[1]) #Connect lightmap node to mixnode
                                 
@@ -301,6 +330,9 @@ def apply_materials(load_atlas=0):
 
                                 if not scene.TLM_EngineProperties.tlm_target == "vertex":
                                     mat.node_tree.links.new(UVLightmap.outputs[0], lightmapNode.inputs[0]) #Connect uvnode to lightmapnode
+
+                                    if scene.TLM_SceneProperties.tlm_split_premultiplied:
+                                        mat.node_tree.links.new(UVLightmap.outputs[0], lightmapNodeExtra.inputs[0]) #Connect uvnode to lightmapnode
 
                             else:
 
@@ -382,11 +414,33 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
                                         #Simple way to sort out objects with multiple materials
                                         if formatHDR == ".hdr" or formatHDR == ".exr":
                                             if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
+                                                print("Node1: " + node.image.filepath_raw + " => " + img_name[:-cutLen] + new_postfix + formatHDR)
                                                 node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
                                         else:
                                             cutLen = len(ext_postfix + ".hdr")
                                             if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
-                                                node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
+                                                if not node.image.filepath_raw.endswith("_XYZ.png"):
+                                                    print("Node2: " + node.image.filepath_raw + " => " + img_name[:-cutLen] + new_postfix + formatHDR)
+                                                    node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
+
+                                for node in nodes:
+                                    if bpy.context.scene.TLM_SceneProperties.tlm_encoding_use and bpy.context.scene.TLM_SceneProperties.tlm_encoding_mode_b == "LogLuv": 
+                                        if bpy.context.scene.TLM_SceneProperties.tlm_split_premultiplied:
+                                            if node.name == "TLM_Lightmap":
+                                                img_name = node.image.filepath_raw
+                                                print("PREM Main: " + img_name)
+                                                if node.image.filepath_raw.endswith("_encoded.png"):
+                                                    print(node.image.filepath_raw + " => " + node.image.filepath_raw[:-4] + "_XYZ.png")
+                                                if not node.image.filepath_raw.endswith("_XYZ.png"):
+                                                    node.image.filepath_raw = node.image.filepath_raw[:-4] + "_XYZ.png"
+                                            if node.name == "TLM_Lightmap_Extra":
+                                                img_path = node.image.filepath_raw[:-8] + "_W.png"
+                                                img = bpy.data.images.load(img_path)
+                                                node.image = img
+                                                bpy.data.images.load(img_path)
+                                                print("PREM Extra: " + img_path)
+                                                node.image.filepath_raw = img_path
+                                                node.image.colorspace_settings.name = "Linear"
 
                     except:
 

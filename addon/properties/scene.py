@@ -248,7 +248,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
     tlm_encoding_mode_b : EnumProperty(
         items = encoding_modes_2,
                 name = "Encoding Mode", 
-                description="TODO", 
+                description="RGBE 32-bit Radiance HDR File", 
                 default='HDR')
 
     tlm_encoding_range : IntProperty(
@@ -260,7 +260,12 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     tlm_decoder_setup : BoolProperty(
         name="Use decoder", 
-        description="TODO", 
+        description="Apply a node for decoding.", 
+        default=False)
+
+    tlm_split_premultiplied : BoolProperty(
+        name="Split for premultiplied", 
+        description="Some game engines doesn't support non-premultiplied files. This splits the alpha channel to a separate file.", 
         default=False)
 
     tlm_encoding_colorspace : EnumProperty(

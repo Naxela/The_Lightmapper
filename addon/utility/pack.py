@@ -91,6 +91,8 @@ def postpack():
 
             packer[atlas.name] = newPacker(PackingMode.Offline, PackingBin.BFF, rotation=False)
 
+            bpy.app.driver_namespace["logman"].append("Postpacking: " + str(atlas.name))
+
             if scene.TLM_EngineProperties.tlm_setting_supersample == "2x":
                 supersampling_scale = 2
             elif scene.TLM_EngineProperties.tlm_setting_supersample == "4x":

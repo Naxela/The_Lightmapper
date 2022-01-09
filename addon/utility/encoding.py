@@ -1,10 +1,43 @@
-import bpy, math, os, gpu, bgl
+import bpy, math, os, gpu, bgl, importlib
 import numpy as np
 from . import utility
 from fractions import Fraction
 from gpu_extras.batch import batch_for_shader
 
+def splitLogLuvAlphaAtlas(imageIn, outDir, quality):
+    pass
+
+def splitLogLuvAlpha(imageIn, outDir, quality):
+    
+    bpy.app.driver_namespace["logman"].append("Starting LogLuv split for: " + str(imageIn))
+
+    cv2 = importlib.util.find_spec("cv2")
+
+    if cv2 is None:
+        print("CV2 not found - Ignoring filtering")
+        return 0
+    else:
+        cv2 = importlib.__import__("cv2")
+
+    print(imageIn)
+    image = cv2.imread(imageIn, cv2.IMREAD_UNCHANGED)
+    #cv2.imshow('image', image)
+    split = cv2.split(image)
+    merged = cv2.merge([split[0], split[1], split[2]])
+    alpha = split[3]
+    #b,g,r = cv2.split(image)
+    #merged = cv2.merge([b, g, r])
+    #alpha = cv2.merge([a,a,a])
+    image_name = os.path.basename(imageIn)[:-4]
+    #os.path.join(outDir, image_name+"_XYZ.png")
+
+    cv2.imwrite(os.path.join(outDir, image_name+"_XYZ.png"), merged)
+    cv2.imwrite(os.path.join(outDir, image_name+"_W.png"), alpha)
+
 def encodeLogLuvGPU(image, outDir, quality):
+
+    bpy.app.driver_namespace["logman"].append("Starting LogLuv encode for: " + str(image.name))
+
     input_image = bpy.data.images[image.name]
     image_name = input_image.name
 
@@ -139,78 +172,6 @@ def encodeLogLuvGPU(image, outDir, quality):
     bpy.context.scene.render.image_settings.quality = quality
     #input_image.save_render(filepath = input_image.filepath_raw, scene = bpy.context.scene)
     input_image.save()
-    
-    #Todo - Find a way to save
-    #bpy.ops.image.save_all_modified()
-    print("Creating new data images for encoding A + B")
-
-    #Create new images jpeg 1 & 2
-    target_a = bpy.data.images.new(
-                    name = image_name + '_encoded_a',
-                    width = input_image.size[0],
-                    height = input_image.size[1],
-                    alpha = True,
-                    float_buffer = False
-                    )
-
-    target_b = bpy.data.images.new(
-                    name = image_name + '_encoded_b',
-                    width = input_image.size[0],
-                    height = input_image.size[1],
-                    alpha = True,
-                    float_buffer = False
-                    )
-
-    num_pixels = len(target_a.pixels)
-    result_pixel = list(target_a.pixels)
-
-    for i in range(0, num_pixels, 4):
-        #print(i)
-        result_pixel[i+0] = input_image.pixels[i+0]
-        result_pixel[i+1] = input_image.pixels[i+1]
-        result_pixel[i+2] = input_image.pixels[i+2]
-        result_pixel[i+3] = 1.0
-
-    target_a.pixels = result_pixel
-
-    num_pixels = len(target_b.pixels)
-    result_pixel = list(target_b.pixels)
-
-    for i in range(0, num_pixels, 4):
-        #print(i)
-        result_pixel[i+0] = input_image.pixels[i+3]
-        result_pixel[i+1] = 0.0
-        result_pixel[i+2] = 0.0
-        result_pixel[i+3] = 1.0
-
-    target_b.pixels = result_pixel
-
-    target_a.filepath_raw = outDir + "/" + input_image.name + "_a.jpg"
-    #input_image.filepath_raw = outDir + "_encoded.png"
-    target_a.file_format = "JPEG"
-    bpy.context.scene.render.image_settings.quality = quality
-    #input_image.save_render(filepath = input_image.filepath_raw, scene = bpy.context.scene)
-    target_a.save()
-
-    target_b.filepath_raw = outDir + "/" + input_image.name + "_b.jpg"
-    #input_image.filepath_raw = outDir + "_encoded.png"
-    target_b.file_format = "JPEG"
-    bpy.context.scene.render.image_settings.quality = quality
-    #input_image.save_render(filepath = input_image.filepath_raw, scene = bpy.context.scene)
-    target_b.save()
-
-    #print(x)
-
-    # for i in range(0,num_pixels,4):
-    #     for j in range(3):
-    #         result_pixel[i+j] *= 1.0 / maxRange;
-    #     result_pixel[i+3] = saturate(max(result_pixel[i], result_pixel[i+1], result_pixel[i+2], 1e-6))
-    #     result_pixel[i+3] = math.ceil(result_pixel[i+3] * 255.0) / 255.0
-    #     for j in range(3):
-    #         result_pixel[i+j] /= result_pixel[i+3]
-    
-    # target_image.pixels = result_pixel
-    # input_image = target_image
 
 def encodeImageRGBDGPU(image, maxRange, outDir, quality):
     input_image = bpy.data.images[image.name]
