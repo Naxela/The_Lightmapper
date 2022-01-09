@@ -1087,51 +1087,8 @@ class TLM_DisableSpecularity(bpy.types.Operator):
                     for slot in obj.material_slots:
 
                         mat = slot.material
-
-                        for node in mat.node_tree.nodes:
-
-                            if node.type == "BSDF_PRINCIPLED":
-
-                                for inp in node.inputs:
-
-                                    if inp.name == "Specular":
-
-                                        inp.default_value = 0.0
-
-                                        if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
-
-                                            mat.node_tree.links.remove(inp.links[0])
-
-        elif bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Selection":
-            for obj in bpy.context.selected_objects:
-                if obj.type == "MESH":
-
-                    for slot in obj.material_slots:
-
-                        mat = slot.material
-
-                        for node in mat.node_tree.nodes:
-
-                            if node.type == "BSDF_PRINCIPLED":
-
-                                for inp in node.inputs:
-
-                                    if inp.name == "Specular":
-
-                                        inp.default_value = 0.0
-
-                                        if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
-
-                                            mat.node_tree.links.remove(inp.links[0])
-
-        else: #Enabled
-            for obj in bpy.context.scene.objects:
-                if obj.type == "MESH":
-                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-
-                        for slot in obj.material_slots:
-
-                            mat = slot.material
+                        
+                        if mat.node_tree:
 
                             for node in mat.node_tree.nodes:
 
@@ -1146,6 +1103,55 @@ class TLM_DisableSpecularity(bpy.types.Operator):
                                             if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
 
                                                 mat.node_tree.links.remove(inp.links[0])
+
+        elif bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Selection":
+            for obj in bpy.context.selected_objects:
+                if obj.type == "MESH":
+
+                    for slot in obj.material_slots:
+
+                        mat = slot.material
+                        
+                        if mat.node_tree:
+
+                            for node in mat.node_tree.nodes:
+
+                                if node.type == "BSDF_PRINCIPLED":
+
+                                    for inp in node.inputs:
+
+                                        if inp.name == "Specular":
+
+                                            inp.default_value = 0.0
+
+                                            if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+
+                                                mat.node_tree.links.remove(inp.links[0])
+
+        else: #Enabled
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                        for slot in obj.material_slots:
+
+                            mat = slot.material
+                            
+                            if mat.node_tree:
+
+                                for node in mat.node_tree.nodes:
+
+                                    if node.type == "BSDF_PRINCIPLED":
+
+                                        for inp in node.inputs:
+
+                                            if inp.name == "Specular":
+
+                                                inp.default_value = 0.0
+
+                                                if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+
+                                                    mat.node_tree.links.remove(inp.links[0])
 
         return{'FINISHED'}
 
