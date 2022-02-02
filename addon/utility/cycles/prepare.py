@@ -731,7 +731,7 @@ def preprocess_material(obj, scene):
 
         #If image not in bpy.data.images or if size changed, make a new image
         if img_name not in bpy.data.images or bpy.data.images[img_name].size[0] != res or bpy.data.images[img_name].size[1] != res:
-            img = bpy.data.images.new(img_name, res, res, alpha=True, float_buffer=True)
+            img = bpy.data.images.new(img_name, int(res), int(res), alpha=True, float_buffer=True)
 
             num_pixels = len(img.pixels)
             result_pixel = list(img.pixels)
@@ -778,9 +778,8 @@ def set_settings():
     cycles.device = scene.TLM_EngineProperties.tlm_mode
     
     print(bpy.app.version)
-    
-    if (3, 0, 0) >= bpy.app.version:
-    
+
+    if bpy.app.version[0] == 3:
         if cycles.device == "GPU":
             scene.cycles.tile_size = 256
         else:
