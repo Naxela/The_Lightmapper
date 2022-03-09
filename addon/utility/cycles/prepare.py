@@ -531,11 +531,11 @@ def configure_meshes(self):
                             if scene.TLM_EngineProperties.tlm_directional_mode == "None":
                                 if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                                     print("Directional mode")
-                                if not len(mainNode.inputs[19].links) == 0:
+                                if not len(mainNode.inputs[22].links) == 0:
                                     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                                         print("NOT LEN 0")
-                                    ninput = mainNode.inputs[19].links[0]
-                                    noutput = mainNode.inputs[19].links[0].from_node
+                                    ninput = mainNode.inputs[22].links[0]
+                                    noutput = mainNode.inputs[22].links[0].from_node
                                     nodetree.links.remove(noutput.outputs[0].links[0])
 
                             #Clamp metallic
