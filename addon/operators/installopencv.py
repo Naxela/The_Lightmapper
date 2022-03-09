@@ -39,7 +39,7 @@ class TLM_Install_OpenCV(bpy.types.Operator):
         pipc = subprocess.run(cmdc)
 
         if pip.returncode == 0:
-            print("Sucessfully installed pip!\n")
+            print("Successfully installed pip!\n")
         else:
 
             try:
@@ -75,7 +75,7 @@ class TLM_Install_OpenCV(bpy.types.Operator):
             return{'FINISHED'}
 
         module_opencv = True
-        print("Sucessfully installed OpenCV!\n")
+        print("Successfully installed OpenCV!\n")
         ShowMessageBox("Please restart blender to enable OpenCV filtering", "Restart", 'PREFERENCES')
 
         return{'FINISHED'}
