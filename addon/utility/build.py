@@ -30,7 +30,20 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
 
     print("Building lightmaps")
 
-    if bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode == "combinedao":
+    if bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode == "combinedao": 
+
+        scene = bpy.context.scene
+
+        if not "tlm_plus_mode" in bpy.app.driver_namespace or bpy.app.driver_namespace["tlm_plus_mode"] == 0:
+            filepath = bpy.data.filepath
+            dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_EngineProperties.tlm_lightmap_savedir)
+            if os.path.isdir(dirpath):
+                for file in os.listdir(dirpath):
+                    os.remove(os.path.join(dirpath + "/" + file))
+            bpy.app.driver_namespace["tlm_plus_mode"] = 1
+            print("Plus Mode")
+
+    if bpy.context.scene.TLM_EngineProperties.tlm_lighting_mode == "indirectao": 
 
         scene = bpy.context.scene
 
