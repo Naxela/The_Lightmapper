@@ -44,7 +44,7 @@ class TLM_PostAtlasListItem(bpy.types.PropertyGroup):
     tlm_atlas_merge_samemat : BoolProperty(
         name="Merge materials", 
         description="Merge objects with same materials.", 
-        default=True)
+        default=False)
 
     tlm_postatlas_lightmap_unwrap_mode : EnumProperty(
         items = unwrap_modes,
