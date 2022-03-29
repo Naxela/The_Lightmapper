@@ -1297,6 +1297,13 @@ class TLM_ConvertToUnlitSetup(bpy.types.Operator):
                         nodetree.links.new(tlm_lightmap.outputs[0], unlit_mix.inputs[2])
                         nodetree.links.new(unlit_mix.outputs[0], tlm_mainmap.inputs[0])
 
+                    if bpy.context.scene.TLM_SceneProperties.tlm_isolate_lightmap_uv:
+                        for uvlayer in obj.data.uv_layers:
+                            if uvlayer.name != "UVMap_Lightmap":
+                                if uvlayer.name != "TLM":
+                                    print(uvlayer.name)
+                                    obj.data.uv_layers.remove(uvlayer)
+
         elif bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Selection":
             for obj in bpy.context.selected_objects:
                 if obj.type == "MESH":
@@ -1328,6 +1335,13 @@ class TLM_ConvertToUnlitSetup(bpy.types.Operator):
                         nodetree.links.new(unlit_transparent.outputs[0], unlit_mix.inputs[1])
                         nodetree.links.new(tlm_lightmap.outputs[0], unlit_mix.inputs[2])
                         nodetree.links.new(unlit_mix.outputs[0], tlm_mainmap.inputs[0])
+
+                    if bpy.context.scene.TLM_SceneProperties.tlm_isolate_lightmap_uv:
+                        for uvlayer in obj.data.uv_layers:
+                            if uvlayer.name != "UVMap_Lightmap":
+                                if uvlayer.name != "TLM":
+                                    print(uvlayer.name)
+                                    obj.data.uv_layers.remove(uvlayer)
 
         else: #Enabled
             for obj in bpy.context.scene.objects:
@@ -1362,6 +1376,13 @@ class TLM_ConvertToUnlitSetup(bpy.types.Operator):
                             nodetree.links.new(tlm_lightmap.outputs[0], unlit_mix.inputs[2])
                             nodetree.links.new(unlit_mix.outputs[0], tlm_mainmap.inputs[0])
 
+                        if bpy.context.scene.TLM_SceneProperties.tlm_isolate_lightmap_uv:
+                            for uvlayer in obj.data.uv_layers:
+                                if uvlayer.name != "UVMap_Lightmap":
+                                    if uvlayer.name != "TLM":
+                                        print(uvlayer.name)
+                                        obj.data.uv_layers.remove(uvlayer)
+        
         return{'FINISHED'}
 
 class TLM_PostAtlasSpecialsMenu(bpy.types.Menu):

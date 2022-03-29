@@ -536,6 +536,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Removes the connected node on metallic or specularity set disable", 
         default=False)
 
+    tlm_isolate_lightmap_uv : BoolProperty(
+        name="Isolate lightmap UV channel", 
+        description="Deletes other UV channels than the lightmap channel", 
+        default=False)
+
     tlm_utility_context : EnumProperty(
         items = [('SetBatching', 'Set Batching', 'Set batching options. Allows to set lightmap options for multiple objects.'),
                  ('EnvironmentProbes', 'Environment Probes', 'Options for rendering environment probes. Cubemaps and panoramic HDRs for external engines'),
