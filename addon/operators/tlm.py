@@ -1257,6 +1257,112 @@ class TLM_RemoveEmptyImages(bpy.types.Operator):
 
         return{'FINISHED'}
 
+class TLM_ConvertToUnlitSetup(bpy.types.Operator):
+    bl_idname = "tlm.convert_unlit"
+    bl_label = "Convert to unlit setup"
+    bl_description = "Converts the material setup to unlit"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        if bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Scene":
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
+
+                    for slots in obj.material_slots:
+                        
+                        mat = slots.material
+                        
+                        print("Converting material " + mat.name + " to unlit shader")
+                        
+                        nodetree = mat.node_tree
+                        
+                        unlit_mix = nodetree.nodes.new("ShaderNodeMixShader")
+                        unlit_mix.name = "TLM_Unlit_mix"
+                        unlit_mix.location = ((400, 1900))
+                        
+                        unlit_lightpath = nodetree.nodes.new("ShaderNodeLightPath")
+                        unlit_lightpath.name = "TLM_Unlit_lightpath"
+                        unlit_lightpath.location = ((0, 1750))
+                        
+                        unlit_transparent = nodetree.nodes.new("ShaderNodeBsdfTransparent")
+                        unlit_transparent.name = "TLM_Unlit_transparent"
+                        unlit_transparent.location = ((0, 1400))
+                        
+                        tlm_lightmap = nodetree.nodes.get("TLM_Lightmap")
+                        tlm_mainmap = nodetree.nodes.get("Material Output")
+                        
+                        nodetree.links.new(unlit_lightpath.outputs[0], unlit_mix.inputs[0])
+                        nodetree.links.new(unlit_transparent.outputs[0], unlit_mix.inputs[1])
+                        nodetree.links.new(tlm_lightmap.outputs[0], unlit_mix.inputs[2])
+                        nodetree.links.new(unlit_mix.outputs[0], tlm_mainmap.inputs[0])
+
+        elif bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Selection":
+            for obj in bpy.context.selected_objects:
+                if obj.type == "MESH":
+
+                    for slots in obj.material_slots:
+                        
+                        mat = slots.material
+                        
+                        print("Converting material " + mat.name + " to unlit shader")
+                        
+                        nodetree = mat.node_tree
+                        
+                        unlit_mix = nodetree.nodes.new("ShaderNodeMixShader")
+                        unlit_mix.name = "TLM_Unlit_mix"
+                        unlit_mix.location = ((400, 1900))
+                        
+                        unlit_lightpath = nodetree.nodes.new("ShaderNodeLightPath")
+                        unlit_lightpath.name = "TLM_Unlit_lightpath"
+                        unlit_lightpath.location = ((0, 1750))
+                        
+                        unlit_transparent = nodetree.nodes.new("ShaderNodeBsdfTransparent")
+                        unlit_transparent.name = "TLM_Unlit_transparent"
+                        unlit_transparent.location = ((0, 1400))
+                        
+                        tlm_lightmap = nodetree.nodes.get("TLM_Lightmap")
+                        tlm_mainmap = nodetree.nodes.get("Material Output")
+                        
+                        nodetree.links.new(unlit_lightpath.outputs[0], unlit_mix.inputs[0])
+                        nodetree.links.new(unlit_transparent.outputs[0], unlit_mix.inputs[1])
+                        nodetree.links.new(tlm_lightmap.outputs[0], unlit_mix.inputs[2])
+                        nodetree.links.new(unlit_mix.outputs[0], tlm_mainmap.inputs[0])
+
+        else: #Enabled
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                        for slots in obj.material_slots:
+                            
+                            mat = slots.material
+                            
+                            print("Converting material " + mat.name + " to unlit shader")
+                            
+                            nodetree = mat.node_tree
+                            
+                            unlit_mix = nodetree.nodes.new("ShaderNodeMixShader")
+                            unlit_mix.name = "TLM_Unlit_mix"
+                            unlit_mix.location = ((400, 1900))
+                            
+                            unlit_lightpath = nodetree.nodes.new("ShaderNodeLightPath")
+                            unlit_lightpath.name = "TLM_Unlit_lightpath"
+                            unlit_lightpath.location = ((0, 1750))
+                            
+                            unlit_transparent = nodetree.nodes.new("ShaderNodeBsdfTransparent")
+                            unlit_transparent.name = "TLM_Unlit_transparent"
+                            unlit_transparent.location = ((0, 1400))
+                            
+                            tlm_lightmap = nodetree.nodes.get("TLM_Lightmap")
+                            tlm_mainmap = nodetree.nodes.get("Material Output")
+                            
+                            nodetree.links.new(unlit_lightpath.outputs[0], unlit_mix.inputs[0])
+                            nodetree.links.new(unlit_transparent.outputs[0], unlit_mix.inputs[1])
+                            nodetree.links.new(tlm_lightmap.outputs[0], unlit_mix.inputs[2])
+                            nodetree.links.new(unlit_mix.outputs[0], tlm_mainmap.inputs[0])
+
+        return{'FINISHED'}
 
 class TLM_PostAtlasSpecialsMenu(bpy.types.Menu):
     bl_label = "Lightmap"

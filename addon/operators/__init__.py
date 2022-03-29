@@ -26,6 +26,7 @@ classes = [
     tlm.TLM_DisableSpecularity,
     tlm.TLM_DisableMetallic,
     tlm.TLM_RemoveEmptyImages,
+    tlm.TLM_ConvertToUnlitSetup,
     tlm.TLM_AddCollectionsPost,
     tlm.TLM_AddSelectedCollectionsPost,
     tlm.TLM_PostAtlasSpecialsMenu,

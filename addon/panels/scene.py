@@ -519,6 +519,8 @@ class TLM_PT_Utility(bpy.types.Panel):
             row = layout.row(align=True)
             row.operator("tlm.remove_empty_images")
             row = layout.row(align=True)
+            row.operator("tlm.convert_unlit")
+            row = layout.row(align=True)
 
         elif sceneProperties.tlm_utility_context == "NetworkRender":
 
