@@ -69,9 +69,9 @@ def configure_meshes(self):
             if "_Original" in mat.name:
                 bpy.data.materials.remove(mat)
 
-    for image in bpy.data.images:
-        if image.name.endswith("_baked"):
-            bpy.data.images.remove(image, do_unlink=True)
+    #for image in bpy.data.images:
+    #    if image.name.endswith("_baked"):
+    #        bpy.data.images.remove(image, do_unlink=True)
 
     iterNum = 0
     currentIterNum = 0
