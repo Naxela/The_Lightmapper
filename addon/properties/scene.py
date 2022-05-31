@@ -541,6 +541,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Deletes other UV channels than the lightmap channel", 
         default=False)
 
+    tlm_adjust_exposure : FloatProperty(
+        name="Adjusted exposure", 
+        default=0,
+        description="Value override in found exposure nodes")
+
     tlm_utility_context : EnumProperty(
         items = [('SetBatching', 'Set Batching', 'Set batching options. Allows to set lightmap options for multiple objects.'),
                  ('EnvironmentProbes', 'Environment Probes', 'Options for rendering environment probes. Cubemaps and panoramic HDRs for external engines'),

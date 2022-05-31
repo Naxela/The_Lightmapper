@@ -1385,6 +1385,77 @@ class TLM_ConvertToUnlitSetup(bpy.types.Operator):
         
         return{'FINISHED'}
 
+class TLM_AdjustExpore(bpy.types.Operator):
+    bl_idname = "tlm.adjust_exposure"
+    bl_label = "Adjust Exposure"
+    bl_description = "Value override in found exposure nodes"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        if bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Scene":
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
+
+                    for slots in obj.material_slots:
+                        
+                        mat = slots.material
+
+                        nodetree = mat.node_tree
+
+                        if nodetree:
+
+                            for node in nodetree.nodes:
+
+                                if node.name == "Lightmap_Exposure":
+
+                                    print(node.name)
+
+                                    node.inputs[1].default_value = bpy.context.scene.TLM_SceneProperties.tlm_adjust_exposure
+
+        elif bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Selection":
+            for obj in bpy.context.selected_objects:
+                if obj.type == "MESH":
+
+                    for slots in obj.material_slots:
+                        
+                        mat = slots.material
+
+                        nodetree = mat.node_tree
+
+                        if nodetree:
+
+                            for node in nodetree.nodes:
+
+                                if node.name == "Lightmap_Exposure":
+
+                                    print(node.name)
+
+                                    node.inputs[1].default_value = bpy.context.scene.TLM_SceneProperties.tlm_adjust_exposure
+
+        else: #Enabled
+            for obj in bpy.context.scene.objects:
+                if obj.type == "MESH":
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+
+                        for slots in obj.material_slots:
+                            
+                            mat = slots.material
+
+                            nodetree = mat.node_tree
+
+                            if nodetree:
+
+                                for node in nodetree.nodes:
+
+                                    if node.name == "Lightmap_Exposure":
+
+                                        print(node.name)
+
+                                        node.inputs[1].default_value = bpy.context.scene.TLM_SceneProperties.tlm_adjust_exposure
+        
+        return{'FINISHED'}
+
 class TLM_PostAtlasSpecialsMenu(bpy.types.Menu):
     bl_label = "Lightmap"
     bl_idname = "TLM_MT_PostAtlasListSpecials"

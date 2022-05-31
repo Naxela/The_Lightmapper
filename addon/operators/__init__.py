@@ -38,7 +38,8 @@ classes = [
     imagetools.TLM_ImageUpscale,
     imagetools.TLM_ImageDownscale,
     tlm.TLM_AddGLTFNode,
-    tlm.TLM_ShiftMultiplyLinks
+    tlm.TLM_ShiftMultiplyLinks,
+    tlm.TLM_AdjustExpore
 
 ]
 
