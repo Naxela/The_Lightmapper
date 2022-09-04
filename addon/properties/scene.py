@@ -361,7 +361,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 ('limit', 'Limit', 'Clamp to 0.9')],
                 name = "Metallic clamping", 
                 description="TODO.", 
-                default="ignore")
+                default="limit")
 
     tlm_texture_interpolation : EnumProperty(
         items = [('Smart', 'Smart', 'Bicubic when magnifying.'),
