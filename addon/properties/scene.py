@@ -550,6 +550,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         items = [('SetBatching', 'Set Batching', 'Set batching options. Allows to set lightmap options for multiple objects.'),
                  ('EnvironmentProbes', 'Environment Probes', 'Options for rendering environment probes. Cubemaps and panoramic HDRs for external engines'),
                  ('LoadLightmaps', 'Load Lightmaps', 'Options for loading pre-built lightmaps.'),
+                 ('LoadLightmaps2', 'Load Lightmaps runtime', 'Load lightmaps into runtime.'),
                  ('NetworkRender', 'Network Rendering', 'Distribute lightmap building across multiple machines.'),
                  ('MaterialAdjustment', 'Material Adjustment', 'Allows adjustment of multiple materials at once.'),
                  ('TexelDensity', 'Texel Density', 'Allows setting texel densities of the UV.'),

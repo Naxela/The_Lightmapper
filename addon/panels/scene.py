@@ -507,6 +507,10 @@ class TLM_PT_Utility(bpy.types.Panel):
             row = layout.row()
             row.prop(sceneProperties, "tlm_load_atlas")
 
+        elif sceneProperties.tlm_utility_context == "LoadLightmaps2":
+
+            row.operator("tlm.load_lightmaps_runtime")
+        
         elif sceneProperties.tlm_utility_context == "MaterialAdjustment":
         
             row = layout.row(align=True)

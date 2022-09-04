@@ -23,6 +23,7 @@ classes = [
     tlm.TLM_CleanBuildEnvironmentProbes,
     tlm.TLM_PrepareUVMaps,
     tlm.TLM_LoadLightmaps,
+    tlm.TLM_LoadLightmapsRuntime,
     tlm.TLM_DisableSpecularity,
     tlm.TLM_DisableMetallic,
     tlm.TLM_RemoveEmptyImages,
@@ -39,7 +40,7 @@ classes = [
     imagetools.TLM_ImageDownscale,
     tlm.TLM_AddGLTFNode,
     tlm.TLM_ShiftMultiplyLinks,
-    tlm.TLM_AdjustExpore
+    tlm.TLM_AdjustExposure
 
 ]
 
