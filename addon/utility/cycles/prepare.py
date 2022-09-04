@@ -541,24 +541,34 @@ def configure_meshes(self):
                             #Clamp metallic
                             if bpy.context.scene.TLM_SceneProperties.tlm_metallic_clamp == "limit":
 
-                                MainMetNodeSocket = mainNode.inputs[4]
+                                MainMetNodeSocket = mainNode.inputs.get("Metallic")
                                 if not len(MainMetNodeSocket.links) == 0:
+
+                                    print("Creating new clamp node")
+
                                     nodes = nodetree.nodes
                                     MetClampNode = nodes.new('ShaderNodeClamp')
                                     MetClampNode.location = (-200,150)
                                     MetClampNode.inputs[2].default_value = 0.9
-                                    minput = mainNode.inputs[4].links[0] #Metal input socket
-                                    moutput = mainNode.inputs[4].links[0].from_socket #Output socket
+                                    minput = mainNode.inputs.get("Metallic").links[0] #Metal input socket
+                                    moutput = mainNode.inputs.get("Metallic").links[0].from_socket #Output socket
                                     
                                     nodetree.links.remove(minput)
 
                                     nodetree.links.new(moutput, MetClampNode.inputs[0]) #minput node to clamp node
                                     nodetree.links.new(MetClampNode.outputs[0], MainMetNodeSocket) #clamp node to metinput
 
+                                elif mainNode.type == "PRINCIPLED_BSDF" and MainMetNodeSocket.links[0].from_node.type == "CLAMP":
+
+                                    pass
+
                                 else:
+
+                                    print("New clamp node NOT made")
 
                                     if mainNode.inputs[4].default_value > 0.9:
                                         mainNode.inputs[4].default_value = 0.9
+
                             elif bpy.context.scene.TLM_SceneProperties.tlm_metallic_clamp == "zero":
 
                                 MainMetNodeSocket = mainNode.inputs[4]
