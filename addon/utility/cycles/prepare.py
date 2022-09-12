@@ -735,6 +735,17 @@ def preprocess_material(obj, scene):
             img_node.select = True
             nodes.active = img_node
 
+        #We need to save this file first in Blender 3.3 due to new filmic option?
+        image = img
+        saveDir = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+        bakemap_path = os.path.join(saveDir, image.name)
+        filepath_ext = ".hdr"
+        image.filepath_raw = bakemap_path + filepath_ext
+        image.file_format = "HDR"
+        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+            print("Saving to: " + image.filepath_raw)
+        image.save()
+
     else:
 
         res = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(scene.TLM_EngineProperties.tlm_resolution_scale) * int(supersampling_scale)
@@ -777,6 +788,17 @@ def preprocess_material(obj, scene):
                 img_node.image = img
             img_node.select = True
             nodes.active = img_node
+
+        #We need to save this file first in Blender 3.3 due to new filmic option?
+        image = img
+        saveDir = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+        bakemap_path = os.path.join(saveDir, image.name)
+        filepath_ext = ".hdr"
+        image.filepath_raw = bakemap_path + filepath_ext
+        image.file_format = "HDR"
+        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+            print("Saving to: " + image.filepath_raw)
+        image.save()
 
 def set_settings():
 
