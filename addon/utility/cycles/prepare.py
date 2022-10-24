@@ -737,6 +737,7 @@ def preprocess_material(obj, scene):
 
         #We need to save this file first in Blender 3.3 due to new filmic option?
         image = img
+        image.colorspace_settings.name = 'Raw'
         saveDir = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
         bakemap_path = os.path.join(saveDir, image.name)
         filepath_ext = ".hdr"
@@ -791,6 +792,7 @@ def preprocess_material(obj, scene):
 
         #We need to save this file first in Blender 3.3 due to new filmic option?
         image = img
+        image.colorspace_settings.name = 'Raw'
         saveDir = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
         bakemap_path = os.path.join(saveDir, image.name)
         filepath_ext = ".hdr"
