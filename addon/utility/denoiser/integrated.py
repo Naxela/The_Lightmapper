@@ -33,6 +33,10 @@ class TLM_Integrated_Denoise:
             bpy.context.scene.use_nodes = True
 
         tree = bpy.context.scene.node_tree
+        
+        #Remove existing nodes (which comes by default in Blender 3.4/3.5?)
+        for node in tree.nodes:
+                tree.nodes.remove(node)
 
         for image in self.image_array:
 
