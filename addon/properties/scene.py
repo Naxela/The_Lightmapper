@@ -456,6 +456,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Invert direction", 
         description="Inverts the direction.", 
         default=False)
+    
+    tlm_gltf_iterate_all : BoolProperty(
+        name="Apply to all materials", 
+        description="Applies the GLTF node setup to all materials in the scene.", 
+        default=False)
 
     tlm_environment_probe_resolution : EnumProperty(
         items = [('32', '32', 'TODO'),

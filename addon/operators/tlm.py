@@ -1966,28 +1966,47 @@ class TLM_AddGLTFNode(bpy.types.Operator):
 
         scene = context.scene
         cycles = scene.cycles
-        material = bpy.context.active_object.active_material
 
-        nodes = material.node_tree.nodes
-        # create group data
-        gltf_settings = bpy.data.node_groups.get('glTF Settings')
-        if gltf_settings is None:
-            bpy.data.node_groups.new('glTF Settings', 'ShaderNodeTree')
-        
-        # add group to node tree
-        gltf_settings_node = nodes.get('glTF Settings')
-        if gltf_settings_node is None:
-            gltf_settings_node = nodes.new('ShaderNodeGroup')
-            gltf_settings_node.name = 'glTF Settings'
-            gltf_settings_node.node_tree = bpy.data.node_groups['glTF Settings']
+        for obj in bpy.context.scene.objects:
 
-        # create group inputs
-        if gltf_settings_node.inputs.get('Occlusion') is None:
-            gltf_settings_node.inputs.new('NodeSocketFloat','Occlusion')
+            print("Iterating: " + obj.name)
 
-        #return gltf_settings_node
+            if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
-        return {'FINISHED'}
+                    for slot in obj.material_slots:
+
+                        material = slot.material
+
+                        nodes = material.node_tree.nodes
+                        # create group data
+                        gltf_settings = bpy.data.node_groups.get('glTF Settings')
+                        if gltf_settings is None:
+                            bpy.data.node_groups.new('glTF Settings', 'ShaderNodeTree')
+                        
+                        # add group to node tree
+                        gltf_settings_node = nodes.get('glTF Settings')
+                        if gltf_settings_node is None:
+                            gltf_settings_node = nodes.new('ShaderNodeGroup')
+                            gltf_settings_node.name = 'glTF Settings'
+                            gltf_settings_node.node_tree = bpy.data.node_groups['glTF Settings']
+
+                        # create group inputs
+                        if gltf_settings_node.inputs.get('Occlusion') is None:
+                            gltf_settings_node.inputs.new('NodeSocketFloat','Occlusion')
+
+                        gltf_settings_node.location.y = 400
+
+                        lightmapNode = nodes.get("TLM_Lightmap")
+                        #mainNode = nodes.get()   
+
+                        material.node_tree.links.remove(lightmapNode.outputs[0].links[0])
+                        material.node_tree.links.new(lightmapNode.outputs[0], gltf_settings_node.inputs[0])
+                        #TLM_Lightmap
+
+                        #return gltf_settings_node
+
+                        return {'FINISHED'}
 
 class TLM_ShiftMultiplyLinks(bpy.types.Operator):
     bl_idname = "tlm.shift_multiply_links"

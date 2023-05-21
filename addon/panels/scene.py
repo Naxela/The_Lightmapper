@@ -551,6 +551,8 @@ class TLM_PT_Utility(bpy.types.Panel):
             row.operator("tlm.add_gltf_node")
             row = layout.row()
             row.operator("tlm.shift_multiply_links")
+            row = layout.row()
+            row.prop(sceneProperties, "tlm_gltf_iterate_all")
 
 class TLM_PT_Selection(bpy.types.Panel):
     bl_label = "Selection"
