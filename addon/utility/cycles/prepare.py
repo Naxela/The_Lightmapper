@@ -22,8 +22,6 @@ def init(self, prev_container):
     configure_lights()
 
     configure_meshes(self)
-
-    print("Config mesh catch omitted: REMEMBER TO SET IT BACK NAXELA")
     # try:
     #     configure_meshes(self)
     # except Exception as e:

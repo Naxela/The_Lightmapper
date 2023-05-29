@@ -405,46 +405,59 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
                                 nodes = mat.node_tree.nodes
 
                                 for node in nodes:
-                                    if node.name == "Baked Image" or node.name == "TLM_Lightmap":
-                                        img_name = node.image.filepath_raw
-                                        cutLen = len(ext_postfix + formatHDR)
-                                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                            print("Len:" + str(len(ext_postfix + formatHDR)) + "|" + ext_postfix + ".." + formatHDR)
+                                    if node.name == "Baked Image" or node.name.startswith("TLM_Lightmap"):
 
-                                        #Simple way to sort out objects with multiple materials
-                                        if formatHDR == ".hdr" or formatHDR == ".exr":
-                                            if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
-                                                print("Node1: " + node.image.filepath_raw + " => " + img_name[:-cutLen] + new_postfix + formatHDR)
-                                                node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
-                                        else:
-                                            cutLen = len(ext_postfix + ".hdr")
-                                            if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
-                                                if not node.image.filepath_raw.endswith("_XYZ.png"):
-                                                    print("Node2: " + node.image.filepath_raw + " => " + img_name[:-cutLen] + new_postfix + formatHDR)
+                                        if node.image != None:
+
+                                            print("Node: " + node.name + " in " + mat.name )
+                                            
+                                            img_name = node.image.filepath_raw
+                                            cutLen = len(ext_postfix + formatHDR)
+                                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                                print("Len:" + str(len(ext_postfix + formatHDR)) + "|" + ext_postfix + ".." + formatHDR)
+
+                                            #Simple way to sort out objects with multiple materials
+                                            if formatHDR == ".hdr" or formatHDR == ".exr":
+                                                if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
+                                                    print("Node1: " + node.image.filepath_raw + " => " + img_name[:-cutLen] + new_postfix + formatHDR)
                                                     node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
+                                            else:
+                                                cutLen = len(ext_postfix + ".hdr")
+                                                if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
+                                                    if not node.image.filepath_raw.endswith("_XYZ.png"):
+                                                        print("Node2: " + node.image.filepath_raw + " => " + img_name[:-cutLen] + new_postfix + formatHDR)
+                                                        node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
 
                                 for node in nodes:
                                     if bpy.context.scene.TLM_SceneProperties.tlm_encoding_use and bpy.context.scene.TLM_SceneProperties.tlm_encoding_mode_b == "LogLuv": 
                                         if bpy.context.scene.TLM_SceneProperties.tlm_split_premultiplied:
-                                            if node.name == "TLM_Lightmap":
-                                                img_name = node.image.filepath_raw
-                                                print("PREM Main: " + img_name)
-                                                if node.image.filepath_raw.endswith("_encoded.png"):
-                                                    print(node.image.filepath_raw + " => " + node.image.filepath_raw[:-4] + "_XYZ.png")
-                                                if not node.image.filepath_raw.endswith("_XYZ.png"):
-                                                    node.image.filepath_raw = node.image.filepath_raw[:-4] + "_XYZ.png"
-                                            if node.name == "TLM_Lightmap_Extra":
-                                                img_path = node.image.filepath_raw[:-8] + "_W.png"
-                                                img = bpy.data.images.load(img_path)
-                                                node.image = img
-                                                bpy.data.images.load(img_path)
-                                                print("PREM Extra: " + img_path)
-                                                node.image.filepath_raw = img_path
-                                                node.image.colorspace_settings.name = "Linear"
+                                            if node.name.startswith("TLM_Lightmap"):
 
-                    except:
+                                                if node.image != None:
+
+                                                    img_name = node.image.filepath_raw
+                                                    print("PREM Main: " + img_name)
+                                                    if node.image.filepath_raw.endswith("_encoded.png"):
+                                                        print(node.image.filepath_raw + " => " + node.image.filepath_raw[:-4] + "_XYZ.png")
+                                                    if not node.image.filepath_raw.endswith("_XYZ.png"):
+                                                        node.image.filepath_raw = node.image.filepath_raw[:-4] + "_XYZ.png"
+
+                                            if node.name.startswith("TLM_Lightmap_Extra"):
+
+                                                if node.image != None:
+
+                                                    img_path = node.image.filepath_raw[:-8] + "_W.png"
+                                                    img = bpy.data.images.load(img_path)
+                                                    node.image = img
+                                                    bpy.data.images.load(img_path)
+                                                    print("PREM Extra: " + img_path)
+                                                    node.image.filepath_raw = img_path
+                                                    node.image.colorspace_settings.name = "Linear"
+
+                    except Exception as e:
 
                         print("Error occured with postfix change for obj: " + obj.name)
+                        print(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
 
     for image in bpy.data.images:
         image.reload()
