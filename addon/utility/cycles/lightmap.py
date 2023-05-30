@@ -147,27 +147,20 @@ def bake(plus_pass=0):
                     bpy.ops.object.bake(type="COMBINED", margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
                 else:
                     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
-
                 
-                #Save image between
-                if scene.TLM_SceneProperties.tlm_save_preprocess_lightmaps:
-                    for image in bpy.data.images:
-                        if image.name.endswith("_baked"):
-
-                            saveDir = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
-                            bakemap_path = os.path.join(saveDir, image.name)
-                            filepath_ext = ".hdr"
-                            image.filepath_raw = bakemap_path + filepath_ext
-                            image.file_format = "HDR"
-                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                print("Saving to: " + image.filepath_raw)
-                            image.save()
+                #Save between baking (to avoid lost textures)
+                for image in bpy.data.images:
+                    if image.name.startswith(obj.name):
+                        print("Saving texture " + image.name)
+                        image.save()
                 
                 bpy.ops.object.select_all(action='DESELECT')
                 currentIterNum = currentIterNum + 1
 
     for image in bpy.data.images:
         if image.name.endswith("_baked"):
+
+            print("Saving baked texture: " + image.name)
 
             saveDir = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
             bakemap_path = os.path.join(saveDir, image.name)
