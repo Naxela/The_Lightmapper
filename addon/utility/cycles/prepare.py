@@ -500,16 +500,20 @@ def configure_meshes(self):
                         if mainNode.type not in ['BSDF_PRINCIPLED','BSDF_DIFFUSE','GROUP']:
 
                             #TODO! FIND THE PRINCIPLED PBR
-                            self.report({'INFO'}, "The primary material node is not supported. Seeking first principled.")
+                            #self.report({'INFO'}, "The primary material node is not supported. Seeking first principled.")
+                            print("The primary material node is not supported. Seeking first principled.")
 
                             if len(find_node_by_type(nodetree.nodes, Node_Types.pbr_node)) > 0: 
                                 mainNode = find_node_by_type(nodetree.nodes, Node_Types.pbr_node)[0]
                             else:
-                                self.report({'INFO'}, "No principled found. Seeking diffuse")
+                                #self.report({'INFO'}, "No principled found. Seeking diffuse")
+                                print("No principled found. Seeking diffuse.")
                                 if len(find_node_by_type(nodetree.nodes, Node_Types.diffuse)) > 0: 
                                     mainNode = find_node_by_type(nodetree.nodes, Node_Types.diffuse)[0]
                                 else:
-                                    self.report({'INFO'}, "No supported nodes. Continuing anyway.")
+                                    print("No supported nodes. Continuing anyway")
+                                    print("Unsupported node was: " + node.type)
+                                    #self.report({'INFO'}, "No supported nodes. Continuing anyway.")
 
                         if mainNode.type == 'GROUP':
                             if mainNode.node_tree != "Armory PBR":
