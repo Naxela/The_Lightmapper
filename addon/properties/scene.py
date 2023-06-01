@@ -559,6 +559,8 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                  ('NetworkRender', 'Network Rendering', 'Distribute lightmap building across multiple machines.'),
                  ('MaterialAdjustment', 'Material Adjustment', 'Allows adjustment of multiple materials at once.'),
                  ('TexelDensity', 'Texel Density', 'Allows setting texel densities of the UV.'),
+                 #('Denoise', 'Denoise Folder', 'Denoise .'),
+                 #('Filter', 'Filter Folder', 'Filter .'),
                  ('GLTFUtil', 'GLTF Utilities', 'GLTF related material utilities.')],
                 name = "Utility Context", 
                 description="Set Utility Context", 
