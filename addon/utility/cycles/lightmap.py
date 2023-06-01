@@ -149,10 +149,19 @@ def bake(plus_pass=0):
                     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
                 
                 #Save between baking (to avoid lost textures)
-                for image in bpy.data.images:
-                    if image.name.startswith(obj.name):
-                        print("Saving texture " + image.name)
-                        image.save()
+                #TODO! ATLASGROUP!
+
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA" or obj.TLM_ObjectProperties.tlm_postpack_object:
+                    for image in bpy.data.images:
+                        if image.name != "Render Result":
+                            image.file_format = "HDR"
+                            image.save() #FIX
+                else:
+                    for image in bpy.data.images:
+                        if image.name.startswith(obj.name):
+                            print("Saving texture " + image.name)
+                            image.file_format = "HDR"
+                            image.save()
                 
                 bpy.ops.object.select_all(action='DESELECT')
                 currentIterNum = currentIterNum + 1
