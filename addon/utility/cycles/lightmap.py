@@ -116,7 +116,7 @@ def bake(plus_pass=0):
                 if scene.TLM_EngineProperties.tlm_target == "vertex":
                     scene.render.bake.target = "VERTEX_COLORS"
 
-                if scene.TLM_EngineProperties.tlm_lighting_mode == "combined":
+                if scene.TLM_EngineProperties.tlm_lighting_mode == "combined" or scene.TLM_EngineProperties.tlm_lighting_mode == "combinedneutral":
                     print("Baking combined: Direct + Indirect")
                     bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT","INDIRECT"}, margin=scene.TLM_EngineProperties.tlm_dilation_margin, use_clear=False)
                 elif scene.TLM_EngineProperties.tlm_lighting_mode == "indirect":
