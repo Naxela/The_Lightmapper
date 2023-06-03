@@ -1724,6 +1724,66 @@ class TLM_AtlasSpecialsMenu(bpy.types.Menu):
         layout = self.layout
         layout.operator("tlm.add_collections")
         layout.operator("tlm.add_selected_collections")
+        layout.operator("tlm.divide_atlasgroupsmodal")
+
+class TLM_DivideAtlasgroupsModal(bpy.types.Operator):
+    bl_idname = "tlm.divide_atlasgroupsmodal"
+    bl_label = "Divide scene into atlas groups"
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width = 400)
+    
+    def draw(self, context):
+        #self.layout.label(text="ABCD")
+        self.layout.prop(bpy.context.scene.TLM_SceneProperties, "tlm_atlasgroup_divisions")
+        self.layout.prop(bpy.context.scene.TLM_SceneProperties, "tlm_atlasgroup_division_unwrap_mode")
+        self.layout.prop(bpy.context.scene.TLM_SceneProperties, "tlm_atlasgroup_division_resolution")
+        self.layout.prop(bpy.context.scene.TLM_SceneProperties, "tlm_atlasgroup_division_unwrap_margin")
+    
+    def execute(self, context):
+
+        if bpy.context.scene.TLM_SceneProperties.tlm_atlas_mode == "Prepack":
+            print("Prepack!")
+        else:
+            print("Postpack!")
+
+        print(bpy.context.scene.TLM_SceneProperties.tlm_atlasgroup_divisions)
+        print(bpy.context.scene.TLM_SceneProperties.tlm_atlasgroup_division_unwrap_mode)
+        print(bpy.context.scene.TLM_SceneProperties.tlm_atlasgroup_division_resolution)
+        print(bpy.context.scene.TLM_SceneProperties.tlm_atlasgroup_division_unwrap_margin)
+
+        lightmappableObjects = []
+        for obj in bpy.context.scene.objects:
+            if obj.type == "MESH":
+                lightmappableObjects.append(obj)
+
+        if len(lightmappableObjects) < bpy.context.scene.TLM_SceneProperties.tlm_atlasgroup_divisions:
+            print("There's less objects than divisions!")
+            return {'FINISHED'}
+        
+        for x in range(bpy.context.scene.TLM_SceneProperties.tlm_atlasgroup_divisions):
+            bpy.context.scene.TLM_AtlasList.add()
+            bpy.context.scene.TLM_AtlasListItem = len(bpy.context.scene.TLM_AtlasList) - 1
+            bpy.context.scene.TLM_AtlasList[len(bpy.context.scene.TLM_AtlasList) - 1].name = "AtlasGroup_" + str(x)
+            bpy.context.scene.TLM_AtlasList[len(bpy.context.scene.TLM_AtlasList) - 1].tlm_atlas_lightmap_unwrap_mode = bpy.context.scene.TLM_SceneProperties.tlm_atlasgroup_division_unwrap_mode
+            bpy.context.scene.TLM_AtlasList[len(bpy.context.scene.TLM_AtlasList) - 1].tlm_atlas_lightmap_resolution = bpy.context.scene.TLM_SceneProperties.tlm_atlasgroup_division_resolution
+            bpy.context.scene.TLM_AtlasList[len(bpy.context.scene.TLM_AtlasList) - 1].tlm_atlas_unwrap_margin = bpy.context.scene.TLM_SceneProperties.tlm_atlasgroup_division_unwrap_margin
+        
+        iteration = 0
+        for obj in lightmappableObjects:
+
+            if iteration == bpy.context.scene.TLM_SceneProperties.tlm_atlasgroup_divisions:
+                iteration = 0
+
+            print(obj.name + " " + str(iteration))
+            obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
+            obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode = "AtlasGroupA"
+            obj.TLM_ObjectProperties.tlm_atlas_pointer = "AtlasGroup_" + str(iteration)
+
+            iteration += 1
+
+        return {'FINISHED'}
+
 
 class TLM_AddCollections(bpy.types.Operator): 
     bl_idname = "tlm.add_collections"
