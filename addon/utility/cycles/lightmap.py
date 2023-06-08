@@ -1,4 +1,4 @@
-import bpy, os
+import bpy, os, datetime
 from .. import build
 from time import time, sleep
 
@@ -108,10 +108,7 @@ def bake(plus_pass=0):
                     bakedObjects = 1
                 averagePrBake = elapsedSeconds / bakedObjects
                 remaining = averagePrBake * bakedLeft
-                #print(time() - bpy.app.driver_namespace["tlm_start_time"])
-                print("Elapsed time: " + str(round(elapsedSeconds, 2)) + "s | ETA remaining: " + str(round(remaining, 2)) + "s") #str(elapsed[0])
-                #print("Averaged: " + str(averagePrBake))
-                #print("Remaining: " + str(remaining))
+                print("Elapsed time: " + str(round(elapsedSeconds, 2)) + "s | ETA remaining: " + str(round(remaining, 2)) + "s "+ "(" + str(datetime.timedelta(seconds=remaining)) + ")") #str(elapsed[0])
 
                 if scene.TLM_EngineProperties.tlm_target == "vertex":
                     scene.render.bake.target = "VERTEX_COLORS"
