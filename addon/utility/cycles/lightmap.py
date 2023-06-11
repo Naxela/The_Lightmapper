@@ -148,31 +148,49 @@ def bake(plus_pass=0):
                 #Save between baking (to avoid lost textures)
                 #TODO! ATLASGROUP!
 
+                print("Saving textures - Stage 1")
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA" or obj.TLM_ObjectProperties.tlm_postpack_object:
+                    print("Saving textures - Stage 1: Atlas Groups")
                     for image in bpy.data.images:
-                        if image.name != "Render Result":
-                            image.file_format = "HDR"
-                            image.save() #FIX
+                        if image.name != "Render Result" or image.name != "Viewer Node":
+                            if image.size[0] > 0 and image.size[1] > 0:
+                                if image.name.startswith(obj.name):
+                                    print("Saving texture: " + image.name)
+                                    image.file_format = "HDR"
+                                    image.save()
+                            else:
+                                print("Skipping texture: " + image.name)
+                        else:
+                            print("Skipping texture: " + image.name)
                 else:
+                    print("Saving textures - Stage 1: Objects")
                     for image in bpy.data.images:
-                        if image.name.startswith(obj.name):
-                            print("Saving texture " + image.name)
-                            image.file_format = "HDR"
-                            image.save()
+                        if image.name != "Render Result" or image.name != "Viewer Node":
+                            if image.size[0] > 0 and image.size[1] > 0:
+                                if image.name.startswith(obj.name):
+                                    print("Saving texture: " + image.name)
+                                    image.file_format = "HDR"
+                                    image.save()
+                            else:
+                                print("Skipping texture: " + image.name)
+                        else:
+                            print("Skipping texture: " + image.name)
                 
                 bpy.ops.object.select_all(action='DESELECT')
                 currentIterNum = currentIterNum + 1
 
+    print("Saving textures - Stage 2")
     for image in bpy.data.images:
-        if image.name.endswith("_baked"):
+        if image.name != "Render Result" or image.name != "Viewer Node":
+            if image.name.endswith("_baked"):
 
-            print("Saving baked texture: " + image.name)
+                print("Saving baked texture: " + image.name)
 
-            saveDir = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
-            bakemap_path = os.path.join(saveDir, image.name)
-            filepath_ext = ".hdr"
-            image.filepath_raw = bakemap_path + filepath_ext
-            image.file_format = "HDR"
-            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                print("Saving to: " + image.filepath_raw)
-            image.save()
+                saveDir = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+                bakemap_path = os.path.join(saveDir, image.name)
+                filepath_ext = ".hdr"
+                image.filepath_raw = bakemap_path + filepath_ext
+                image.file_format = "HDR"
+                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                    print("Saving to: " + image.filepath_raw)
+                image.save()
