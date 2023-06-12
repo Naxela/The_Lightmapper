@@ -108,6 +108,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Compile statistics", 
         description="Compile time statistics in the lightmap folder.", 
         default=True)
+    
+    tlm_only_prepare : BoolProperty(
+        name="Prepare only", 
+        description="Only does preparations for lightmap baking (UV and material setup) without baking", 
+        default=False)
 
     tlm_apply_on_unwrap : BoolProperty(
         name="Apply scale", 

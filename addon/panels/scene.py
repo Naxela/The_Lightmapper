@@ -94,6 +94,8 @@ class TLM_PT_Settings(bpy.types.Panel):
 
             row = layout.row(align=True)
             row.prop(sceneProperties, "tlm_verbose")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_only_prepare")
             #row = layout.row(align=True)
             #row.prop(sceneProperties, "tlm_compile_statistics")
             row = layout.row(align=True)

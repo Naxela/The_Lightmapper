@@ -115,7 +115,12 @@ def prepare_build(self=0, background_mode=False, shutdown_after_build=False):
 
             configure.init(self, previous_settings)
 
-        begin_build()
+        if sceneProperties.tlm_only_prepare:
+            print("Preparation done...")
+            setGui(0)
+            return
+        else:
+            begin_build()
 
     else:
 
