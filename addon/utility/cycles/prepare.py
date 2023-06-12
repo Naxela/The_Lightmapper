@@ -707,6 +707,7 @@ def preprocess_material(obj, scene):
             for i in range(0,num_pixels,4):
 
                 if scene.TLM_SceneProperties.tlm_override_bg_color:
+                    print("Override Background Color")
                     result_pixel[i+0] = scene.TLM_SceneProperties.tlm_override_color[0]
                     result_pixel[i+1] = scene.TLM_SceneProperties.tlm_override_color[1]
                     result_pixel[i+2] = scene.TLM_SceneProperties.tlm_override_color[2]
@@ -739,7 +740,7 @@ def preprocess_material(obj, scene):
 
         #We need to save this file first in Blender 3.3 due to new filmic option?
         image = img
-        image.colorspace_settings.name = 'Raw'
+        #image.colorspace_settings.name = 'Raw'
         saveDir = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
         bakemap_path = os.path.join(saveDir, image.name)
         filepath_ext = ".hdr"
@@ -760,11 +761,15 @@ def preprocess_material(obj, scene):
             num_pixels = len(img.pixels)
             result_pixel = list(img.pixels)
 
+            if scene.TLM_SceneProperties.tlm_override_bg_color:
+                print("Override Background Color")
+
             for i in range(0,num_pixels,4):
                 if scene.TLM_SceneProperties.tlm_override_bg_color:
                     result_pixel[i+0] = scene.TLM_SceneProperties.tlm_override_color[0]
                     result_pixel[i+1] = scene.TLM_SceneProperties.tlm_override_color[1]
                     result_pixel[i+2] = scene.TLM_SceneProperties.tlm_override_color[2]
+                    result_pixel[i+3] = 1.0
                 else:
                     result_pixel[i+0] = 0.0
                     result_pixel[i+1] = 0.0
@@ -794,7 +799,7 @@ def preprocess_material(obj, scene):
 
         #We need to save this file first in Blender 3.3 due to new filmic option?
         image = img
-        image.colorspace_settings.name = 'Raw'
+        #image.colorspace_settings.name = 'Raw'
         saveDir = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
         bakemap_path = os.path.join(saveDir, image.name)
         filepath_ext = ".hdr"
