@@ -962,24 +962,24 @@ def manage_build(background_pass=False, load_atlas=0):
                     if "_Original" in mat.name:
                         bpy.data.materials.remove(mat)
 
-            for obj in bpy.context.scene.objects:
-                if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
-                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+        for obj in bpy.context.scene.objects:
+            if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
-                        if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
-                            atlasName = obj.TLM_ObjectProperties.tlm_atlas_pointer
-                            img_name = atlasName + '_baked'
-                            Lightmapimage = bpy.data.images[img_name]
-                            obj["Lightmap"] = Lightmapimage.filepath_raw
-                        elif obj.TLM_ObjectProperties.tlm_postpack_object:
-                            atlasName = obj.TLM_ObjectProperties.tlm_postatlas_pointer
-                            img_name = atlasName + '_baked' + ".hdr"
-                            Lightmapimage = bpy.data.images[img_name]
-                            obj["Lightmap"] = Lightmapimage.filepath_raw
-                        else:
-                            img_name = obj.name + '_baked'
-                            Lightmapimage = bpy.data.images[img_name]
-                            obj["Lightmap"] = Lightmapimage.filepath_raw
+                    if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+                        atlasName = obj.TLM_ObjectProperties.tlm_atlas_pointer
+                        img_name = atlasName + '_baked'
+                        Lightmapimage = bpy.data.images[img_name]
+                        obj["Lightmap"] = Lightmapimage.filepath_raw
+                    elif obj.TLM_ObjectProperties.tlm_postpack_object:
+                        atlasName = obj.TLM_ObjectProperties.tlm_postatlas_pointer
+                        img_name = atlasName + '_baked' + ".hdr"
+                        Lightmapimage = bpy.data.images[img_name]
+                        obj["Lightmap"] = Lightmapimage.filepath_raw
+                    else:
+                        img_name = obj.name + '_baked'
+                        Lightmapimage = bpy.data.images[img_name]
+                        obj["Lightmap"] = Lightmapimage.filepath_raw
 
             for image in bpy.data.images:
                 if image.name.endswith("_baked"):
