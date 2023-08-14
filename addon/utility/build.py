@@ -961,7 +961,7 @@ def manage_build(background_pass=False, load_atlas=0):
                 if mat.name.startswith("."):
                     if "_Original" in mat.name:
                         bpy.data.materials.remove(mat)
-        try:
+
             for obj in bpy.context.scene.objects:
                 if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
                     if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
@@ -980,8 +980,6 @@ def manage_build(background_pass=False, load_atlas=0):
                             img_name = obj.name + '_baked'
                             Lightmapimage = bpy.data.images[img_name]
                             obj["Lightmap"] = Lightmapimage.filepath_raw
-        except:
-            pass
 
             for image in bpy.data.images:
                 if image.name.endswith("_baked"):
@@ -1363,4 +1361,3 @@ def checkAtlasSize():
         return True
     else:
         return False
-
