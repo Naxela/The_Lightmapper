@@ -1,5 +1,5 @@
 '''
-Copyright (c) 2018-2020 Naxela
+Copyright (c) 2018-2023 Naxela
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -22,8 +22,8 @@ bl_info = {
     'name': 'The Lightmapper',
     'description': 'The Lightmapper is a lightmapping utility addon for Blender, made specifically for making lightmaps for game engines.',
     'author': 'Alexander Kleemann @ Naxela',
-    'version': (0, 6, 3, 0),
-    'blender': (3, 1, 0),
+    'version': (1, 0, 0, 0),
+    'blender': (4, 0, 0),
     'location': 'View3D',
     'category': '3D View'
 }
