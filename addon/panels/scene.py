@@ -18,6 +18,11 @@ class TLM_PT_Panel(bpy.types.Panel):
         layout.use_property_decorate = False
         sceneProperties = scene.TLM_SceneProperties
 
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_setting_lightmap_mode")
+        row = layout.row(align=True)
+        row.operator("tlm.build_lightmaps_easy")
+
 class TLM_PT_Groups(bpy.types.Panel):
     bl_label = "Lightmap Groups"
     bl_space_type = "PROPERTIES"
@@ -54,7 +59,7 @@ class TLM_PT_Settings(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "render"
     bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = "TLM_PT_Panel"
+    #bl_parent_id = "TLM_PT_Panel"
 
     def draw(self, context):
         layout = self.layout
@@ -219,7 +224,7 @@ class TLM_PT_Denoise(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "render"
     bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = "TLM_PT_Panel"
+    #bl_parent_id = "TLM_PT_Panel"
 
     def draw_header(self, context):
         scene = context.scene
@@ -272,7 +277,7 @@ class TLM_PT_Filtering(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "render"
     bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = "TLM_PT_Panel"
+    #bl_parent_id = "TLM_PT_Panel"
 
     def draw_header(self, context):
         scene = context.scene
@@ -335,7 +340,7 @@ class TLM_PT_Encoding(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "render"
     bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = "TLM_PT_Panel"
+    #bl_parent_id = "TLM_PT_Panel"
 
     def draw_header(self, context):
         scene = context.scene
@@ -402,7 +407,7 @@ class TLM_PT_Utility(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "render"
     bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = "TLM_PT_Panel"
+    #bl_parent_id = "TLM_PT_Panel"
 
     def draw(self, context):
         layout = self.layout
@@ -562,7 +567,7 @@ class TLM_PT_Selection(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "render"
     bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = "TLM_PT_Panel"
+    #bl_parent_id = "TLM_PT_Panel"
 
     def draw(self, context):
         layout = self.layout
@@ -631,7 +636,7 @@ class TLM_PT_Additional(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "render"
     bl_options = {'DEFAULT_CLOSED'}
-    bl_parent_id = "TLM_PT_Panel"
+    #bl_parent_id = "TLM_PT_Panel"
 
     def draw(self, context):
         layout = self.layout

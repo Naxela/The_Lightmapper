@@ -41,7 +41,10 @@ classes = [
     tlm.TLM_AddGLTFNode,
     tlm.TLM_ShiftMultiplyLinks,
     tlm.TLM_AdjustExposure,
-    tlm.TLM_DivideAtlasgroupsModal
+    tlm.TLM_DivideAtlasgroupsModal,
+
+
+    tlm.TLM_Build_Lightmaps_Easy
 ]
 
 def register():

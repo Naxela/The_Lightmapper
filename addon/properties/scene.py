@@ -11,6 +11,19 @@ def transfer_load():
 
 class TLM_SceneProperties(bpy.types.PropertyGroup):
 
+
+    tlm_setting_lightmap_mode : EnumProperty(
+        items = [('Easy', 'Easy', 'Easy mode. Bake lightmaps for the entire scene.'),
+                ('Advanced', 'Advanced', 'Advanced mode. Bake lightmaps for selected objects.')],
+                name = "Lightmape mode", 
+                description="Select whether you want an easy or advanced mode.", 
+                default='Easy')
+
+
+
+
+
+
     engines = [('Cycles', 'Cycles', 'Use Cycles for lightmapping')]
 
     #engines.append(('LuxCoreRender', 'LuxCoreRender', 'Use LuxCoreRender for lightmapping'))

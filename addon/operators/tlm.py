@@ -31,6 +31,143 @@ def setObjectLightmapByWeight(minimumRes, maximumRes, objWeight):
             nearestWeight = min(assortedRange, key=lambda x:abs(x - exampleWeight))
             return (availableResolutions[assortedRange.index(nearestWeight) + minResIdx])
 
+
+#NEW LIGHTMAPPER ONE
+class TLM_Build_Lightmaps_Easy(bpy.types.Operator):
+    bl_idname = "tlm.build_lightmaps_easy"
+    bl_label = "Build Lightmaps"
+    bl_description = "Build Lightmaps for the entire scene"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    '''Bake textures for listed objects'''
+    bl_idname = 'arm.bake_textures'
+    bl_label = 'Bake'
+
+    def execute(self, context):
+        scn = context.scene
+        if len(scn.arm_bakelist) == 0:
+            return{'FINISHED'}
+
+        self.report({'INFO'}, "Once baked, hit 'Armory Bake - Apply' to pack lightmaps")
+
+        bake_objects = []
+
+        for obj in bpy.data.objects:
+            bake_objects.append(obj)
+
+        # At least one material required for now..
+        for obj in bake_objects:
+            if len(obj.material_slots) == 0:
+                if not 'MaterialDefault' in bpy.data.materials:
+                    mat = bpy.data.materials.new(name='MaterialDefault')
+                    mat.use_nodes = True
+                else:
+                    mat = bpy.data.materials['MaterialDefault']
+                obj.data.materials.append(mat)
+
+        # Single user materials
+        for obj in bake_objects:
+            for slot in obj.material_slots:
+                # Temp material already exists
+                if slot.material.name.endswith('_temp'):
+                    continue
+                n = slot.material.name + '_' + obj.name + '_temp'
+                if not n in bpy.data.materials:
+                    slot.material = slot.material.copy()
+                    slot.material.name = n
+
+        # Images for baking
+        for obj in bake_objects:
+            img_name = obj.name + '_baked'
+            rx = 512
+            ry = 512
+            # Get image
+            if img_name not in bpy.data.images or bpy.data.images[img_name].size[0] != rx or bpy.data.images[img_name].size[1] != ry:
+                img = bpy.data.images.new(img_name, int(rx), int(ry))
+                img.name = img_name # Force img_name (in case Blender picked img_name.001)
+            else:
+                img = bpy.data.images[img_name]
+            for slot in obj.material_slots:
+                # Add image nodes
+                mat = slot.material
+                mat.use_nodes = True
+                nodes = mat.node_tree.nodes
+                if 'Baked Image' in nodes:
+                    img_node = nodes['Baked Image']
+                else:
+                    img_node = nodes.new('ShaderNodeTexImage')
+                    img_node.name = 'Baked Image'
+                    img_node.location = (100, 100)
+                    img_node.image = img
+                img_node.select = True
+                nodes.active = img_node
+
+        obs = bpy.context.view_layer.objects
+
+        # Unwrap
+        active = obs.active
+        for obj in scn.arm_bakelist:
+            uv_layers = obj.data.uv_layers
+            if not 'UVMap_baked' in uv_layers:
+                uvmap = uv_layers.new(name='UVMap_baked')
+                uv_layers.active_index = len(uv_layers) - 1
+                obs.active = obj
+                bpy.ops.object.mode_set(mode='OBJECT')
+                bpy.ops.object.select_all(action='DESELECT')
+                bpy.context.view_layer.objects.active = obj
+                obj.select_set(True)
+                bpy.ops.object.mode_set(mode='EDIT')
+                bpy.ops.mesh.select_all(action='SELECT')
+                bpy.ops.uv.smart_project()
+                bpy.ops.mesh.select_all(action='DESELECT')
+                bpy.ops.object.mode_set(mode='OBJECT')
+            else:
+                for i in range(0, len(uv_layers)):
+                    if uv_layers[i].name == 'UVMap_baked':
+                        uv_layers.active_index = i
+                        break
+        obs.active = active
+
+        # Materials for runtime
+        # TODO: use single mat per object
+        for obj in scn.arm_bakelist:
+            img_name = obj.name + '_baked'
+            for slot in obj.material_slots:
+                n = slot.material.name[:-5] + '_baked'
+                if not n in bpy.data.materials:
+                    mat = bpy.data.materials.new(name=n)
+                    mat.use_nodes = True
+                    mat.use_fake_user = True
+                    nodes = mat.node_tree.nodes
+                    img_node = nodes.new('ShaderNodeTexImage')
+                    img_node.name = 'Baked Image'
+                    img_node.location = (100, 100)
+                    img_node.image = bpy.data.images[img_name]
+                    mat.node_tree.links.new(img_node.outputs[0], nodes['Principled BSDF'].inputs[0])
+                else:
+                    mat = bpy.data.materials[n]
+                    nodes = mat.node_tree.nodes
+                    nodes['Baked Image'].image = bpy.data.images[img_name]
+
+        # Bake
+        bpy.ops.object.select_all(action='DESELECT')
+        for obj in bake_objects:
+            obj.obj.select_set(True)
+        bpy.ops.object.bake('INVOKE_DEFAULT', type='COMBINED')
+        bpy.ops.object.select_all(action='DESELECT')
+
+        return{'FINISHED'}
+
+
+
+
+
+
+
+
+
+
+
 class TLM_BuildLightmaps(bpy.types.Operator):
     bl_idname = "tlm.build_lightmaps"
     bl_label = "Build Lightmaps"
