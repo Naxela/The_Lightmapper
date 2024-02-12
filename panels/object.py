@@ -19,3 +19,5 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
         if obj.type == "MESH":
             row = layout.row(align=True)
             row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_use")
+            row = layout.row(align=True)
+            row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_resolution")

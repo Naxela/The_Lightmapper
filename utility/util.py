@@ -34,10 +34,10 @@ def load_library(asset_name):
 
     scriptDir = os.path.dirname(os.path.realpath(__file__))
 
-    if bpy.data.filepath.endswith('tlm_data.blend'): # Prevent load in library itself
+    if bpy.data.filepath.endswith('TLMNode'): # Prevent load in library itself
         return
 
-    data_path = os.path.abspath(os.path.join(scriptDir, '..', '..', 'assets/tlm_data.blend'))
+    data_path = os.path.abspath(os.path.join(get_addon_path(), "utility","TLMNode.blend"))
     data_names = [asset_name]
 
     # Import
