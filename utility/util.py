@@ -73,6 +73,37 @@ def addLightmapNode(mat, path):
     img_node.location = (100, 100)
     img_node.image = image
 
+def linkLightmap(folder):
+    #First make sure directory exists
+    relative_directory = folder
+    
+    absolute_directory = bpy.path.abspath(relative_directory)
+    manifest_file = os.path.join(absolute_directory,"manifest.json")
+
+    if not os.path.exists(absolute_directory):
+        print("No lightmap directory")
+        return
+    
+    if not os.path.exists(manifest_file):
+        print("No lightmap manifest")
+        return
+    
+    with open(manifest_file, 'r') as file:
+        # Load JSON data from file
+        data = json.load(file)
+
+    for index, key in enumerate(data):
+        
+        if index == 0 or key == "EXT":
+            continue
+        
+        obj = bpy.data.objects.get(key)
+        
+        lightmap = data[key]
+
+        obj["TLM-Lightmap"] = lightmap
+    
+
 def applyLightmap(folder, directly=False):
     
     #First make sure directory exists

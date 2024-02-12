@@ -131,3 +131,19 @@ class TLM_ApplyLightmaps(bpy.types.Operator):
 
     def cancel(self, context):
         return {'CANCELLED'}
+
+class TLM_LinkLightmaps(bpy.types.Operator):
+    bl_idname = "tlm.link_lightmaps"
+    bl_label = "Link Lightmaps"
+    bl_description = "Link Lightmaps to NX Engine"
+    bl_options = {'REGISTER', 'UNDO'}
+        
+    def execute(self, context):
+        util.linkLightmap("//Lightmaps")
+        return {'RUNNING_MODAL'}
+    
+    def modal(self, context, event):
+        return {'PASS_THROUGH'}
+
+    def cancel(self, context):
+        return {'CANCELLED'}

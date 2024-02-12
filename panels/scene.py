@@ -33,3 +33,5 @@ class TLM_PT_Settings(bpy.types.Panel):
         row.operator("tlm.build_lightmaps")
         row = layout.row(align=True)
         row.operator("tlm.apply_lightmaps")
+        row = layout.row(align=True)
+        row.operator("tlm.link_lightmaps")
