@@ -14,6 +14,16 @@ class TLM_PT_Panel(bpy.types.Panel):
         layout.use_property_split = True
         layout.use_property_decorate = False
 
+        scene = context.scene
+        row = layout.row(align=True)
+        row.operator("tlm.build_lightmaps")
+        row = layout.row(align=True)
+        row.operator("tlm.apply_lightmaps")
+        row = layout.row(align=True)
+        row.operator("tlm.link_lightmaps")
+        row = layout.row(align=True)
+        row.operator("tlm.explore_lightmaps")
+
 class TLM_PT_Settings(bpy.types.Panel):
     bl_label = "Settings"
     bl_space_type = "PROPERTIES"
@@ -30,8 +40,14 @@ class TLM_PT_Settings(bpy.types.Panel):
         sceneProperties = scene.TLM_SceneProperties
 
         row = layout.row(align=True)
-        row.operator("tlm.build_lightmaps")
+        row.prop(sceneProperties, "tlm_setting_renderer", expand=True)
         row = layout.row(align=True)
-        row.operator("tlm.apply_lightmaps")
+        row.prop(sceneProperties, "tlm_quality")
         row = layout.row(align=True)
-        row.operator("tlm.link_lightmaps")
+        row.prop(sceneProperties, "tlm_setting_scale", expand=True)
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_setting_savedir")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_play_sound")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_denoise_engine", expand=True)

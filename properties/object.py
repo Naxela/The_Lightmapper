@@ -4,19 +4,36 @@ from bpy.props import *
 class TLM_ObjectProperties(bpy.types.PropertyGroup):
     tlm_mesh_lightmap_use : BoolProperty(
         name="Enable Lightmapping", 
-        description="TODO", 
+        description="Enable Lightmapping for this object", 
         default=False)
     
     tlm_mesh_lightmap_resolution : EnumProperty(
-        items = [('32', '32', 'TODO'),
-                 ('64', '64', 'TODO'),
-                 ('128', '128', 'TODO'),
-                 ('256', '256', 'TODO'),
-                 ('512', '512', 'TODO'),
-                 ('1024', '1024', 'TODO'),
-                 ('2048', '2048', 'TODO'),
-                 ('4096', '4096', 'TODO'),
-                 ('8192', '8192', 'TODO')],
+        items = [('32', '32', '32'),
+                 ('64', '64', '64'),
+                 ('128', '128', '128'),
+                 ('256', '256', '256'),
+                 ('512', '512', '512'),
+                 ('1024', '1024', '1024'),
+                 ('2048', '2048', '2048'),
+                 ('4096', '4096', '4096'),
+                 ('8192', '8192', '8192')],
                 name = "Lightmap Resolution", 
-                description="TODO", 
+                description="The lightmap resolution for this object", 
                 default='256')
+    
+    unwrap_modes = [('Lightmap', 'Lightmap', 'TODO'),
+                ('SmartProject', 'Smart Project', 'TODO')]
+    
+    tlm_mesh_lightmap_unwrap_mode : EnumProperty(
+        items = unwrap_modes,
+                name = "Unwrap Mode",
+                description="The unwrap mode for this object", 
+                default='SmartProject')
+    
+    tlm_mesh_unwrap_margin : FloatProperty(
+        name="Unwrap Margin", 
+        description="The unwrap margin for this object",
+        default=0.1, 
+        min=0.0, 
+        max=1.0, 
+        subtype='FACTOR')

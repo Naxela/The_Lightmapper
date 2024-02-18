@@ -1,34 +1,14 @@
-import bpy, os, json
-
-#Create a lightmap channel if it doesn't exist
-def prepareLightmapChannel(obj, setActive):
-    
-    mesh = obj.data
-    
-    if not "UVMap-Lightmap" in mesh.uv_layers:
-        
-        mesh.uv_layers.new(name="UVMap-Lightmap")
-        
-    if setActive:
-        
-        mesh.uv_layers.active = mesh.uv_layers["UVMap-Lightmap"]
-        mesh.uv_layers["UVMap-Lightmap"].active_render = True
-        
+import bpy, os, json, math
 #
-def unwrapObjectOnChannel(obj, channel, type):
-    
-    #deselect all
-    #set object to active + selected
-    #set edit mode
-    #select all
-    print("Todo unwrap: " + obj.name)
-
-#
-def createBakeImages(obj, resolution, setActive):
+def createBakeImages(obj, setActive):
     
     img_name = "TLM-" + obj.name
     
     if not img_name in bpy.data.images:
+
+        #bpy.data.scenes["Scene"].TLM_SceneProperties.tlm_setting_scale
+
+        resolution = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / int(bpy.context.scene.TLM_SceneProperties.tlm_setting_scale) 
         
         image = bpy.data.images.new(img_name, int(resolution), int(resolution), alpha=True, float_buffer=True)
     
@@ -130,7 +110,14 @@ def saveLightmaps(obj):
                     if image is not None:
                         # Save the image
                         if not os.path.exists(image_path):
-                            image.save_render(filepath=image_path)
+
+                            bpy.context.scene.render.image_settings.file_format = 'HDR'
+                            bpy.context.scene.render.image_settings.color_depth = '32'
+                            # Save the image
+                            image.save_render(filepath=image_path, scene=bpy.context.scene)
+
+                            #image.save_render(filepath=image_path)
+
                             print(f"Image saved to {image_path}")
                         else:
                             print(f"Image already exist at {image_path}")
@@ -206,17 +193,9 @@ def bakeObjectsAndReportProgress(obj_list):
     total = len(obj_list)
     for index, obj_name in enumerate(obj_list):
         obj = bpy.data.objects[obj_name]
-        prepareLightmapChannel(obj, True)
-        unwrapObjectOnChannel(obj, "UVMap-Lightmap", 0)
-        createBakeImages(obj, 256, True)
-        
+        createBakeImages(obj, True)
         bakeObject(obj)
-        
         saveLightmaps(obj)
-
-        # Report progress
-        #print(f"Baked {index + 1} of {total} objects ({obj_name})")
-        #print(f"[TLM] {index + 1} / {total}", flush=True)
         print(f"[TLM]:0: {(index + 1) / total}", flush=True)
         
     for index, obj_name in enumerate(obj_list):

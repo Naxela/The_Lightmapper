@@ -5,7 +5,8 @@ from . import tlm
 classes = [
     tlm.TLM_BuildLightmaps,
     tlm.TLM_ApplyLightmaps,
-    tlm.TLM_LinkLightmaps
+    tlm.TLM_LinkLightmaps,
+    tlm.TLM_ExploreLightmaps
 ]
 
 def register():

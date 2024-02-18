@@ -5,6 +5,7 @@ import subprocess
 import threading
 from queue import Queue, Empty
 from ..utility import util
+from ..utility import unwrap
 
 main_progress = NX_Progress_Bar(10, 10, 100, 10, 0.0, (0.0, 0.0, 0.0, 1.0))
 
@@ -62,7 +63,10 @@ class TLM_BuildLightmaps(bpy.types.Operator):
     def execute(self, context):
         args=()
         # Setup command and start the process
+        util.removeLightmapFolder()
+        util.configureEngine()
         util.copyBuildScript()
+        unwrap.prepareObjectsForBaking()
         script_path = bpy.path.abspath("//_build_script.py")
         blender_exe_path = bpy.app.binary_path
         blend_file_path = bpy.data.filepath
@@ -114,6 +118,10 @@ class TLM_BuildLightmaps(bpy.types.Operator):
             bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
         util.removeBuildScript()
+
+        #Post build operations here
+        util.postprocessBuild()
+
         return {'CANCELLED'}
     
 class TLM_ApplyLightmaps(bpy.types.Operator):
@@ -124,6 +132,22 @@ class TLM_ApplyLightmaps(bpy.types.Operator):
         
     def execute(self, context):
         util.applyLightmap("//Lightmaps", False)
+        return {'RUNNING_MODAL'}
+    
+    def modal(self, context, event):
+        return {'PASS_THROUGH'}
+
+    def cancel(self, context):
+        return {'CANCELLED'}
+    
+class TLM_ExploreLightmaps(bpy.types.Operator):
+    bl_idname = "tlm.explore_lightmaps"
+    bl_label = "Explore Lightmaps"
+    bl_description = "Explore Lightmaps"
+    bl_options = {'REGISTER', 'UNDO'}
+        
+    def execute(self, context):
+        util.exploreLightmaps()
         return {'RUNNING_MODAL'}
     
     def modal(self, context, event):

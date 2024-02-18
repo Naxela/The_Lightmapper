@@ -1,4 +1,6 @@
-import bpy, shutil, os, json
+import bpy, shutil, os, json, webbrowser
+from ..denoiser import oidn
+from types import SimpleNamespace
 
 def get_addon_path():
 
@@ -30,6 +32,24 @@ def removeBuildScript():
     if os.path.exists(bpy.path.abspath("//_build_script.py")):
         os.remove(bpy.path.abspath("//_build_script.py"))
 
+def exploreLightmaps():
+
+    relative_directory = "//Lightmaps"
+    
+    absolute_directory = bpy.path.abspath(relative_directory)
+    if not os.path.exists(absolute_directory):
+        os.makedirs(absolute_directory)
+
+    webbrowser.open(absolute_directory)
+
+def removeLightmapFolder():
+
+    relative_directory = "//Lightmaps"
+    
+    absolute_directory = bpy.path.abspath(relative_directory)
+    if os.path.exists(absolute_directory):
+        shutil.rmtree(absolute_directory)
+
 def load_library(asset_name):
 
     scriptDir = os.path.dirname(os.path.realpath(__file__))
@@ -47,6 +67,53 @@ def load_library(asset_name):
 
     for ref in data_refs:
         ref.use_fake_user = True
+
+def postprocessBuild():
+
+    denoiseList = []
+
+    relative_directory = "//Lightmaps"
+    
+    absolute_directory = bpy.path.abspath(relative_directory)
+    manifest_file = os.path.join(absolute_directory,"manifest.json")
+
+    if not os.path.exists(absolute_directory):
+        print("No lightmap directory")
+        return
+    
+    if not os.path.exists(manifest_file):
+        print("No lightmap manifest")
+        return
+    
+    with open(manifest_file, 'r') as file:
+        # Load JSON data from file
+        data = json.load(file)
+
+    for index, key in enumerate(data):
+        
+        if index == 0 or key == "EXT":
+            continue
+
+        denoiseList.append(data[key] + "." + data["EXT"])
+
+    if bpy.context.scene.TLM_SceneProperties.tlm_denoise_engine == "OIDN":
+
+        denoiser_path = os.path.join(get_addon_path(), "denoiser","bin")
+
+        #Denoise
+        props = SimpleNamespace(
+            tlm_oidn_path=denoiser_path,
+            tlm_oidn_verbose=False,
+            tlm_oidn_affinity=0,
+            tlm_oidn_threads=0,
+            tlm_oidn_maxmem=0
+        )
+
+        denoiser = oidn.TLM_OIDN_Denoise(props, denoiseList, absolute_directory)
+        denoiser.denoise()
+        denoiser.clean()
+
+        del denoiser
 
 def addTLMNode(mat):
     
@@ -103,6 +170,71 @@ def linkLightmap(folder):
 
         obj["TLM-Lightmap"] = lightmap
     
+def configureEngine():
+
+    scene = bpy.context.scene
+    cycles = scene.cycles
+    bpy.context.scene.render.engine = 'CYCLES'
+    cycles.device = scene.TLM_SceneProperties.tlm_setting_renderer
+
+    if cycles.device == "GPU":
+        cycles.tile_size = 256
+    else:
+        cycles.tile_size = 32
+    
+    if scene.TLM_SceneProperties.tlm_quality == "0":
+        cycles.samples = 32
+        cycles.max_bounces = 1
+        cycles.diffuse_bounces = 1
+        cycles.glossy_bounces = 1
+        cycles.transparent_max_bounces = 1
+        cycles.transmission_bounces = 1
+        cycles.volume_bounces = 1
+        cycles.caustics_reflective = False
+        cycles.caustics_refractive = False
+    elif scene.TLM_SceneProperties.tlm_quality == "1":
+        cycles.samples = 64
+        cycles.max_bounces = 2
+        cycles.diffuse_bounces = 2
+        cycles.glossy_bounces = 2
+        cycles.transparent_max_bounces = 2
+        cycles.transmission_bounces = 2
+        cycles.volume_bounces = 2
+        cycles.caustics_reflective = False
+        cycles.caustics_refractive = False
+    elif scene.TLM_SceneProperties.tlm_quality == "2":
+        cycles.samples = 512
+        cycles.max_bounces = 2
+        cycles.diffuse_bounces = 2
+        cycles.glossy_bounces = 2
+        cycles.transparent_max_bounces = 2
+        cycles.transmission_bounces = 2
+        cycles.volume_bounces = 2
+        cycles.caustics_reflective = False
+        cycles.caustics_refractive = False
+    elif scene.TLM_SceneProperties.tlm_quality == "3":
+        cycles.samples = 1024
+        cycles.max_bounces = 256
+        cycles.diffuse_bounces = 256
+        cycles.glossy_bounces = 256
+        cycles.transparent_max_bounces = 256
+        cycles.transmission_bounces = 256
+        cycles.volume_bounces = 256
+        cycles.caustics_reflective = False
+        cycles.caustics_refractive = False
+    elif scene.TLM_SceneProperties.tlm_quality == "4":
+        cycles.samples = 2048
+        cycles.max_bounces = 512
+        cycles.diffuse_bounces = 512
+        cycles.glossy_bounces = 512
+        cycles.transparent_max_bounces = 512
+        cycles.transmission_bounces = 512
+        cycles.volume_bounces = 512
+        cycles.caustics_reflective = True
+        cycles.caustics_refractive = True
+    else: #Custom
+        pass
+
 
 def applyLightmap(folder, directly=False):
     
