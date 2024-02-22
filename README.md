@@ -1,3 +1,6 @@
+ℹ Note: I'm slowly making a new and improved version of the Lightmapper. It's currently located in the "Lightmapper-One" branch, but keep in mind, it's very early and WIP - Naxela.
+<br>
+
 ## The Lightmapper
 
 ![](img/a.png)
