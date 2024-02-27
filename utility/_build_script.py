@@ -12,6 +12,23 @@ def createBakeImages(obj, setActive):
         
         image = bpy.data.images.new(img_name, int(resolution), int(resolution), alpha=True, float_buffer=True)
     
+    #TODO - THIS NEEDS TO BE IN PRE-BUILD PHASE
+    #We want unique materials
+    #for slot in obj.material_slots:
+        
+    #    mat = slot.material
+
+        #If the material has more users, make it unique
+    #    if mat.users < 1:
+            # Duplicate the material
+    #        new_mat = mat.copy()
+            # Rename the new material with the object's name as suffix
+    #        new_mat.name = f"{mat.name}-{obj.name}"
+            # Assign the new, uniquely named material to the slot
+    #        slot.material = new_mat
+            # Optionally, set use_fake_user here if needed
+            # new_mat.use_fake_user = True
+    
     #For each slot in the objects
     for slot in obj.material_slots:
         

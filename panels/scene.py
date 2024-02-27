@@ -50,4 +50,6 @@ class TLM_PT_Settings(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_play_sound")
         row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_material_multi_user")
+        row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_denoise_engine", expand=True)

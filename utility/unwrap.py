@@ -108,6 +108,7 @@ def unwrapObjectOnChannel(obj):
                 print("Copied Existing UV Map for object: " + obj.name)
 
 def prepareObjectsForBaking():
+    scene = bpy.context.scene
     obj_list = []
         
     for obj in bpy.context.scene.objects:
@@ -120,6 +121,40 @@ def prepareObjectsForBaking():
         obj = bpy.data.objects[obj_name]
         prepareLightmapChannel(obj, True)
         unwrapObjectOnChannel(obj)
+
+    #if scene.TLM_SceneProperties.tlm_reset_uv:
+    #    pass
+        #todo
+
+    if scene.TLM_SceneProperties.tlm_material_multi_user == "Unique":
+        for obj in bpy.context.scene.objects:
+            if obj.type == 'MESH':
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    for slot in obj.material_slots:
+                        
+                        mat = slot.material
+
+                        #If the material has more users, make it unique
+                        if mat.users > 1:
+                            # Duplicate the material
+                            new_mat = mat.copy()
+                            # Rename the new material with the object's name as suffix
+                            new_mat.name = f"{mat.name}-{obj.name}"
+                            # Assign the new, uniquely named material to the slot
+                            slot.material = new_mat
+                            # Optionally, set use_fake_user here if needed
+                            # new_mat.use_fake_user = True
+
+    elif scene.TLM_SceneProperties.tlm_material_multi_user == "Shared":
+
+        pass
+
+    else:
+
+        pass
+
+
+
 
     #Save the blend file
     bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)

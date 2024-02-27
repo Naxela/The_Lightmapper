@@ -62,11 +62,17 @@ class TLM_BuildLightmaps(bpy.types.Operator):
         
     def execute(self, context):
         args=()
+
+        #Init timer here!
+
         # Setup command and start the process
         util.removeLightmapFolder()
         util.configureEngine()
         util.copyBuildScript()
         unwrap.prepareObjectsForBaking()
+
+        #End prepare time here
+
         script_path = bpy.path.abspath("//_build_script.py")
         blender_exe_path = bpy.app.binary_path
         blend_file_path = bpy.data.filepath
@@ -117,17 +123,21 @@ class TLM_BuildLightmaps(bpy.types.Operator):
             bpy.types.SpaceView3D.draw_handler_remove(self._draw_handler, 'WINDOW')
             bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
+        #End baking time here
+
         util.removeBuildScript()
 
         #Post build operations here
         util.postprocessBuild()
 
+        #End post build time here
+
         return {'CANCELLED'}
     
 class TLM_ApplyLightmaps(bpy.types.Operator):
     bl_idname = "tlm.apply_lightmaps"
-    bl_label = "Apply Lightmaps"
-    bl_description = "Apply Lightmaps"
+    bl_label = "Toggle Lightmaps"
+    bl_description = "Toggle Lightmaps"
     bl_options = {'REGISTER', 'UNDO'}
         
     def execute(self, context):

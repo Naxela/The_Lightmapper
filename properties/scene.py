@@ -35,6 +35,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Automatically apply lightmaps on finish", 
         default=False)
     
+    tlm_resetUV : BoolProperty(
+        name="Reset lightmaps UVs", 
+        description="Delete existing lightmap UVs and recalculate them", 
+        default=False)
+    
     tlm_quality : EnumProperty(
         items = [('0', 'Exterior Preview', 'Best for fast exterior previz'),
                     ('1', 'Interior Preview', 'Best for fast interior previz with bounces'),
@@ -50,6 +55,14 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Enable denoising", 
         description="Enable denoising for lightmaps", 
         default=False)
+    
+    tlm_material_multi_user : EnumProperty(
+        items = [('Ignore', 'Ignore', 'Ignore multi-user'),
+                ('Unique', 'Unique', 'Every lightmapped object will get unique lightmap materials'),
+                ('Shared', 'Shared', 'Objects sharing materials will also share UV space')],
+                name = "Material multi-option", 
+                description="Select how to handle shared materials across objects", 
+                default='Unique')
 
     tlm_denoise_engine : EnumProperty(
         items = [('None', 'None', 'Don\'t use any denoising'),
