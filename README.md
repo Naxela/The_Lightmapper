@@ -67,6 +67,18 @@ Installation of The Lightmapper is straight forward. All you need to do is downl
 
 ### Usage
 
+To lightmap, the scene needs to be saved to disk.
+
+To enable lightmapping for single objects, go to object properties/The Lightmapper and enable it.
+
+![](https://user-images.githubusercontent.com/5429817/228257743-33487019-a2d3-40c3-a318-270f98ccd219.png)
+
+If you want to bake the whole scene, you can enable lightmapping for all objects by going to Utilities and click "Enable for set" - By default it will apply this to all the objects in the scene.
+
+![](https://user-images.githubusercontent.com/5429817/228258206-3a75f64e-d483-4c9f-9cc7-fc7ccec9d4a4.png)
+
+
+
 For more information, please refer to the wiki section: COMING SOON
 
 ### Documentation
