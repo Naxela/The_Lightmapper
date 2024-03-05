@@ -285,12 +285,24 @@ def removeLightmap(directly=False):
 
                         TLMNodeInput2 = None
                         #IF THE TLMNode INPUT #2 has a connection, store it
-                        if TLMNode.inputs[1].is_linked:
+
+                        if TLMNode is not None and TLMNode.inputs[1].is_linked:
                             TLMNodeInput2 = TLMNode.inputs[1].links[0].from_socket
 
-                        node_tree.nodes.remove(TLMNode)
-                        node_tree.nodes.remove(LightmapNode)
-                        node_tree.nodes.remove(UVMapNode)
+                        #try:
+                        #    if TLMNode.inputs[1].is_linked:
+                        #        TLMNodeInput2 = TLMNode.inputs[1].links[0].from_socket
+                        #except:
+                        #    print("Something wrong with node: " + TLMNode.name + " at material: " + mat.name)
+
+                        if TLMNode is not None:
+                            node_tree.nodes.remove(TLMNode)
+
+                        if LightmapNode is not None:
+                            node_tree.nodes.remove(LightmapNode)
+
+                        if UVMapNode is not None:
+                            node_tree.nodes.remove(UVMapNode)
 
                         #Connect Input to to the Principled BSDF
                         if TLMNodeInput2 is not None:
