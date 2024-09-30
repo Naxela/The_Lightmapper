@@ -78,6 +78,12 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 description="Supersamples the baked lightmap. Increases bake time", 
                 default="2x")
 
+    tlm_ktx_path : StringProperty(
+        name="KTX Path", 
+        description="The path to the KTX2 binaries", 
+        default="", 
+        subtype="FILE_PATH")
+
     tlm_setting_savedir : StringProperty(
         name="Lightmap Directory", 
         description="Your baked lightmaps will be stored here.", 
@@ -293,6 +299,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
     
     tlm_format : EnumProperty(
         items = [('RGBE', 'HDR', '32-bit RGBE encoded .hdr files. No compression available.'),
+                ('KTX', 'KTX', 'KTX2 Format'),
                  ('EXR', 'EXR', '32-bit OpenEXR format.')],
                 name = "Format", 
                 description="Select default 32-bit format", 

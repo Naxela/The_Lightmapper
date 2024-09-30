@@ -378,6 +378,10 @@ class TLM_PT_Encoding(bpy.types.Panel):
                 if sceneProperties.tlm_encoding_mode_a == "HDR":
                     row = layout.row(align=True)
                     row.prop(sceneProperties, "tlm_format")
+
+                    if(sceneProperties.tlm_format == "KTX"):
+                        row = layout.row(align=True)
+                        row.prop(sceneProperties, "tlm_ktx_path")
             else:
 
                 if sceneProperties.tlm_encoding_mode_b == "RGBM":

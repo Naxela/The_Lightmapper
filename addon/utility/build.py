@@ -437,6 +437,56 @@ def begin_build():
 
             if sceneProperties.tlm_encoding_mode_a == "HDR":
 
+                if sceneProperties.tlm_format == "KTX":
+
+                    tlm_log.append("KTX Format")
+                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                        
+                        print("KTX Format")
+
+                    ren = bpy.context.scene.render
+                    ren.image_settings.file_format = "OPEN_EXR"
+                    #ren.image_settings.exr_codec = "scene.TLM_SceneProperties.tlm_exr_codec"
+
+                    end = "_baked"
+
+                    baked_image_array = []
+
+                    if sceneProperties.tlm_denoise_use:
+
+                        end = "_denoised"
+
+                    if sceneProperties.tlm_filtering_use:
+
+                        end = "_filtered"
+                    
+                    #For each image in folder ending in denoised/filtered
+                    dirfiles = [f for f in listdir(dirpath) if isfile(join(dirpath, f))]
+
+                    for file in dirfiles:
+                        if file.endswith(end + ".hdr"):
+
+                            img = bpy.data.images.load(os.path.join(dirpath,file))
+                            img.save_render(img.filepath_raw[:-4] + ".exr")
+
+                            if(sceneProperties.tlm_ktx_path != ""):
+                                
+                                ktx_path = sceneProperties.tlm_ktx_path
+                                exr_path = img.filepath_raw[:-4] + ".exr"
+                                
+                                # Build the KTX command
+                                ktx_command = [
+                                    ktx_path, 
+                                    "create", 
+                                    "--format", "R32G32B32A32_SFLOAT", 
+                                    exr_path, 
+                                    exr_path[:-4] + ".ktx2"
+                                ]
+                                
+                                # Execute the KTX conversion command
+                                subprocess.run(ktx_command, check=True)
+                                print(f"Converted {exr_path} to KTX2 format.")
+
                 if sceneProperties.tlm_format == "EXR":
 
                     tlm_log.append("EXR Format")
@@ -798,6 +848,10 @@ def manage_build(background_pass=False, load_atlas=0):
                 print("GPU Encoding")
 
                 if sceneProperties.tlm_encoding_mode_b == "HDR":
+
+                    if sceneProperties.tlm_format == "KTX":
+
+                        formatEnc = ".ktx2"
 
                     if sceneProperties.tlm_format == "EXR":
 
