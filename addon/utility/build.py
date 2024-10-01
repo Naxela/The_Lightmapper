@@ -430,6 +430,11 @@ def begin_build():
             if not bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                 print("Turn on verbose mode to get more detail.")
 
+    # Initialize a dictionary to store the manifest
+    lightmap_manifest = {
+        "lightmaps": {}
+    }
+
     #Encoding
     if sceneProperties.tlm_encoding_use and scene.TLM_EngineProperties.tlm_bake_mode != "Background":
 
@@ -473,6 +478,8 @@ def begin_build():
                                 
                                 ktx_path = sceneProperties.tlm_ktx_path
                                 exr_path = img.filepath_raw[:-4] + ".exr"
+
+                                object_name = os.path.basename(exr_path).replace(end + ".exr", "")  # Extract base object name
                                 
                                 # Build the KTX command
                                 ktx_command = [
@@ -486,6 +493,16 @@ def begin_build():
                                 # Execute the KTX conversion command
                                 subprocess.run(ktx_command, check=True)
                                 print(f"Converted {exr_path} to KTX2 format.")
+
+                                # Add to manifest (just the filename without the path)
+                                lightmap_manifest["lightmaps"][object_name] = os.path.basename(exr_path[:-4] + ".ktx2")
+
+                    # Save the manifest to a JSON file
+                    manifest_path = os.path.join(dirpath, "lightmap_manifest.json")
+                    with open(manifest_path, 'w') as json_file:
+                        json.dump(lightmap_manifest, json_file, indent=4)
+
+                    print(f"Manifest saved to {manifest_path}")
 
                 if sceneProperties.tlm_format == "EXR":
 
