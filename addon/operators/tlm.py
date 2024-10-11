@@ -737,7 +737,7 @@ class TLM_BuildEnvironmentProbes(bpy.types.Operator):
         for obj in bpy.context.scene.objects:
 
             if obj.type == "LIGHT_PROBE":
-                if obj.data.type == "CUBEMAP":
+                if obj.data.type == "SPHERE":
 
                     cam_name = "EnvPCam_" + obj.name
                     camera = bpy.data.cameras.new(cam_name)
