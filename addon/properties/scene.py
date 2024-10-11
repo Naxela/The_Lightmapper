@@ -489,11 +489,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 default='256')
 
     tlm_environment_probe_engine : EnumProperty(
-        items = [('BLENDER_EEVEE', 'Eevee', 'TODO'),
+        items = [('BLENDER_EEVEE_NEXT', 'Eevee', 'TODO'),
                  ('CYCLES', 'Cycles', 'TODO')],
                 name = "Probe Render Engine", 
                 description="TODO", 
-                default='BLENDER_EEVEE')
+                default='BLENDER_EEVEE_NEXT')
 
     tlm_load_folder : StringProperty(
         name="Load Folder",
