@@ -1,5 +1,5 @@
 import bpy
-#from ..ui import progress_bar.NX_Progress_Bar as NX_Progress_Bar
+
 from ..ui.progress_bar import NX_Progress_Bar
 import subprocess
 import threading
@@ -9,30 +9,32 @@ from ..utility import unwrap
 
 main_progress = NX_Progress_Bar(10, 10, 100, 10, 0.0, (0.0, 0.0, 0.0, 1.0))
 
+# Draws the 2D progress bar in the Blender interface
 def draw_callback_2d():
     main_progress.progress = bpy.context.scene.get("baking_progress", 0.0)
-    #main_progress.color = (1.0, 0.0, 0.0, 1.0)
     main_progress.draw()
     
-def callbackOperations(argument):
-    
-    # [TLM]:0:0.0
-    # [INDICATOR] : KEYTYPE : VALUE
-    
-    global baking_progress
-    
+# Handles operations based on output from the subprocess, updating progress or printing messages
+def callback_operations(argument):
     if argument.startswith("[TLM]"):
-        
-        call = argument.split(':') #Remove indicator and split by semicolon :
-        
-        if call[1] == "0":
-            progress_value = float(call[2].strip())
-            bpy.context.scene["baking_progress"] = progress_value
-            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-        
-        if call[1] == "1":
-            print(call[2].strip())
+        call = argument.split(":")
+        if len(call) < 3:
+            return
+        key_type = call[1].strip()
+        value = call[2].strip()
 
+        if key_type == "0":
+            try:
+                progress_value = float(value)
+                bpy.context.scene["baking_progress"] = progress_value
+                bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+            except ValueError:
+                print(f"Invalid progress value: {value}")
+
+        elif key_type == "1":
+            print(value)
+
+# Operator for building lightmaps, manages the subprocess and updates progress in Blender
 class TLM_BuildLightmaps(bpy.types.Operator):
     bl_idname = "tlm.build_lightmaps"
     bl_label = "Build Lightmaps"
@@ -46,6 +48,7 @@ class TLM_BuildLightmaps(bpy.types.Operator):
         self.output_queue = Queue()
         self.error_queue = Queue()
 
+    # Reads output from the subprocess and adds it to a queue
     def read_output(self, pipe, queue):
         try:
             for line in iter(pipe.readline, ''):
@@ -53,31 +56,29 @@ class TLM_BuildLightmaps(bpy.types.Operator):
         finally:
             pipe.close()
 
+    # Starts the subprocess to build lightmaps
     def start_process(self, cmd):
         self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, bufsize=1, universal_newlines=True, encoding='utf-8')
-        self.stdout_thread = threading.Thread(target=self.read_output, args=(self.process.stdout, self.output_queue))
-        self.stderr_thread = threading.Thread(target=self.read_output, args=(self.process.stderr, self.error_queue))
+        self.stdout_thread = threading.Thread(target=self.read_output, args=(self.process.stdout, self.output_queue), daemon=True)
+        self.stderr_thread = threading.Thread(target=self.read_output, args=(self.process.stderr, self.error_queue), daemon=True)
         self.stdout_thread.start()
         self.stderr_thread.start()
         
+    # Executes the lightmap building process, setting up timers and handlers
     def execute(self, context):
-        args=()
+        args = ()
 
-        #Init timer here!
-
-        # Setup command and start the process
         util.removeLightmapFolder()
         util.configureEngine()
         util.copyBuildScript()
         unwrap.prepareObjectsForBaking()
-
-        #End prepare time here
 
         script_path = bpy.path.abspath("//_build_script.py")
         blender_exe_path = bpy.app.binary_path
         blend_file_path = bpy.data.filepath
         cmd = f'"{blender_exe_path}" "{blend_file_path}" --background --python "{script_path}"'
         self.start_process(cmd)
+
         wm = context.window_manager
         self._timer = wm.event_timer_add(0.1, window=context.window)
         self._draw_handler = bpy.types.SpaceView3D.draw_handler_add(draw_callback_2d, args, 'WINDOW', 'POST_PIXEL')
@@ -85,21 +86,19 @@ class TLM_BuildLightmaps(bpy.types.Operator):
         wm.modal_handler_add(self)
         return {'RUNNING_MODAL'}
     
+    # Handles modal events, reading subprocess output and updating progress
     def modal(self, context, event):
         if event.type == 'TIMER':
-            
             try:
-                while True:  # Non-blocking read from the queue
+                while True:
                     line = self.output_queue.get_nowait()
-                    callbackOperations(line)
-                    print(line.strip())
-                    # Process line here if necessary
+                    callback_operations(line)
             except Empty:
-                pass  # No more lines to read for now
+                pass
 
-            if self.process.poll() is not None:  # Process has finished
+            if self.process.poll() is not None:
                 try:
-                    while True:  # Ensure we read all remaining lines
+                    while True:
                         line = self.error_queue.get_nowait()
                         print("[stderr] " + line.strip())
                 except Empty:
@@ -107,15 +106,15 @@ class TLM_BuildLightmaps(bpy.types.Operator):
                 return self.cancel(context)
         return {'PASS_THROUGH'}
 
+    # Cancels the operation, cleaning up subprocess and handlers
     def cancel(self, context):
-        print("Cancel Call")
         if self.process and self.process.poll() is None:
-            self.process.terminate()  # Or .kill() if terminate doesn't work
+            self.process.terminate()
         if self.stdout_thread.is_alive():
             self.stdout_thread.join()
         if self.stderr_thread.is_alive():
             self.stderr_thread.join()
-            
+        
         wm = context.window_manager
         wm.event_timer_remove(self._timer)
         
@@ -123,17 +122,12 @@ class TLM_BuildLightmaps(bpy.types.Operator):
             bpy.types.SpaceView3D.draw_handler_remove(self._draw_handler, 'WINDOW')
             bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
-        #End baking time here
-
         util.removeBuildScript()
-
-        #Post build operations here
         util.postprocessBuild()
-
-        #End post build time here
 
         return {'CANCELLED'}
     
+# Operator to apply lightmaps, toggling them on the objects
 class TLM_ApplyLightmaps(bpy.types.Operator):
     bl_idname = "tlm.apply_lightmaps"
     bl_label = "Toggle Lightmaps"
@@ -142,14 +136,9 @@ class TLM_ApplyLightmaps(bpy.types.Operator):
         
     def execute(self, context):
         util.applyLightmap("//Lightmaps", False)
-        return {'RUNNING_MODAL'}
+        return {'FINISHED'}
     
-    def modal(self, context, event):
-        return {'PASS_THROUGH'}
-
-    def cancel(self, context):
-        return {'CANCELLED'}
-    
+# Operator to explore the lightmaps directory
 class TLM_ExploreLightmaps(bpy.types.Operator):
     bl_idname = "tlm.explore_lightmaps"
     bl_label = "Explore Lightmaps"
@@ -158,26 +147,15 @@ class TLM_ExploreLightmaps(bpy.types.Operator):
         
     def execute(self, context):
         util.exploreLightmaps()
-        return {'RUNNING_MODAL'}
+        return {'FINISHED'}
     
-    def modal(self, context, event):
-        return {'PASS_THROUGH'}
-
-    def cancel(self, context):
-        return {'CANCELLED'}
-
+# Operator to link lightmaps to the object properties
 class TLM_LinkLightmaps(bpy.types.Operator):
     bl_idname = "tlm.link_lightmaps"
     bl_label = "Link Lightmaps"
-    bl_description = "Link Lightmaps to NX Engine"
+    bl_description = "Link Lightmaps to NX object properties"
     bl_options = {'REGISTER', 'UNDO'}
         
     def execute(self, context):
         util.linkLightmap("//Lightmaps")
-        return {'RUNNING_MODAL'}
-    
-    def modal(self, context, event):
-        return {'PASS_THROUGH'}
-
-    def cancel(self, context):
-        return {'CANCELLED'}
+        return {'FINISHED'}

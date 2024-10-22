@@ -25,7 +25,7 @@ bl_info = {
     "author": "Alexander 'Naxela' Kleemann",
     "location": "T",
     "version": (1, 0, 0),
-    "blender": (4, 00, 0),
+    "blender": (4, 20, 0),
     "description": "",
     'tracker_url': "",
     "category": "Node"
