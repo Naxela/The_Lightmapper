@@ -5,7 +5,7 @@ class TLMBuilder:
     # Initializes the TLMBuilder class with a list of objects and sets up the lightmap directory
     def __init__(self, obj_list):
         self.obj_list = obj_list
-        self.lightmap_dir = "//Lightmaps"
+        self.lightmap_dir = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
         self.abs_dir = bpy.path.abspath(self.lightmap_dir)
         if not os.path.exists(self.abs_dir):
             os.makedirs(self.abs_dir)
@@ -17,12 +17,28 @@ class TLMBuilder:
             resolution = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) // int(bpy.context.scene.TLM_SceneProperties.tlm_setting_scale)
             image = bpy.data.images.new(img_name, resolution, resolution, alpha=True, float_buffer=True)
 
+        if len(obj.material_slots) == 0:
+            single = False
+            number = 0
+            while single == False:
+                matname = obj.name + ".00" + str(number)
+                if matname in bpy.data.materials:
+                    single = False
+                    number = number + 1
+                else:
+                    mat = bpy.data.materials.new(name=matname)
+                    mat.use_nodes = True
+                    obj.data.materials.append(mat)
+                    single = True
+
         for slot in obj.material_slots:
             mat = slot.material
             if not mat:
-                continue
+                continue #Shouldn't occur
             if not mat.use_nodes:
+                mat.use_nodes = True
                 print(f"No nodes in: {obj.name} w/ {mat.name}")
+                print(f"[TLM]:2:Error no nodes in {obj.name} - {msg}", flush=True)
                 continue
 
             nodes = mat.node_tree.nodes
@@ -43,10 +59,11 @@ class TLMBuilder:
         bpy.context.view_layer.objects.active = obj
 
         try:
-            bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, margin=16, use_clear=True)
+            bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, margin=bpy.context.scene.TLM_SceneProperties.tlm_dilation_margin, use_clear=True)
             print(f"[TLM]:1:Baking object '{obj.name}' with diffuse lighting...", flush=True)
         except RuntimeError as e:
-            print(f"Error baking {obj.name}: {e}")
+            msg = str(e).replace(":", " - ")
+            print(f"[TLM]:2:Error baking {obj.name} - {msg}", flush=True)
 
     # Creates a custom property linking the lightmap to the object
     def create_link_properties(self, obj):
@@ -69,11 +86,30 @@ class TLMBuilder:
             if mat.use_nodes and "TLM-Lightmap" in mat.node_tree.nodes:
                 image = mat.node_tree.nodes["TLM-Lightmap"].image
                 if image:
-                    file_path = os.path.join(self.abs_dir, f"{image.name}.hdr")
+
+                    if bpy.context.scene.TLM_SceneProperties.tlm_format == "EXR" or bpy.context.scene.TLM_SceneProperties.tlm_format == "KTX":
+                        file_path = os.path.join(self.abs_dir, f"{image.name}.exr")
+                    else:
+                        file_path = os.path.join(self.abs_dir, f"{image.name}.hdr")
+
+
                     if not os.path.exists(file_path):
-                        bpy.context.scene.render.image_settings.file_format = 'HDR'
-                        bpy.context.scene.render.image_settings.color_depth = '32'
-                        image.save_render(filepath=file_path)
+
+                        if bpy.context.scene.TLM_SceneProperties.tlm_format == "EXR" or bpy.context.scene.TLM_SceneProperties.tlm_format == "KTX":
+
+                            print("[TLM]:1:Saving as EXR File...", flush=True)
+
+                            bpy.context.scene.render.image_settings.file_format = 'OPEN_EXR'
+                            image.save_render(filepath=file_path)
+
+                        else:
+
+                            print("[TLM]:1:Saving as HDR File...", flush=True)
+
+                            bpy.context.scene.render.image_settings.file_format = 'HDR'
+                            bpy.context.scene.render.image_settings.color_depth = '32'
+                            image.save_render(filepath=file_path)
+
                         print(f"Image saved to {file_path}")
                     else:
                         print(f"Image already exists at {file_path}")
@@ -94,7 +130,20 @@ class TLMBuilder:
 
     # Compiles a manifest of all baked lightmaps, storing the information in a JSON file
     def compile_manifest(self):
-        manifest = {"EXT": "hdr"}
+
+        if bpy.context.scene.TLM_SceneProperties.tlm_format == "EXR" or bpy.context.scene.TLM_SceneProperties.tlm_format == "KTX":
+            
+            manifest = {"EXT": "exr"}
+
+        elif bpy.context.scene.TLM_SceneProperties.tlm_format == "KTX":
+
+            # For KTX we would rather change this manually, since the denoiser (nor Blender) can't work with KTX files
+            manifest = {"EXT": "exr"}
+
+        else:
+
+            manifest = {"EXT": "hdr"}
+
         for obj_name in self.obj_list:
             obj = bpy.data.objects[obj_name]
             if "TLM-Lightmap" in obj:

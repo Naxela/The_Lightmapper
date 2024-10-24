@@ -122,10 +122,18 @@ class TLM_OIDN_Denoise:
                 img_array = ndata2.ravel()
 
                 loaded_image.pixels = img_array
-                loaded_image.filepath_raw = image_output_denoise_result_destination = image_path[:-4] + ".hdr"
-                print("Saving: " + image_path[:-4])
-                loaded_image.file_format = "HDR"
-                loaded_image.save()
+
+                #TODO - Pass this as an argument instead
+                if bpy.context.scene.TLM_SceneProperties.tlm_format == "EXR" or bpy.context.scene.TLM_SceneProperties.tlm_format == "KTX":
+                    loaded_image.filepath_raw = image_output_denoise_result_destination = image_path[:-4] + ".exr"
+                    print("Saving: " + image_path[:-4])
+                    loaded_image.file_format = "OPEN_EXR"
+                    loaded_image.save()
+                else:
+                    loaded_image.filepath_raw = image_output_denoise_result_destination = image_path[:-4] + ".hdr"
+                    print("Saving: " + image_path[:-4])
+                    loaded_image.file_format = "HDR"
+                    loaded_image.save()
 
                 self.denoised_array.append(image)
 

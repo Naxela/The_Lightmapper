@@ -1,4 +1,4 @@
-import bpy, shutil, os, json, webbrowser
+import bpy, shutil, os, json, webbrowser, subprocess
 from ..denoiser import oidn
 from ..ui.text_field import NX_Text_Display
 from types import SimpleNamespace
@@ -28,7 +28,7 @@ def removeBuildScript():
 
 # Open the lightmaps directory in the system file browser
 def exploreLightmaps():
-    relative_directory = "//Lightmaps"
+    relative_directory = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
     absolute_directory = bpy.path.abspath(relative_directory)
     if not os.path.exists(absolute_directory):
         os.makedirs(absolute_directory)
@@ -36,7 +36,7 @@ def exploreLightmaps():
 
 # Remove the entire lightmap folder
 def removeLightmapFolder():
-    relative_directory = "//Lightmaps"
+    relative_directory = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
     absolute_directory = bpy.path.abspath(relative_directory)
     if os.path.exists(absolute_directory):
         shutil.rmtree(absolute_directory)
@@ -63,7 +63,7 @@ def postprocessBuild():
     text_display.toggle()
 
     denoiseList = []
-    relative_directory = "//Lightmaps"
+    relative_directory = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
     absolute_directory = bpy.path.abspath(relative_directory)
     manifest_file = os.path.join(absolute_directory, "manifest.json")
 
@@ -83,8 +83,9 @@ def postprocessBuild():
             continue
         denoiseList.append(data[key] + "." + data["EXT"])
 
+    # Denoising with OIDN if enabled
     if bpy.context.scene.TLM_SceneProperties.tlm_denoise_engine == "OIDN":
-        denoiser_path = os.path.join(get_addon_path(), "denoiser", "bin")
+        denoiser_path = os.path.join(get_addon_path(), "binaries", "oidn")
         props = SimpleNamespace(
             tlm_oidn_path=denoiser_path,
             tlm_oidn_verbose=False,
@@ -100,11 +101,60 @@ def postprocessBuild():
         text_display.remove()
         del denoiser
 
+    # Reset UV layers for lightmapped objects
     for obj in bpy.data.objects:
         if obj.type == 'MESH' and obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
             mesh = obj.data
             mesh.uv_layers.active = mesh.uv_layers[0]
             mesh.uv_layers[0].active_render = True
+
+    # KTX Conversion regardless of denoising
+    if bpy.context.scene.TLM_SceneProperties.tlm_format == "KTX":
+
+        ktx_outdir = os.path.join(absolute_directory, "KTX")
+
+        if not os.path.exists(ktx_outdir):
+            os.makedirs(ktx_outdir)
+
+        ktx_path = os.path.join(get_addon_path(), "binaries", "ktx", "ktx.exe")
+        if not os.path.exists(ktx_path):
+            print(f"KTX tool not found at {ktx_path}")
+            return
+
+        for exr_file in os.listdir(absolute_directory):
+            if exr_file.endswith(".exr"):
+
+                exr_path = os.path.join(absolute_directory, exr_file)
+                ktx_output_path = os.path.join(ktx_outdir, os.path.basename(exr_file).replace(".exr",".ktx"))
+
+                ktx_command = [
+                    ktx_path,
+                    "create",
+                    "--format", "R32G32B32A32_SFLOAT",
+                    exr_path,
+                    ktx_output_path
+                ]
+
+                # Execute the KTX conversion command
+                try:
+                    subprocess.run(ktx_command, check=True)
+                    print(f"Converted {exr_path} to {ktx_output_path} in KTX2 format.")
+                except subprocess.CalledProcessError as e:
+                    print(f"Error during KTX conversion for {exr_path}: {e}")
+
+            # We also want to edit the EXR to a KTX
+            manifest_path = os.path.join(absolute_directory, "manifest.json")
+            shutil.copy(manifest_path, ktx_outdir)
+
+            # Update the manifest file to reflect the new extension
+            updated_manifest_path = os.path.join(ktx_outdir, "manifest.json")
+            with open(updated_manifest_path, 'r') as file:
+                manifest_data = json.load(file)
+
+            manifest_data["EXT"] = "ktx"
+
+            with open(updated_manifest_path, 'w') as file:
+                json.dump(manifest_data, file, indent=4)
 
 # Add a TLM node group to the material
 def addTLMNode(mat):
@@ -256,9 +306,20 @@ def applyLightmap(folder, directly=False):
             continue
 
         obj = bpy.data.objects.get(key)
-        extension = "." + data["EXT"]
+
+        if data["EXT"] == "ktx":
+
+            extension = ".exr"
+
+        else:
+
+            extension = "." + data["EXT"]
+
         lightmap = data[key]
         lightmapPath = os.path.join(absolute_directory, lightmap + extension)
+
+        #TODO - We want to try and store the original material name as a property?
+        #SOMETHING WITH THE UV THAT NEEDS TO BE RESET??
 
         for slot in obj.material_slots:
             mat = slot.material

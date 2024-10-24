@@ -19,6 +19,13 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 description="Lightmap resolution scaling. Adjust for previewing.", 
                 default="1")
 
+    tlm_dilation_margin : IntProperty(
+        name="Dilation margin", 
+        default=4,
+        min=1, 
+        max=64, 
+        subtype='PIXEL')
+
     tlm_setting_savedir : StringProperty(
         name="Lightmap Directory", 
         description="Your baked lightmaps will be stored here.", 
@@ -64,9 +71,17 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 description="Select how to handle shared materials across objects", 
                 default='Unique')
 
+    tlm_material_missing : EnumProperty(
+        items = [('Ignore', 'Ignore', 'Ignore lightmapping on object'),
+                #COPY MATERIAL + MATERIAL SELECTION
+                ('Create', 'Create', 'Create a new empty material')],
+                name = "Missing material", 
+                description="Select how to handle missing materials on objects. There needs to be at least one", 
+                default='Ignore')
+
     tlm_denoise_engine : EnumProperty(
         items = [('None', 'None', 'Don\'t use any denoising'),
-                ('Integrated', 'Integrated', 'Use the Blender native denoiser (Compositor; Slow)'),
+                #('Integrated', 'Integrated', 'Use the Blender native denoiser (Compositor; Slow)'),
                 ('OIDN', 'OIDN', 'Use the Intel OIDN denoiser if available')],
                 name = "Denoiser", 
                 description="Select which denoising engine to use.", 
@@ -76,3 +91,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Keep cache files", 
         description="Keep cache files (non-filtered and non-denoised)", 
         default=True)
+
+    tlm_format : EnumProperty(
+        items = [('HDR', 'HDR', 'Use the .HDR file format'),
+                ('EXR', 'EXR', 'Use the .EXR file format'),
+                ('KTX', 'KTX', 'Use the .KTX (KTX2) file format. Requires KTX binaries. Converted files will be placed in the KTX subfolder')],
+                name = "File format", 
+                description="Select which file format to use", 
+                default='HDR')

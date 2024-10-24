@@ -34,6 +34,9 @@ def callback_operations(argument):
         elif key_type == "1":
             print(value)
 
+        elif key_type == "2": #ERROR - Popup dialogue?
+            print(value) 
+
 # Operator for building lightmaps, manages the subprocess and updates progress in Blender
 class TLM_BuildLightmaps(bpy.types.Operator):
     bl_idname = "tlm.build_lightmaps"
@@ -135,7 +138,7 @@ class TLM_ApplyLightmaps(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
         
     def execute(self, context):
-        util.applyLightmap("//Lightmaps", False)
+        util.applyLightmap("//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir, False)
         return {'FINISHED'}
     
 # Operator to explore the lightmaps directory
@@ -153,9 +156,9 @@ class TLM_ExploreLightmaps(bpy.types.Operator):
 class TLM_LinkLightmaps(bpy.types.Operator):
     bl_idname = "tlm.link_lightmaps"
     bl_label = "Link Lightmaps"
-    bl_description = "Link Lightmaps to NX object properties"
+    bl_description = "Link Lightmaps to object properties"
     bl_options = {'REGISTER', 'UNDO'}
         
     def execute(self, context):
-        util.linkLightmap("//Lightmaps")
+        util.linkLightmap("//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir)
         return {'FINISHED'}
