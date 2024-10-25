@@ -125,7 +125,7 @@ def postprocessBuild():
             if exr_file.endswith(".exr"):
 
                 exr_path = os.path.join(absolute_directory, exr_file)
-                ktx_output_path = os.path.join(ktx_outdir, os.path.basename(exr_file).replace(".exr",".ktx"))
+                ktx_output_path = os.path.join(ktx_outdir, os.path.basename(exr_file).replace(".exr",".ktx2"))
 
                 ktx_command = [
                     ktx_path,
@@ -320,6 +320,19 @@ def applyLightmap(folder, directly=False):
 
         #TODO - We want to try and store the original material name as a property?
         #SOMETHING WITH THE UV THAT NEEDS TO BE RESET??
+
+                single = False
+                number = 0
+                while single == False:
+                    matname = obj.name + ".00" + str(number)
+                    if matname in bpy.data.materials:
+                        single = False
+                        number = number + 1
+                    else:
+                        mat = bpy.data.materials.new(name=matname)
+                        mat.use_nodes = True
+                        obj.data.materials.append(mat)
+                        single = True
 
         for slot in obj.material_slots:
             mat = slot.material

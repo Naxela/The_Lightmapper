@@ -17,19 +17,20 @@ class TLMBuilder:
             resolution = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) // int(bpy.context.scene.TLM_SceneProperties.tlm_setting_scale)
             image = bpy.data.images.new(img_name, resolution, resolution, alpha=True, float_buffer=True)
 
-        if len(obj.material_slots) == 0:
-            single = False
-            number = 0
-            while single == False:
-                matname = obj.name + ".00" + str(number)
-                if matname in bpy.data.materials:
-                    single = False
-                    number = number + 1
-                else:
-                    mat = bpy.data.materials.new(name=matname)
-                    mat.use_nodes = True
-                    obj.data.materials.append(mat)
-                    single = True
+        if bpy.context.scene.TLM_SceneProperties.tlm_material_missing == "Create":
+            if len(obj.material_slots) == 0:
+                single = False
+                number = 0
+                while single == False:
+                    matname = obj.name + ".00" + str(number)
+                    if matname in bpy.data.materials:
+                        single = False
+                        number = number + 1
+                    else:
+                        mat = bpy.data.materials.new(name=matname)
+                        mat.use_nodes = True
+                        obj.data.materials.append(mat)
+                        single = True
 
         for slot in obj.material_slots:
             mat = slot.material
@@ -58,12 +59,14 @@ class TLMBuilder:
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
 
-        try:
-            bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, margin=bpy.context.scene.TLM_SceneProperties.tlm_dilation_margin, use_clear=True)
-            print(f"[TLM]:1:Baking object '{obj.name}' with diffuse lighting...", flush=True)
-        except RuntimeError as e:
-            msg = str(e).replace(":", " - ")
-            print(f"[TLM]:2:Error baking {obj.name} - {msg}", flush=True)
+        #We don't wanna bake it if there isn't any materials
+        if len(obj.material_slots) != 0:
+            try:
+                bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, margin=bpy.context.scene.TLM_SceneProperties.tlm_dilation_margin, use_clear=True)
+                print(f"[TLM]:1:Baking object '{obj.name}' with diffuse lighting...", flush=True)
+            except RuntimeError as e:
+                msg = str(e).replace(":", " - ")
+                print(f"[TLM]:2:Error baking {obj.name} - {msg}", flush=True)
 
     # Creates a custom property linking the lightmap to the object
     def create_link_properties(self, obj):
