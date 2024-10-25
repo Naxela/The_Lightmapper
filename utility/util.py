@@ -321,6 +321,8 @@ def applyLightmap(folder, directly=False):
         #TODO - We want to try and store the original material name as a property?
         #SOMETHING WITH THE UV THAT NEEDS TO BE RESET??
 
+        if bpy.context.scene.TLM_SceneProperties.tlm_material_missing == "Create":
+            if len(obj.material_slots) == 0:
                 single = False
                 number = 0
                 while single == False:
