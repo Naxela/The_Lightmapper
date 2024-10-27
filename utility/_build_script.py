@@ -136,21 +136,23 @@ class TLMBuilder:
 
         if bpy.context.scene.TLM_SceneProperties.tlm_format == "EXR" or bpy.context.scene.TLM_SceneProperties.tlm_format == "KTX":
             
-            manifest = {"EXT": "exr"}
+            manifest = {"ext": "exr"}
 
         elif bpy.context.scene.TLM_SceneProperties.tlm_format == "KTX":
 
             # For KTX we would rather change this manually, since the denoiser (nor Blender) can't work with KTX files
-            manifest = {"EXT": "exr"}
+            manifest = {"ext": "exr"}
 
         else:
 
-            manifest = {"EXT": "hdr"}
+            manifest = {"ext": "hdr"}
+
+        manifest["lightmaps"] = {}
 
         for obj_name in self.obj_list:
             obj = bpy.data.objects[obj_name]
             if "TLM-Lightmap" in obj:
-                manifest[obj.name] = obj["TLM-Lightmap"]
+                manifest["lightmaps"][obj.name] = obj["TLM-Lightmap"]
 
         file_path = os.path.join(self.abs_dir, "manifest.json")
         with open(file_path, "w") as f:

@@ -78,10 +78,11 @@ def postprocessBuild():
     with open(manifest_file, 'r') as file:
         data = json.load(file)
 
-    for index, key in enumerate(data):
-        if index == 0 or key == "EXT":
-            continue
-        denoiseList.append(data[key] + "." + data["EXT"])
+    for index, key in enumerate(data["lightmaps"]):
+
+        print(key)
+        print(data["lightmaps"][key])
+        denoiseList.append(data["lightmaps"][key] + "." + data["ext"])
 
     # Denoising with OIDN if enabled
     if bpy.context.scene.TLM_SceneProperties.tlm_denoise_engine == "OIDN":
@@ -151,7 +152,7 @@ def postprocessBuild():
             with open(updated_manifest_path, 'r') as file:
                 manifest_data = json.load(file)
 
-            manifest_data["EXT"] = "ktx"
+            manifest_data["ext"] = "ktx"
 
             with open(updated_manifest_path, 'w') as file:
                 json.dump(manifest_data, file, indent=4)
@@ -200,12 +201,10 @@ def linkLightmap(folder):
     with open(manifest_file, 'r') as file:
         data = json.load(file)
 
-    for index, key in enumerate(data):
-        if index == 0 or key == "EXT":
-            continue
+    for index, key in enumerate(data["lightmaps"]):
         obj = bpy.data.objects.get(key)
-        lightmap = data[key]
-        obj["TLM-Lightmap"] = lightmap
+        lightmap = data["lightmaps"][key]
+        obj["TLM_Lightmap"] = lightmap
 
 # Configure the Cycles rendering engine based on scene properties
 def configureEngine():
@@ -300,22 +299,23 @@ def applyLightmap(folder, directly=False):
 
     with open(manifest_file, 'r') as file:
         data = json.load(file)
+        print(data)
 
-    for index, key in enumerate(data):
-        if index == 0 or key == "EXT":
-            continue
+    for index, key in enumerate(data["lightmaps"]):
+
+        print("Trying to apply: " + data["lightmaps"][key])
 
         obj = bpy.data.objects.get(key)
 
-        if data["EXT"] == "ktx":
+        if data["ext"] == "ktx":
 
             extension = ".exr"
 
         else:
 
-            extension = "." + data["EXT"]
+            extension = "." + data["ext"]
 
-        lightmap = data[key]
+        lightmap = data["lightmaps"][key]
         lightmapPath = os.path.join(absolute_directory, lightmap + extension)
 
         #TODO - We want to try and store the original material name as a property?
