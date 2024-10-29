@@ -268,6 +268,24 @@ def removeLightmap(directly=False):
                 if TLMNodeInput2:
                     node_tree.links.new(TLMNodeInput2, PrincipledNode.inputs[0])
 
+def reassign_materials():
+
+    for obj in bpy.data.objects:
+
+        for slot in obj.material_slots:
+
+            mat = slot.material
+            if not mat or not mat.use_nodes:
+                continue
+
+            inherited_mat = mat.get("TLM_InheritedMaterial")
+
+            if inherited_mat:
+
+                print("Inherited Material: " + obj.name + " : " + inherited_mat.name + " child: " + mat.name)
+
+                slot.material = inherited_mat
+
 # Apply lightmaps to objects based on a manifest file
 def applyLightmap(folder, directly=False):
     # Check if lightmaps are already applied and toggle them accordingly
@@ -340,6 +358,21 @@ def applyLightmap(folder, directly=False):
             mat = slot.material
             if not mat or not mat.use_nodes:
                 continue
+
+            if bpy.context.scene.TLM_SceneProperties.tlm_material_multi_user == "Unique":
+
+                #If the material has more users, make it unique
+                if mat.users > 1:
+
+                    original_material = mat
+                    # Duplicate the material
+                    new_mat = mat.copy()
+
+                    new_mat["TLM_InheritedMaterial"] = original_material
+                    # Rename the new material with the object's name as suffix
+                    new_mat.name = f"{mat.name}-{obj.name}"
+                    # Assign the new, uniquely named material to the slot
+                    slot.material = new_mat
 
             if mat.node_tree.nodes.get("Principled BSDF"):
                 base_color = None

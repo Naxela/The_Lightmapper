@@ -23,6 +23,8 @@ class TLM_PT_Panel(bpy.types.Panel):
         row.operator("tlm.link_lightmaps")
         row = layout.row(align=True)
         row.operator("tlm.explore_lightmaps")
+        row = layout.row(align=True)
+        row.operator("tlm.clean_and_reassign_materials")
 
 class TLM_PT_Settings(bpy.types.Panel):
     bl_label = "Settings"

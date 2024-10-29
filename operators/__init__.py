@@ -6,7 +6,8 @@ classes = [
     tlm.TLM_BuildLightmaps,
     tlm.TLM_ApplyLightmaps,
     tlm.TLM_LinkLightmaps,
-    tlm.TLM_ExploreLightmaps
+    tlm.TLM_ExploreLightmaps,
+    tlm.TLM_CleanAndReassignMaterials
 ]
 
 def register():

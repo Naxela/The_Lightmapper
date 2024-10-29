@@ -136,14 +136,16 @@ def prepareObjectsForBaking():
 
                         #If the material has more users, make it unique
                         if mat.users > 1:
+
+                            original_material = mat
                             # Duplicate the material
                             new_mat = mat.copy()
+
+                            new_mat["TLM_InheritedMaterial"] = original_material
                             # Rename the new material with the object's name as suffix
                             new_mat.name = f"{mat.name}-{obj.name}"
                             # Assign the new, uniquely named material to the slot
                             slot.material = new_mat
-                            # Optionally, set use_fake_user here if needed
-                            # new_mat.use_fake_user = True
 
     elif scene.TLM_SceneProperties.tlm_material_multi_user == "Shared":
 

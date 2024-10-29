@@ -140,7 +140,33 @@ class TLM_ApplyLightmaps(bpy.types.Operator):
     def execute(self, context):
         util.applyLightmap("//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir, False)
         return {'FINISHED'}
-    
+
+class TLM_CleanAndReassignMaterials(bpy.types.Operator):
+    bl_idname = "tlm.clean_and_reassign_materials"
+    bl_label = "Clean and Reassign Materials"
+    bl_description = "Clean and reassign materials"
+    bl_options = {'REGISTER', 'UNDO'}
+        
+    def execute(self, context):
+
+        for obj in bpy.data.objects:
+
+            for slot in obj.material_slots:
+
+                mat = slot.material
+                if not mat or not mat.use_nodes:
+                    continue
+
+                inherited_mat = mat.get("TLM_InheritedMaterial")
+
+                if inherited_mat:
+
+                    print("Inherited Material: " + obj.name + " : " + inherited_mat.name + " child: " + mat.name)
+
+                    slot.material = inherited_mat
+
+        return {'FINISHED'}
+
 # Operator to explore the lightmaps directory
 class TLM_ExploreLightmaps(bpy.types.Operator):
     bl_idname = "tlm.explore_lightmaps"
