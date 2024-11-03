@@ -3,16 +3,7 @@ import bpy, math
 
 def prepareLightmapChannel(obj, setActive):
     
-    mesh = obj.data
-    
-    if not "UVMap-Lightmap" in mesh.uv_layers:
-        
-        mesh.uv_layers.new(name="UVMap-Lightmap")
-        
-    if setActive:
-        
-        mesh.uv_layers.active = mesh.uv_layers["UVMap-Lightmap"]
-        mesh.uv_layers["UVMap-Lightmap"].active_render = True
+    pass
 
 def unwrapObjectOnChannel(obj):
 
@@ -77,35 +68,52 @@ def unwrapObjectOnChannel(obj):
 
             obs = bpy.context.view_layer.objects
             active = obs.active
-
             #Provide material if none exists
 
-            #If lightmap
-            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
+            existing_lightmap_uv = False
 
-                print("Lightmapping UV Map for object: " + obj.name)
-
-                bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
+            mesh = obj.data
             
-            #If smart project
-            elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "SmartProject":
-
-                print("Smart Projecting UV Map for object: " + obj.name)
-
-                bpy.ops.object.select_all(action='DESELECT')
-                obj.select_set(True)
-                bpy.ops.object.mode_set(mode='EDIT')
-                bpy.ops.mesh.select_all(action='SELECT')
-
-                angle = math.radians(45.0)
-                bpy.ops.uv.smart_project(angle_limit=angle, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, area_weight=1.0, correct_aspect=True, scale_to_bounds=False)
-
-                bpy.ops.mesh.select_all(action='DESELECT')
-                bpy.ops.object.mode_set(mode='OBJECT')
+            if not "UVMap-Lightmap" in mesh.uv_layers:
                 
-            else: #if copy existing
+                mesh.uv_layers.new(name="UVMap-Lightmap")
 
-                print("Copied Existing UV Map for object: " + obj.name)
+            else:
+
+                existing_lightmap_uv = True
+
+            mesh.uv_layers.active = mesh.uv_layers["UVMap-Lightmap"]
+            mesh.uv_layers["UVMap-Lightmap"].active_render = True
+
+            #If a lightmap UV map already exists, we don't want to unwrap it
+            if not existing_lightmap_uv:
+
+                #If lightmap
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
+
+                    print("Lightmapping UV Map for object: " + obj.name)
+
+                    bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
+                
+                #If smart project
+                elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "SmartProject":
+
+                    print("Smart Projecting UV Map for object: " + obj.name)
+
+                    bpy.ops.object.select_all(action='DESELECT')
+                    obj.select_set(True)
+                    bpy.ops.object.mode_set(mode='EDIT')
+                    bpy.ops.mesh.select_all(action='SELECT')
+
+                    angle = math.radians(45.0)
+                    bpy.ops.uv.smart_project(angle_limit=angle, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, area_weight=1.0, correct_aspect=True, scale_to_bounds=False)
+
+                    bpy.ops.mesh.select_all(action='DESELECT')
+                    bpy.ops.object.mode_set(mode='OBJECT')
+                    
+                else: #if copy existing
+
+                    print("Copied Existing UV Map for object: " + obj.name)
 
 def prepareObjectsForBaking():
     scene = bpy.context.scene
