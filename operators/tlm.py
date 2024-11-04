@@ -149,6 +149,7 @@ class TLM_CleanAndReassignMaterials(bpy.types.Operator):
         
     def execute(self, context):
 
+        # Reassign the materials
         for obj in bpy.data.objects:
 
             for slot in obj.material_slots:
@@ -164,6 +165,18 @@ class TLM_CleanAndReassignMaterials(bpy.types.Operator):
                     print("Inherited Material: " + obj.name + " : " + inherited_mat.name + " child: " + mat.name)
 
                     slot.material = inherited_mat
+
+        # Clean the lightmap folder
+
+        scene = context.scene
+
+        filepath = bpy.data.filepath
+        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_setting_savedir)
+
+        if not bpy.context.scene.TLM_SceneProperties.tlm_keep_baked_files:
+            if os.path.isdir(dirpath):
+                for file in os.listdir(dirpath):
+                    os.remove(os.path.join(dirpath + "/" + file))
 
         return {'FINISHED'}
 
