@@ -1,4 +1,4 @@
-import bpy
+import bpy, os
 
 from ..ui.progress_bar import NX_Progress_Bar
 import subprocess
@@ -173,10 +173,9 @@ class TLM_CleanAndReassignMaterials(bpy.types.Operator):
         filepath = bpy.data.filepath
         dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_setting_savedir)
 
-        if not bpy.context.scene.TLM_SceneProperties.tlm_keep_baked_files:
-            if os.path.isdir(dirpath):
-                for file in os.listdir(dirpath):
-                    os.remove(os.path.join(dirpath + "/" + file))
+        # if os.path.isdir(dirpath):
+        #     for file in os.listdir(dirpath):
+        #         os.remove(os.path.join(dirpath + "/" + file))
 
         return {'FINISHED'}
 
