@@ -206,6 +206,10 @@ def linkLightmap(folder):
         lightmap = data["lightmaps"][key]
         obj["TLM_Lightmap"] = lightmap
 
+def linkMat():
+
+    pass
+
 # Configure the Cycles rendering engine based on scene properties
 def configureEngine():
     scene = bpy.context.scene

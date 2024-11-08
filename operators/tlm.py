@@ -1,4 +1,4 @@
-import bpy, os
+import bpy, os, json
 
 from ..ui.progress_bar import NX_Progress_Bar
 import subprocess
@@ -128,6 +128,9 @@ class TLM_BuildLightmaps(bpy.types.Operator):
         util.removeBuildScript()
         util.postprocessBuild()
 
+
+        self.report({'INFO'}, "Lightmapping Finished")
+
         return {'CANCELLED'}
     
 # Operator to apply lightmaps, toggling them on the objects
@@ -177,6 +180,8 @@ class TLM_CleanAndReassignMaterials(bpy.types.Operator):
         #     for file in os.listdir(dirpath):
         #         os.remove(os.path.join(dirpath + "/" + file))
 
+        self.report({'INFO'}, "Materials cleaned and reassigned")
+
         return {'FINISHED'}
 
 # Operator to explore the lightmaps directory
@@ -200,3 +205,72 @@ class TLM_LinkLightmaps(bpy.types.Operator):
     def execute(self, context):
         util.linkLightmap("//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir)
         return {'FINISHED'}
+
+# Operator to link lightmaps to the object properties
+class TLM_MatProperties(bpy.types.Operator):
+    bl_idname = "tlm.mat_links"
+    bl_label = "Assign material links"
+    bl_description = "Assign material links"
+    bl_options = {'REGISTER', 'UNDO'}
+        
+    def execute(self, context):
+
+        tlm_objmat = {
+            "materials_options" : []
+        }
+
+        for obj in bpy.context.selected_objects:
+
+            if obj.type == "MESH":
+
+                if len(obj.material_slots) > 0:
+
+                    for slot in obj.material_slots:
+
+                        mat = slot.material
+
+                        options = {
+                            "name" : mat.name,
+                            "tex_animation_x" : None,
+                            "tex_animation_y" : None,
+                            "blend" : None,
+                            "transmission" : None,
+                            "parallax" : None
+                        }
+
+                        mat["tlm_matopt"] = options
+
+        return {'FINISHED'}
+
+class TLM_OBJECT_OT_lightmap_enable(bpy.types.Operator):
+    bl_idname = "object.lightmap_enable"
+    bl_label = "Enable Lightmapping"
+    
+    def execute(self, context):
+
+        for obj in bpy.context.selected_objects:
+
+            if obj.type == "MESH":
+
+                obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
+
+        # Add your code here to enable lightmapping
+        self.report({'INFO'}, "Lightmapping Enabled")
+        return {'FINISHED'}
+
+class TLM_OBJECT_OT_lightmap_disable(bpy.types.Operator):
+    bl_idname = "object.lightmap_disable"
+    bl_label = "Disable Lightmapping"
+    
+    def execute(self, context):
+
+        for obj in bpy.context.selected_objects:
+
+            if obj.type == "MESH":
+
+                obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = False
+
+        self.report({'INFO'}, "Lightmapping Disabled")
+        return {'FINISHED'}
+
+
