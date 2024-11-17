@@ -53,6 +53,9 @@ class TLMBuilder:
                 img_node.image = bpy.data.images[img_name]
                 nodes.active = img_node
 
+        mesh = obj.data
+        mesh.uv_layers.active = mesh.uv_layers["UVMap-Lightmap"]
+
     # Bakes the diffuse lighting for the given object
     def bake_object(self, obj):
         bpy.ops.object.select_all(action='DESELECT')

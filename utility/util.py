@@ -340,9 +340,10 @@ def applyLightmap(folder, directly=False):
         lightmap = data["lightmaps"][key]
         lightmapPath = os.path.join(absolute_directory, lightmap + extension)
 
-        #TODO - We want to try and store the original material name as a property?
-        #SOMETHING WITH THE UV THAT NEEDS TO BE RESET??
+        #TODO - Weird crash to desktop, maybe when each material has been unique (ie. 033) and a baking was initiated
+        #Also Decals => Mark as decal, thus copying the main/primary uv channel
 
+        print("Check missing materials")
         if bpy.context.scene.TLM_SceneProperties.tlm_material_missing == "Create":
             if len(obj.material_slots) == 0:
                 single = False
@@ -358,6 +359,7 @@ def applyLightmap(folder, directly=False):
                         obj.data.materials.append(mat)
                         single = True
 
+        print("Applying materials")
         for slot in obj.material_slots:
             mat = slot.material
             if not mat or not mat.use_nodes:
@@ -379,22 +381,30 @@ def applyLightmap(folder, directly=False):
                     slot.material = new_mat
 
             if mat.node_tree.nodes.get("Principled BSDF"):
+                print("Got principled BSDF: " + mat.name)
                 base_color = None
                 base_input = None
 
                 if mat.node_tree.nodes.get("TLM-Node"):
+                    print("Found TLM Node")
                     mat.node_tree.nodes.remove(mat.node_tree.nodes.get("TLM-Node"))
 
                 if len(mat.node_tree.nodes.get("Principled BSDF").inputs[0].links) < 1:
+                    print("No links - Adding default value base color")
                     base_color = mat.node_tree.nodes.get("Principled BSDF").inputs[0].default_value
                 else:
+                    print("Found link - Adding link to base input")
                     base_input = mat.node_tree.nodes.get("Principled BSDF").inputs[0].links[0]
 
                 if mat.node_tree.nodes.get("TLM-Lightmap"):
+                    print("Removing TLM Lightmap?")
                     mat.node_tree.nodes.remove(mat.node_tree.nodes.get("TLM-Lightmap"))
 
+                print("Add TLM")
                 addTLMNode(mat)
+                print("Add LightmapNode")
                 addLightmapNode(mat, lightmapPath)
+                print("Add UV Node")
                 addUVMapNode(mat)
 
                 PrincipledNode = mat.node_tree.nodes.get("Principled BSDF")
@@ -402,11 +412,14 @@ def applyLightmap(folder, directly=False):
                 LightmapNode = mat.node_tree.nodes.get("TLM-Lightmap")
                 UVMapNode = mat.node_tree.nodes.get("TLM-UVMap")
 
+                
                 if directly:
+                    print("Adding directly")
                     mat.node_tree.links.new(TLMNode.outputs[0], PrincipledNode.inputs[0])
                     mat.node_tree.links.new(LightmapNode.outputs[0], TLMNode.inputs[0])
                     mat.node_tree.links.new(UVMapNode.outputs[0], LightmapNode.inputs[0])
                 else:
+                    print("Not Adding directly")
                     if base_color is not None:
                         mat.node_tree.links.new(TLMNode.outputs[0], PrincipledNode.inputs[0])
                         mat.node_tree.links.new(LightmapNode.outputs[0], TLMNode.inputs[0])

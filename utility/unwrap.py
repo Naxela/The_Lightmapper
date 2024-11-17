@@ -82,11 +82,13 @@ def unwrapObjectOnChannel(obj):
 
                 existing_lightmap_uv = True
 
-            mesh.uv_layers.active = mesh.uv_layers["UVMap-Lightmap"]
-            mesh.uv_layers["UVMap-Lightmap"].active_render = True
+            
 
             #If a lightmap UV map already exists, we don't want to unwrap it
             if not existing_lightmap_uv:
+
+                mesh.uv_layers.active = mesh.uv_layers["UVMap-Lightmap"]
+                mesh.uv_layers["UVMap-Lightmap"].active_render = True
 
                 #If lightmap
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
@@ -114,6 +116,9 @@ def unwrapObjectOnChannel(obj):
                 else: #if copy existing
 
                     print("Copied Existing UV Map for object: " + obj.name)
+
+                mesh.uv_layers.active = mesh.uv_layers[0]
+                mesh.uv_layers[0].active_render = True
 
 def prepareObjectsForBaking():
     scene = bpy.context.scene
