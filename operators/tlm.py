@@ -141,7 +141,7 @@ class TLM_ApplyLightmaps(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
         
     def execute(self, context):
-        util.applyLightmap("//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir, False)
+        util.applyLightmap("//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir)
         return {'FINISHED'}
 
 class TLM_CleanAndReassignMaterials(bpy.types.Operator):

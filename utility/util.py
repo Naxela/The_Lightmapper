@@ -164,7 +164,7 @@ def addTLMNode(mat):
         load_library("TLM-Node")
     TLMNode = node_tree.nodes.new(type="ShaderNodeGroup")
     TLMNode.node_tree = bpy.data.node_groups["TLM-Node"]
-    TLMNode.location = -400, 300
+    TLMNode.location = -200, 700
     TLMNode.name = "TLM-Node"
 
 # Add a lightmap texture node to the material
@@ -173,7 +173,7 @@ def addLightmapNode(mat, path):
     image = bpy.data.images.load(path, check_existing=True)
     img_node = nodes.new('ShaderNodeTexImage')
     img_node.name = 'TLM-Lightmap'
-    img_node.location = (100, 100)
+    img_node.location = (-700, 700)
     img_node.image = image
 
 # Add a UV map node to the material
@@ -244,7 +244,7 @@ def configureEngine():
         cycles.caustics_refractive = quality == "4"
 
 # Remove lightmaps from all mesh objects
-def removeLightmap(directly=False):
+def removeLightmap():
     print("Removing Lightmaps")
 
     for obj in bpy.data.objects:
@@ -260,7 +260,25 @@ def removeLightmap(directly=False):
                 LightmapNode = node_tree.nodes.get("TLM-Lightmap")
                 UVMapNode = node_tree.nodes.get("TLM-UVMap")
 
-                TLMNodeInput2 = TLMNode.inputs[1].links[0].from_socket if TLMNode and TLMNode.inputs[1].is_linked else None
+                print("Removing lightmap for obj " + obj.name)
+
+                TLMNodeInput = None
+
+                #If there's a TLMNode
+                if TLMNode:
+
+                    #i:Base
+                    #i:Lightmap
+                    #i:Factor
+                    #o:Result
+
+                    #print("Found TLMNode")
+
+                    if TLMNode.inputs["Base"].is_linked:
+
+                        print("Linked base TLMNode")
+
+                        TLMNodeInput = TLMNode.inputs["Base"].links[0].from_socket
 
                 if TLMNode:
                     node_tree.nodes.remove(TLMNode)
@@ -269,8 +287,9 @@ def removeLightmap(directly=False):
                 if UVMapNode:
                     node_tree.nodes.remove(UVMapNode)
 
-                if TLMNodeInput2:
-                    node_tree.links.new(TLMNodeInput2, PrincipledNode.inputs[0])
+                if TLMNode and TLMNodeInput:
+                    node_tree.links.new(TLMNodeInput, PrincipledNode.inputs["Base Color"])
+                    print("Connected from: " + TLMNodeInput.name + " to " + PrincipledNode.inputs["Base Color"].name)
 
 def reassign_materials():
 
@@ -290,13 +309,26 @@ def reassign_materials():
 
                 slot.material = inherited_mat
 
+def safe_node_link(tree, output_node, output_socket_name, input_node, input_socket_name):
+    try:
+        if output_socket_name in output_node.outputs and input_socket_name in input_node.inputs:
+            tree.links.new(output_node.outputs[output_socket_name], input_node.inputs[input_socket_name])
+        else:
+            print(f"Warning: Socket not found: {output_socket_name} -> {input_socket_name}")
+    except Exception as e:
+        print(f"Error creating link: {e}")
+
 # Apply lightmaps to objects based on a manifest file
-def applyLightmap(folder, directly=False):
+def applyLightmap(folder):
+
+    #Force update? Not needed?
+    #bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+
     # Check if lightmaps are already applied and toggle them accordingly
     if "Lightmapped" in bpy.context.scene:
         if bpy.context.scene["Lightmapped"]:
             print("Lightmaps are currently applied - removing lightmap")
-            removeLightmap(directly)
+            removeLightmap()
             bpy.context.scene["Lightmapped"] = False
             return
         else:
@@ -359,7 +391,8 @@ def applyLightmap(folder, directly=False):
                         obj.data.materials.append(mat)
                         single = True
 
-        print("Applying materials")
+        print("/////////////////////////")
+        print("Applying materials for: " + obj.name)
         for slot in obj.material_slots:
             mat = slot.material
             if not mat or not mat.use_nodes:
@@ -383,28 +416,34 @@ def applyLightmap(folder, directly=False):
             if mat.node_tree.nodes.get("Principled BSDF"):
                 print("Got principled BSDF: " + mat.name)
                 base_color = None
-                base_input = None
+                base_input_from_node = None
+                base_input_from_socket_name = None
 
                 if mat.node_tree.nodes.get("TLM-Node"):
                     print("Found TLM Node")
-                    mat.node_tree.nodes.remove(mat.node_tree.nodes.get("TLM-Node"))
+                    # Safely remove existing TLM-Node and its links
+                    TLMNode_to_remove = mat.node_tree.nodes.get("TLM-Node")
+                    for link in TLMNode_to_remove.inputs[0].links:
+                        mat.node_tree.links.remove(link)
+                    for link in TLMNode_to_remove.outputs[0].links:
+                        mat.node_tree.links.remove(link)
+                    mat.node_tree.nodes.remove(TLMNode_to_remove)
 
                 if len(mat.node_tree.nodes.get("Principled BSDF").inputs[0].links) < 1:
                     print("No links - Adding default value base color")
                     base_color = mat.node_tree.nodes.get("Principled BSDF").inputs[0].default_value
                 else:
-                    print("Found link - Adding link to base input")
-                    base_input = mat.node_tree.nodes.get("Principled BSDF").inputs[0].links[0]
+                    base_input_link = mat.node_tree.nodes.get("Principled BSDF").inputs[0].links[0]
+                    base_input_from_node = base_input_link.from_node
+                    base_input_from_socket_name = base_input_link.from_socket.name
+                    print("Found link - Adding link to base input - From node: " + base_input_from_node.name)
 
                 if mat.node_tree.nodes.get("TLM-Lightmap"):
                     print("Removing TLM Lightmap?")
                     mat.node_tree.nodes.remove(mat.node_tree.nodes.get("TLM-Lightmap"))
 
-                print("Add TLM")
                 addTLMNode(mat)
-                print("Add LightmapNode")
                 addLightmapNode(mat, lightmapPath)
-                print("Add UV Node")
                 addUVMapNode(mat)
 
                 PrincipledNode = mat.node_tree.nodes.get("Principled BSDF")
@@ -412,23 +451,27 @@ def applyLightmap(folder, directly=False):
                 LightmapNode = mat.node_tree.nodes.get("TLM-Lightmap")
                 UVMapNode = mat.node_tree.nodes.get("TLM-UVMap")
 
-                
-                if directly:
-                    print("Adding directly")
-                    mat.node_tree.links.new(TLMNode.outputs[0], PrincipledNode.inputs[0])
-                    mat.node_tree.links.new(LightmapNode.outputs[0], TLMNode.inputs[0])
-                    mat.node_tree.links.new(UVMapNode.outputs[0], LightmapNode.inputs[0])
+                if base_color is not None:
+                    safe_node_link(mat.node_tree, TLMNode, "Result", PrincipledNode, "Base Color")
+                    safe_node_link(mat.node_tree, LightmapNode, "Color", TLMNode, "Lightmap")
+                    safe_node_link(mat.node_tree, UVMapNode, "UV", LightmapNode, "Vector")
+                    TLMNode.inputs["Base"].default_value = base_color
+                    TLMNode.inputs["Factor"].default_value = 1.0
                 else:
-                    print("Not Adding directly")
-                    if base_color is not None:
-                        mat.node_tree.links.new(TLMNode.outputs[0], PrincipledNode.inputs[0])
-                        mat.node_tree.links.new(LightmapNode.outputs[0], TLMNode.inputs[0])
-                        mat.node_tree.links.new(UVMapNode.outputs[0], LightmapNode.inputs[0])
-                        TLMNode.inputs[1].default_value = base_color
-                        TLMNode.inputs[2].default_value = 1.0
+                    safe_node_link(mat.node_tree, TLMNode, "Result", PrincipledNode, "Base Color")
+                    safe_node_link(mat.node_tree, LightmapNode, "Color", TLMNode, "Lightmap")
+                    safe_node_link(mat.node_tree, UVMapNode, "UV", LightmapNode, "Vector")
+                    TLMNode.inputs["Factor"].default_value = 1.0
+
+                    if base_input_from_node != TLMNode:
+                        safe_node_link(mat.node_tree, base_input_from_node, base_input_from_socket_name, TLMNode, "Base")
                     else:
-                        mat.node_tree.links.new(TLMNode.outputs[0], PrincipledNode.inputs[0])
-                        mat.node_tree.links.new(LightmapNode.outputs[0], TLMNode.inputs[0])
-                        mat.node_tree.links.new(UVMapNode.outputs[0], LightmapNode.inputs[0])
-                        mat.node_tree.links.new(TLMNode.inputs[1], base_input.from_socket)
-                        TLMNode.inputs[2].default_value = 1.0
+                        print("Warning: Attempted to connect TLMNode output back to its input (Base). Skipping.")
+                        print("From: " + base_input.from_node.name + " to: " + TLMNode.name)
+                        bpy.ops.object.select_all(action='DESELECT')
+                        bpy.context.view_layer.objects.active = obj
+                        obj.select_set(True)
+                        print("THIS IS A VERY ANNOYING BUG THAT SHOULD BE FIXED. PLEASE REPORT TO NAXELA IF IT OCCURS AGAIN")
+                        print(x)
+
+    print("Lightmap applied")
