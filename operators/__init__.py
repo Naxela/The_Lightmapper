@@ -28,18 +28,28 @@ classes = [
     tlm.TLM_CleanAndReassignMaterials,
     tlm.TLM_OBJECT_OT_lightmap_enable,
     tlm.TLM_OBJECT_OT_lightmap_disable,
+    tlm.TLM_OBJECT_OT_selected_lightmapped,
     OBJECT_MT_lightmapping_menu,
-    tlm.TLM_MatProperties
+    tlm.TLM_MatProperties,
+    tlm.TLM_OBJECT_OT_lightmap_oneup,
+    tlm.TLM_OBJECT_OT_lightmap_onedown,
+    tlm.TLM_OBJECT_OT_lightmap_removeuv
 ]
+
+def menu_func_select_object(self, context):
+    layout = self.layout
+    layout.operator("object.selected_lightmapped", text="Select Lightmapped")
 
 def register():
     for cls in classes:
         register_class(cls)
 
     bpy.types.VIEW3D_MT_object.append(menu_func)
-        
+    bpy.types.VIEW3D_MT_select_object.append(menu_func_select_object)
+
 def unregister():
     for cls in classes:
         unregister_class(cls)
 
     bpy.types.VIEW3D_MT_object.remove(menu_func)
+    bpy.types.VIEW3D_MT_select_object.remove(menu_func_select_object)

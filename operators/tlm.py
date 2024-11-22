@@ -180,6 +180,18 @@ class TLM_CleanAndReassignMaterials(bpy.types.Operator):
         #     for file in os.listdir(dirpath):
         #         os.remove(os.path.join(dirpath + "/" + file))
 
+        #import bpy
+
+        # Iterate over all materials in the file
+        for material in bpy.data.materials:
+
+            # Check if the material has 0 users
+            if material.users == 0:
+
+                # Unlink and remove the material
+                bpy.data.materials.remove(material)
+                print(f"Removed material: {material.name}")
+
         self.report({'INFO'}, "Materials cleaned and reassigned")
 
         return {'FINISHED'}
@@ -245,17 +257,41 @@ class TLM_MatProperties(bpy.types.Operator):
 class TLM_OBJECT_OT_lightmap_enable(bpy.types.Operator):
     bl_idname = "object.lightmap_enable"
     bl_label = "Enable Lightmapping"
-    
+
+    # Define properties for the modal
+    enable_lightmap: bpy.props.BoolProperty(
+        name="Enable Lightmap",
+        description="Enable lightmapping for the selected objects",
+        default=True,
+    )
+
+    lightmap_resolution: bpy.props.IntProperty(
+        name="Lightmap Resolution",
+        description="Resolution of the lightmap",
+        default=256,
+        min=128,
+        max=4096,
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "enable_lightmap")
+        layout.prop(self, "lightmap_resolution")
+
+    def invoke(self, context, event):
+        # Opens the modal pop-up
+        return context.window_manager.invoke_props_dialog(self)
+
     def execute(self, context):
+        if self.enable_lightmap:
+            for obj in bpy.context.selected_objects:
+                if obj.type == "MESH":
+                    obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
+                    obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution = str(self.lightmap_resolution)
 
-        for obj in bpy.context.selected_objects:
-
-            if obj.type == "MESH":
-
-                obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
-
-        # Add your code here to enable lightmapping
-        self.report({'INFO'}, "Lightmapping Enabled")
+            self.report({'INFO'}, f"Lightmapping Enabled with resolution {self.lightmap_resolution}")
+        else:
+            self.report({'INFO'}, "Lightmapping Disabled")
         return {'FINISHED'}
 
 class TLM_OBJECT_OT_lightmap_disable(bpy.types.Operator):
@@ -273,4 +309,78 @@ class TLM_OBJECT_OT_lightmap_disable(bpy.types.Operator):
         self.report({'INFO'}, "Lightmapping Disabled")
         return {'FINISHED'}
 
+class TLM_OBJECT_OT_lightmap_oneup(bpy.types.Operator):
+    bl_idname = "object.lightmap_oneup"
+    bl_label = "Increase lightmap resolution to double"
+    
+    def execute(self, context):
 
+        for obj in bpy.context.selected_objects:
+
+            if obj.type == "MESH":
+
+                obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution = str(int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) * 2)
+
+        self.report({'INFO'}, "Lightmapping resolution doubled")
+        return {'FINISHED'}
+
+class TLM_OBJECT_OT_lightmap_removeuv(bpy.types.Operator):
+    bl_idname = "object.lightmap_removeuv"
+    bl_label = "Remove the lightmap UV of the selected objects"
+    
+    def execute(self, context):
+
+        for obj in bpy.context.selected_objects:
+
+            if obj.type == "MESH":
+
+                uv_layers = obj.data.uv_layers
+                uv_channel = "UVMap-Lightmap"
+
+                for uvlayer in uv_layers:
+                    if uvlayer.name == uv_channel:
+                        uv_layers.remove(uvlayer)
+
+        self.report({'INFO'}, "Lightmapping resolution doubled")
+        return {'FINISHED'}
+
+class TLM_OBJECT_OT_lightmap_onedown(bpy.types.Operator):
+    bl_idname = "object.lightmap_onedown"
+    bl_label = "Decrease lightmap resolution to half"
+    
+    def execute(self, context):
+
+        for obj in bpy.context.selected_objects:
+
+            if obj.type == "MESH":
+
+                obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution = str(int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) / 2)
+
+        self.report({'INFO'}, "Lightmapping resolution halved")
+        return {'FINISHED'}
+
+
+class TLM_OBJECT_OT_selected_lightmapped(bpy.types.Operator):
+    bl_idname = "object.selected_lightmapped"
+    bl_label = "Select lightmapped"
+
+    def execute(self, context):
+
+        bpy.ops.object.select_all(action='DESELECT')
+
+        for obj in bpy.context.scene.objects:
+
+            if obj.type == "MESH":
+
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use == True:
+
+                    obj.select_set(True)
+
+        print("Select lightmapped!")
+
+        return {'FINISHED'}
+
+#Todo:
+# - Remove lightmap UV channel
+# - Disable roughness
+# - Disable specularity
