@@ -189,8 +189,9 @@ class TLM_CleanAndReassignMaterials(bpy.types.Operator):
             if material.users == 0:
 
                 # Unlink and remove the material
+                matname = str(material.name)
                 bpy.data.materials.remove(material)
-                print(f"Removed material: {material.name}")
+                print(f"Removed material: {matname}")
 
         self.report({'INFO'}, "Materials cleaned and reassigned")
 

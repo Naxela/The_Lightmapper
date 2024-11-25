@@ -54,7 +54,8 @@ class TLMBuilder:
                 nodes.active = img_node
 
         mesh = obj.data
-        mesh.uv_layers.active = mesh.uv_layers["UVMap-Lightmap"]
+        if "UVMap-Lightmap" in mesh.uv_layers:
+            mesh.uv_layers.active = mesh.uv_layers["UVMap-Lightmap"]
 
     # Bakes the diffuse lighting for the given object
     def bake_object(self, obj):
