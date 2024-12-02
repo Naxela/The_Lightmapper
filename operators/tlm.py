@@ -248,7 +248,8 @@ class TLM_MatProperties(bpy.types.Operator):
                             "tex_animation_y" : None,
                             "blend" : None,
                             "transmission" : None,
-                            "parallax" : None
+                            "parallax" : None,
+                            "reflectance" : None
                         }
 
                         mat["tlm_matopt"] = options
@@ -360,6 +361,23 @@ class TLM_OBJECT_OT_lightmap_onedown(bpy.types.Operator):
         self.report({'INFO'}, "Lightmapping resolution halved")
         return {'FINISHED'}
 
+class TLM_removeMatLink(bpy.types.Operator):
+    bl_idname = "tlm.remove_mat_links"
+    bl_label = "Remove material links"
+    
+    def execute(self, context):
+
+        for obj in bpy.context.scene.objects:
+
+            if obj.type == "MESH":
+
+                if "TLM_Lightmap" in obj.keys():
+                    
+                    del obj["TLM_Lightmap"]
+
+        return {'FINISHED'}
+
+
 
 class TLM_OBJECT_OT_selected_lightmapped(bpy.types.Operator):
     bl_idname = "object.selected_lightmapped"
@@ -381,7 +399,82 @@ class TLM_OBJECT_OT_selected_lightmapped(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
 #Todo:
 # - Remove lightmap UV channel
 # - Disable roughness
 # - Disable specularity
+
+
+class TLM_DisableSpec(bpy.types.Operator):
+    bl_idname = "tlm.disable_spec"
+    bl_label = "Disable specularity for object materials"
+    bl_description = "Disable specularity for object materials"
+    bl_options = {'REGISTER', 'UNDO'}
+        
+    def execute(self, context):
+
+        for obj in bpy.context.selected_objects:
+
+            if obj.type == "MESH":
+
+                if len(obj.material_slots) > 0:
+
+                    for slot in obj.material_slots:
+
+                        mat = slot.material
+
+                        if mat.node_tree:
+
+                            for node in mat.node_tree.nodes:
+
+                                if node.type == "BSDF_PRINCIPLED":
+
+                                    for inp in node.inputs:
+
+                                        if inp.name == "Specular IOR Level":
+
+                                            inp.default_value = 0.0
+
+                                            if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+
+                                                mat.node_tree.links.remove(inp.links[0])
+
+        return {'FINISHED'}
+
+
+class TLM_DisableMetallic(bpy.types.Operator):
+    bl_idname = "tlm.disable_metallic"
+    bl_label = "Disable metallicity for object materials"
+    bl_description = "Disable metallicity for object materials"
+    bl_options = {'REGISTER', 'UNDO'}
+        
+    def execute(self, context):
+
+        for obj in bpy.context.selected_objects:
+
+            if obj.type == "MESH":
+
+                if len(obj.material_slots) > 0:
+
+                    for slot in obj.material_slots:
+
+                        mat = slot.material
+
+                        if mat.node_tree:
+
+                            for node in mat.node_tree.nodes:
+
+                                if node.type == "BSDF_PRINCIPLED":
+
+                                    for inp in node.inputs:
+
+                                        if inp.name == "Metallic":
+
+                                            inp.default_value = 0.0
+
+                                            if inp.links and bpy.context.scene.TLM_SceneProperties.tlm_remove_met_spec_link:
+
+                                                mat.node_tree.links.remove(inp.links[0])
+
+        return {'FINISHED'}

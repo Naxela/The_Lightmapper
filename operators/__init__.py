@@ -14,11 +14,10 @@ class OBJECT_MT_lightmapping_menu(bpy.types.Menu):
     
     def draw(self, context):
         layout = self.layout
-        layout.operator("object.lightmap_enable", text="Enable")
-        layout.operator("object.lightmap_disable", text="Disable")
-
-
-
+        layout.operator("object.lightmap_enable", text="Enable lightmapping")
+        layout.operator("object.lightmap_disable", text="Disable lightmapping")
+        layout.operator("tlm.disable_spec", text="Disable Specular")
+        layout.operator("tlm.disable_metallic", text="Disable Metallic")
 
 classes = [
     tlm.TLM_BuildLightmaps,
@@ -33,7 +32,10 @@ classes = [
     tlm.TLM_MatProperties,
     tlm.TLM_OBJECT_OT_lightmap_oneup,
     tlm.TLM_OBJECT_OT_lightmap_onedown,
-    tlm.TLM_OBJECT_OT_lightmap_removeuv
+    tlm.TLM_OBJECT_OT_lightmap_removeuv,
+    tlm.TLM_DisableSpec,
+    tlm.TLM_DisableMetallic,
+    tlm.TLM_removeMatLink
 ]
 
 def menu_func_select_object(self, context):
