@@ -135,7 +135,7 @@ def postprocessBuild():
                         ktx_command = [
                             ktx_path,
                             "create",
-                            "--format", "R32G32B32_SFLOAT",
+                            "--format", "R32G32B32A32_SFLOAT",
                             "--zstd", bpy.context.scene.TLM_SceneProperties.tlm_tex_compression_level,
                             exr_path,
                             ktx_output_path
@@ -146,7 +146,7 @@ def postprocessBuild():
                         ktx_command = [
                             ktx_path,
                             "create",
-                            "--format", "R32G32B32_SFLOAT",
+                            "--format", "R32G32B32A32_SFLOAT",
                             exr_path,
                             ktx_output_path
                         ]
@@ -158,7 +158,7 @@ def postprocessBuild():
                         ktx_command = [
                             ktx_path,
                             "create",
-                            "--format", "R16G16B16_SFLOAT",
+                            "--format", "R16G16B16A16_SFLOAT",
                             "--zstd", bpy.context.scene.TLM_SceneProperties.tlm_tex_compression_level,
                             exr_path,
                             ktx_output_path
@@ -169,7 +169,7 @@ def postprocessBuild():
                         ktx_command = [
                             ktx_path,
                             "create",
-                            "--format", "R16G16B16_SFLOAT",
+                            "--format", "R16G16B16A16_SFLOAT",
                             exr_path,
                             ktx_output_path
                         ]
