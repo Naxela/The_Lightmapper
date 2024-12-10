@@ -61,3 +61,15 @@ class TLM_PT_Settings(bpy.types.Panel):
         row.prop(sceneProperties, "tlm_denoise_engine", expand=True)
         row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_format", expand=True)
+
+        if sceneProperties.tlm_format == "KTX":
+
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_tex_format")
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_tex_compression")
+
+            if sceneProperties.tlm_tex_compression:
+
+                row = layout.row(align=True)
+                row.prop(sceneProperties, "tlm_tex_compression_level")

@@ -92,10 +92,41 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Keep cache files (non-filtered and non-denoised)", 
         default=True)
 
-    tlm_format : EnumProperty(
-        items = [('HDR', 'HDR', 'Use the .HDR file format'),
-                ('EXR', 'EXR', 'Use the .EXR file format'),
-                ('KTX', 'KTX', 'Use the .KTX (KTX2) file format. Requires KTX binaries. Converted files will be placed in the KTX subfolder')],
-                name = "File format", 
-                description="Select which file format to use", 
-                default='HDR')
+    tlm_format: EnumProperty(
+        items=[
+            ('HDR', 'HDR', 'Use the .HDR file format for storing HDR textures. Supports high dynamic range.'),
+            ('EXR', 'EXR', 'Use the .EXR file format for HDR textures. Offers high precision and compatibility.'),
+            ('KTX', 'KTX', 'Use the .KTX (KTX2) file format. Requires KTX binaries. Provides advanced compression and GPU-optimized formats.')],
+        name="File Format",
+        description="Select the file format to use for lightmaps.",
+        default='HDR'
+    )
+
+    tlm_tex_format: EnumProperty(
+        items=[
+            ('F32', '32-bit Float (High Precision)', 'Maximum precision for HDR textures. Ideal for detailed lighting at the cost of higher memory usage.'),
+            ('F16', '16-bit Float (Medium Precision)', 'Balances memory usage and quality. Suitable for most HDR use cases.'),
+            ('VK', 'Packed HDR (Vulkan Optimized)', 'Uses Vulkan’s compact B10G11R11_UFLOAT_PACK32 format for efficient memory usage. No alpha channel.')
+        ],
+        name="Texture Format",
+        description="Select the encoded format for KTX lightmaps.",
+        default='F32'
+    )
+
+    tlm_tex_compression: BoolProperty(
+        name="Enable Texture Compression",
+        description="Use Zstandard compression to reduce file size for KTX lightmaps. Compression is lossless.",
+        default=False
+    )
+
+    tlm_tex_compression_level: EnumProperty(
+        items=[
+            ('18', '18 (Maximum)', 'Maximum compression. Slowest encoding but smallest file size.'),
+            ('10', '10 (Balanced)', 'Balanced compression. Good trade-off between size and encoding speed.'),
+            ('4', '4 (Fast)', 'Faster encoding with moderate compression.'),
+            ('1', '1 (Fastest)', 'Fastest encoding speed with minimal compression.')
+        ],
+        name="Compression Level",
+        description="Select the level of Zstandard compression for KTX lightmaps.",
+        default='10'
+    )

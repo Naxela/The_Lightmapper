@@ -128,13 +128,91 @@ def postprocessBuild():
                 exr_path = os.path.join(absolute_directory, exr_file)
                 ktx_output_path = os.path.join(ktx_outdir, os.path.basename(exr_file).replace(".exr",".ktx2"))
 
-                ktx_command = [
-                    ktx_path,
-                    "create",
-                    "--format", "R32G32B32A32_SFLOAT",
-                    exr_path,
-                    ktx_output_path
-                ]
+                if bpy.context.scene.TLM_SceneProperties.tlm_tex_format == "F32":
+
+                    if bpy.context.scene.TLM_SceneProperties.tlm_tex_compression:
+
+                        ktx_command = [
+                            ktx_path,
+                            "create",
+                            "--format", "R32G32B32_SFLOAT",
+                            "--zstd", bpy.context.scene.TLM_SceneProperties.tlm_tex_compression_level,
+                            exr_path,
+                            ktx_output_path
+                        ]
+
+                    else:
+
+                        ktx_command = [
+                            ktx_path,
+                            "create",
+                            "--format", "R32G32B32_SFLOAT",
+                            exr_path,
+                            ktx_output_path
+                        ]
+
+                elif bpy.context.scene.TLM_SceneProperties.tlm_tex_format == "F16":
+
+                    if bpy.context.scene.TLM_SceneProperties.tlm_tex_compression:
+
+                        ktx_command = [
+                            ktx_path,
+                            "create",
+                            "--format", "R16G16B16_SFLOAT",
+                            "--zstd", bpy.context.scene.TLM_SceneProperties.tlm_tex_compression_level,
+                            exr_path,
+                            ktx_output_path
+                        ]
+
+                    else:
+
+                        ktx_command = [
+                            ktx_path,
+                            "create",
+                            "--format", "R16G16B16_SFLOAT",
+                            exr_path,
+                            ktx_output_path
+                        ]
+
+                elif bpy.context.scene.TLM_SceneProperties.tlm_tex_format == "VK":
+
+                    if bpy.context.scene.TLM_SceneProperties.tlm_tex_compression:
+
+                        ktx_command = [
+                            ktx_path,
+                            "create",
+                            "--format", "B10G11R11_UFLOAT_PACK32",
+                            "--zstd", bpy.context.scene.TLM_SceneProperties.tlm_tex_compression_level,
+                            exr_path,
+                            ktx_output_path
+                        ]
+
+                    else:
+
+                        ktx_command = [
+                            ktx_path,
+                            "create",
+                            "--format", "B10G11R11_UFLOAT_PACK32",
+                            exr_path,
+                            ktx_output_path
+                        ]
+
+                # ktx_command = [
+                #     ktx_path,
+                #     "create",
+                #     "--format", "R32G32B32A32_SFLOAT",
+                #     exr_path,
+                #     ktx_output_path
+                # ]
+
+                # ktx_command = [
+                #     ktx_path,
+                #     "create",
+                #     "--format", "B10G11R11_UFLOAT_PACK32",
+                #     "--zstd", "18",
+                #     exr_path,
+                #     ktx_output_path
+                # ]
 
                 # Execute the KTX conversion command
                 try:
