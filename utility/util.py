@@ -60,7 +60,9 @@ text_display = NX_Text_Display(x=10, y=12, message="Processing Denoising...", fo
 
 # Post-process after the build, including denoising and UV reset
 def postprocessBuild():
-    text_display.toggle()
+
+    if bpy.context.scene.TLM_SceneProperties.tlm_denoise_engine == "OIDN":
+        text_display.toggle()
 
     denoiseList = []
     relative_directory = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
@@ -469,7 +471,6 @@ def applyLightmap(folder):
                         obj.data.materials.append(mat)
                         single = True
 
-        print("/////////////////////////")
         print("Applying materials for: " + obj.name)
         for slot in obj.material_slots:
             mat = slot.material
@@ -549,7 +550,5 @@ def applyLightmap(folder):
                         bpy.ops.object.select_all(action='DESELECT')
                         bpy.context.view_layer.objects.active = obj
                         obj.select_set(True)
-                        print("THIS IS A VERY ANNOYING BUG THAT SHOULD BE FIXED. PLEASE REPORT TO NAXELA IF IT OCCURS AGAIN")
-                        print(x)
 
     print("Lightmap applied")

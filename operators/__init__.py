@@ -35,7 +35,8 @@ classes = [
     tlm.TLM_OBJECT_OT_lightmap_removeuv,
     tlm.TLM_DisableSpec,
     tlm.TLM_DisableMetallic,
-    tlm.TLM_removeMatLink
+    tlm.TLM_removeMatLink,
+    tlm.TLM_Atlas
 ]
 
 def menu_func_select_object(self, context):

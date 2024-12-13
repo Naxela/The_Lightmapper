@@ -1,10 +1,12 @@
-import bpy, os, json
+import bpy, os, json, sys, time
+import numpy as np
 
 from ..ui.progress_bar import NX_Progress_Bar
 import subprocess
 import threading
 from queue import Queue, Empty
 from ..utility import util
+from ..utility.rectpack import newPacker, PackingMode, MaxRectsBssf
 from ..utility import unwrap
 
 main_progress = NX_Progress_Bar(10, 10, 100, 10, 0.0, (0.0, 0.0, 0.0, 1.0))
@@ -477,4 +479,237 @@ class TLM_DisableMetallic(bpy.types.Operator):
 
                                                 mat.node_tree.links.remove(inp.links[0])
 
+        return {'FINISHED'}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+atlas_res = 1024
+
+def loadImagesToAtlas():
+    imagesToAtlas = []
+    relative_directory = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
+    absolute_directory = bpy.path.abspath(relative_directory)
+    manifest_file = os.path.join(absolute_directory, "manifest.json")
+
+    if not os.path.exists(absolute_directory):
+        print("No lightmap directory")
+        return imagesToAtlas
+
+    if not os.path.exists(manifest_file):
+        print("No lightmap manifest")
+        return imagesToAtlas
+
+    with open(manifest_file, 'r') as file:
+        data = json.load(file)
+
+    ext = data.get("ext", "hdr")
+    for key, value in data["lightmaps"].items():
+        image_name = f"{value}.{ext}"
+        imagesToAtlas.append({"name": image_name, "object": key})
+
+    return imagesToAtlas
+
+def createEmptyAtlas(atlas_index):
+    image_name = f"Atlas_{atlas_index}"
+    new_image = bpy.data.images.new(image_name, width=atlas_res, height=atlas_res, float_buffer=True)
+    pixels = [0.0] * (atlas_res * atlas_res * 4)
+    new_image.pixels = pixels
+    new_image.alpha_mode = 'STRAIGHT'
+    new_image.file_format = 'HDR'
+    return new_image
+
+def invertPixelsY(source_image):
+    source_pixels = list(source_image.pixels)
+    source_width, source_height = source_image.size
+    corrected_pixels = [0.0] * len(source_pixels)
+
+    for y in range(source_height):
+        for x in range(source_width):
+            source_index = (y * source_width + x) * 4  # Original pixel index
+            corrected_index = ((source_height - 1 - y) * source_width + x) * 4  # Flip Y-axis
+            for c in range(4):  # Iterate over RGBA channels
+                corrected_pixels[source_index + c] = source_pixels[corrected_index + c]
+
+    return corrected_pixels
+
+
+def transferPixels(inverted_pixels, target_image, x_offset, y_offset, source_width, source_height):
+    target_pixels = list(target_image.pixels)
+
+    for y in range(source_height):
+        for x in range(source_width):
+            source_index = (y * source_width + x) * 4
+            target_index = ((y_offset + (source_height - 1 - y)) * atlas_res + x_offset + x) * 4  # Flip Y
+            for c in range(4):  # RGBA channels
+                target_pixels[target_index + c] = inverted_pixels[source_index + c]
+
+    target_image.pixels = target_pixels
+
+def adjustUVs(obj, x_offset, y_offset, source_width, source_height, atlas_res):
+    mesh = obj.data
+    uv_layer = mesh.uv_layers.get("UVMap-Lightmap")
+
+    if uv_layer is None:
+        raise ValueError(f"UV layer 'UVMap-Lightmap' not found in object {obj.name}")
+
+    for loop in mesh.loops:
+        uv = uv_layer.data[loop.index].uv
+        uv.x = (x_offset + uv.x * source_width) / atlas_res
+        uv.y = (y_offset + uv.y * source_height) / atlas_res
+
+def setMaterialImage(obj, atlas_image):
+    if obj.type != 'MESH':
+        return
+
+    mesh = obj.data
+    if not mesh.materials:
+        return
+
+    material = mesh.materials[0]
+    if not material.use_nodes:
+        return
+
+    nodes = material.node_tree.nodes
+    tlm_lightmap_node = nodes.get("TLM-Lightmap")
+    if tlm_lightmap_node and tlm_lightmap_node.type == 'TEX_IMAGE':
+        tlm_lightmap_node.image = atlas_image
+
+def createAtlases():
+    imagesToAtlas = loadImagesToAtlas()
+    if not imagesToAtlas:
+        print("No images to atlas")
+        return
+
+    atlases = []  # List to store created atlases
+    manifest_data = {"atlases": [], "lightmaps": {}}  # Updated manifest data
+    total_rectangles = len(imagesToAtlas)
+    processed_rectangles = 0
+
+    source_images = [bpy.data.images[img_info['name']] for img_info in imagesToAtlas]
+    rectangles = [(img.size[0], img.size[1], i) for i, img in enumerate(source_images)]
+    print("Rectangles for Packing:", rectangles)
+
+    relative_directory = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
+    absolute_directory = bpy.path.abspath(relative_directory)
+
+    while processed_rectangles < total_rectangles:
+        print(f"Creating new atlas (Bin #{len(atlases) + 1})...")
+
+        # Initialize the packer for each new atlas
+        packer = newPacker(mode=PackingMode.Offline, rotation=False, pack_algo=MaxRectsBssf)
+
+        # Add a new bin for the current atlas
+        packer.add_bin(atlas_res, atlas_res)
+
+        # Add remaining rectangles to the packer
+        for rect in rectangles:
+            packer.add_rect(*rect)
+
+        # Perform packing
+        packer.pack()
+
+        # Create an empty atlas for this bin
+        atlas_index = len(atlases) + 1
+        atlas_image = createEmptyAtlas(atlas_index)
+        atlases.append(atlas_image)
+
+        # Save the atlas to the lightmap directory
+        atlas_path = os.path.join(absolute_directory, f"atlas_{atlas_index}.hdr")
+        atlas_image.filepath_raw = atlas_path
+        atlas_image.save()
+        print(f"Atlas {atlas_index} saved to {atlas_path}")
+
+        manifest_data["atlases"].append(f"atlas_{atlas_index}.hdr")
+
+        # Process packed rectangles for the current bin
+        packed_rects = packer.rect_list()
+        print(f"Packed Rectangles for Atlas {atlas_index}: {packed_rects}")
+
+        # Calculate atlas fill percentage
+        used_area = sum(w * h for _, _, _, w, h, _ in packed_rects)
+        total_area = atlas_res * atlas_res
+        fill_percentage = (used_area / total_area) * 100
+        print(f"Atlas {atlas_index} Fill Percentage: {fill_percentage:.2f}%")
+
+        # Process packed rectangles
+        packed_ids = set()
+        for rect in packed_rects:
+            bin_id, x, y, w, h, rid = rect
+            if rid is None:
+                raise ValueError(f"Rectangle {rect} has no associated ID (rid). This should not happen.")
+
+            img_info = imagesToAtlas[rid]
+            source_image = bpy.data.images[img_info['name']]
+            inverted_pixels = invertPixelsY(source_image)
+            transferPixels(inverted_pixels, atlas_image, x, y, w, h)
+            obj = bpy.data.objects[img_info['object']]
+            adjustUVs(obj, x, y, w, h, atlas_res)
+
+            # Assign the correct atlas image to the object's material
+            setMaterialImage(obj, atlas_image)
+
+            # Track processed rectangles
+            packed_ids.add(rid)
+            processed_rectangles += 1
+
+            # Update the manifest for the object
+            manifest_data["lightmaps"][img_info['object']] = f"atlas_{atlas_index}.hdr"
+
+        # Determine unpacked rectangles
+        rectangles = [rect for rect in rectangles if rect[2] not in packed_ids]
+
+    # Save the updated manifest to the lightmap directory
+    manifest_path = os.path.join(absolute_directory, "manifest.json")
+    with open(manifest_path, 'w') as manifest_file:
+        json.dump(manifest_data, manifest_file, indent=4)
+    print(f"Manifest saved to {manifest_path}")
+
+    # Debug report
+    print("\nAtlas Creation Summary:")
+    print(f"Total Atlases Created: {len(atlases)}")
+    print(f"Total Rectangles Packed: {processed_rectangles}/{total_rectangles}")
+    return atlases
+
+
+
+
+
+class TLM_Atlas(bpy.types.Operator):
+    bl_idname = "tlm.atlas"
+    bl_label = "Atlas"
+    bl_description = "Atlas"
+    bl_options = {'REGISTER', 'UNDO'}
+        
+    def execute(self, context):
+        created_atlases = createAtlases()
+        print(f"Created {len(created_atlases)} atlases.")
         return {'FINISHED'}
