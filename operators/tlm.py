@@ -1,4 +1,4 @@
-import bpy, os, json, sys, time
+import bpy, os, json, sys, time, shutil
 import numpy as np
 
 from ..ui.progress_bar import NX_Progress_Bar
@@ -538,13 +538,17 @@ def loadImagesToAtlas():
 
     return imagesToAtlas
 
-def createEmptyAtlas(atlas_index):
+def createEmptyAtlas(atlas_index, file_format):
     image_name = f"Atlas_{atlas_index}"
     new_image = bpy.data.images.new(image_name, width=atlas_res, height=atlas_res, float_buffer=True)
     pixels = [0.0] * (atlas_res * atlas_res * 4)
     new_image.pixels = pixels
     new_image.alpha_mode = 'STRAIGHT'
-    new_image.file_format = 'HDR'
+    if file_format == "HDR":
+        new_image.file_format = file_format #HDR
+    else:
+        new_image.file_format = "OPEN_EXR" #EXR or KTX will be converted from EXR
+
     return new_image
 
 def invertPixelsY(source_image):
@@ -560,7 +564,6 @@ def invertPixelsY(source_image):
                 corrected_pixels[source_index + c] = source_pixels[corrected_index + c]
 
     return corrected_pixels
-
 
 def transferPixels(inverted_pixels, target_image, x_offset, y_offset, source_width, source_height):
     target_pixels = list(target_image.pixels)
@@ -603,6 +606,75 @@ def setMaterialImage(obj, atlas_image):
     if tlm_lightmap_node and tlm_lightmap_node.type == 'TEX_IMAGE':
         tlm_lightmap_node.image = atlas_image
 
+def convertToKTX(absolute_directory, manifest_data):
+
+    ktx_outdir = os.path.join(absolute_directory, "KTX")
+    print("KTX output directory is: " + ktx_outdir)
+
+    if not os.path.exists(ktx_outdir):
+        os.makedirs(ktx_outdir)
+
+    ktx_path = os.path.join(util.get_addon_path(), "binaries", "ktx", "ktx.exe")
+    if not os.path.exists(ktx_path):
+        print(f"KTX tool not found at {ktx_path}")
+        return
+
+    for hdr_file in os.listdir(absolute_directory):
+
+        if hdr_file.startswith("atlas"):
+
+            if hdr_file.endswith(".hdr"):
+
+                hdr_path = os.path.join(absolute_directory, hdr_file)
+                ktx_output_path = os.path.join(ktx_outdir, os.path.basename(hdr_file).replace(".hdr", ".ktx2"))
+
+                ktx_command = [
+                    ktx_path,
+                    "create",
+                    "--format", "R32G32B32A32_SFLOAT",
+                    hdr_path,
+                    ktx_output_path
+                ]
+
+                try:
+                    subprocess.run(ktx_command, check=True)
+                    print(f"Converted {hdr_path} to {ktx_output_path} in KTX2 format.")
+                except subprocess.CalledProcessError as e:
+                    print(f"Error during KTX conversion for {hdr_path}: {e}")
+
+            if hdr_file.endswith(".exr"):
+
+                hdr_path = os.path.join(absolute_directory, hdr_file)
+                ktx_output_path = os.path.join(ktx_outdir, os.path.basename(hdr_file).replace(".exr", ".ktx2"))
+
+                ktx_command = [
+                    ktx_path,
+                    "create",
+                    "--format", "B10G11R11_UFLOAT_PACK32",
+                    hdr_path,
+                    ktx_output_path
+                ]
+
+                try:
+                    subprocess.run(ktx_command, check=True)
+                    print(f"Converted {hdr_path} to {ktx_output_path} in KTX2 format.")
+                except subprocess.CalledProcessError as e:
+                    print(f"Error during KTX conversion for {hdr_path}: {e}")
+
+    manifest_path = os.path.join(absolute_directory, "manifest.json")
+    shutil.copy(manifest_path, ktx_outdir)
+
+    updated_manifest_path = os.path.join(ktx_outdir, "manifest.json")
+    with open(updated_manifest_path, 'r') as file:
+        manifest_data = json.load(file)
+
+    manifest_data["ext"] = "ktx"
+
+    with open(updated_manifest_path, 'w') as file:
+        json.dump(manifest_data, file, indent=4)
+
+    #TODO - Remove lightmap folder and copy
+
 def createAtlases():
     imagesToAtlas = loadImagesToAtlas()
     if not imagesToAtlas:
@@ -610,7 +682,7 @@ def createAtlases():
         return
 
     atlases = []  # List to store created atlases
-    manifest_data = {"atlases": [], "lightmaps": {}}  # Updated manifest data
+    manifest_data = {"ext": "", "lightmaps": {}}  # Updated manifest data
     total_rectangles = len(imagesToAtlas)
     processed_rectangles = 0
 
@@ -620,6 +692,8 @@ def createAtlases():
 
     relative_directory = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
     absolute_directory = bpy.path.abspath(relative_directory)
+
+    output_format = bpy.context.scene.TLM_SceneProperties.tlm_format
 
     while processed_rectangles < total_rectangles:
         print(f"Creating new atlas (Bin #{len(atlases) + 1})...")
@@ -639,16 +713,22 @@ def createAtlases():
 
         # Create an empty atlas for this bin
         atlas_index = len(atlases) + 1
-        atlas_image = createEmptyAtlas(atlas_index)
+        atlas_image = createEmptyAtlas(atlas_index, output_format)
         atlases.append(atlas_image)
 
+        if output_format.lower() == "HDR":
+            atlas_path = os.path.join(absolute_directory, f"atlas_{atlas_index}.hdr")
+            atlas_image.file_format = "HDR"
+        else:
+            atlas_path = os.path.join(absolute_directory, f"atlas_{atlas_index}.exr")
+            atlas_image.file_format = "OPEN_EXR"
+
         # Save the atlas to the lightmap directory
-        atlas_path = os.path.join(absolute_directory, f"atlas_{atlas_index}.hdr")
         atlas_image.filepath_raw = atlas_path
         atlas_image.save()
         print(f"Atlas {atlas_index} saved to {atlas_path}")
 
-        manifest_data["atlases"].append(f"atlas_{atlas_index}.hdr")
+        # manifest_data["atlases"].append(f"atlas_{atlas_index}.{output_format.lower()}")
 
         # Process packed rectangles for the current bin
         packed_rects = packer.rect_list()
@@ -682,7 +762,8 @@ def createAtlases():
             processed_rectangles += 1
 
             # Update the manifest for the object
-            manifest_data["lightmaps"][img_info['object']] = f"atlas_{atlas_index}.hdr"
+            manifest_data["lightmaps"][img_info['object']] = f"atlas_{atlas_index}"
+            manifest_data["ext"] = output_format.lower()
 
         # Determine unpacked rectangles
         rectangles = [rect for rect in rectangles if rect[2] not in packed_ids]
@@ -693,6 +774,28 @@ def createAtlases():
         json.dump(manifest_data, manifest_file, indent=4)
     print(f"Manifest saved to {manifest_path}")
 
+    # Convert to KTX if required
+    if output_format.upper() == "KTX":
+        print("Converting to KTX")
+
+        shutil.rmtree(os.path.join(absolute_directory,"KTX"))
+
+        for image in bpy.data.images:
+            if image.name.startswith("Atlas"):
+                image.save()
+
+        convertToKTX(absolute_directory, manifest_data)
+
+    #Clean the lightmap folder
+    for file in os.listdir(absolute_directory):
+        if file.endswith(".hdr"):
+           os.remove(os.path.join(absolute_directory,file))
+        if file.endswith(".exr"):
+           os.remove(os.path.join(absolute_directory,file))
+        # if file.endswith(".json"):
+        #     os.remove(os.path.join(absolute_directory,file)) 
+        # We need the .json for lightmap linking properties
+
     # Debug report
     print("\nAtlas Creation Summary:")
     print(f"Total Atlases Created: {len(atlases)}")
@@ -700,13 +803,10 @@ def createAtlases():
     return atlases
 
 
-
-
-
 class TLM_Atlas(bpy.types.Operator):
     bl_idname = "tlm.atlas"
-    bl_label = "Atlas"
-    bl_description = "Atlas"
+    bl_label = "Atlas lightmaps"
+    bl_description = "Package all your lightmaps into combined textures called atlas textures"
     bl_options = {'REGISTER', 'UNDO'}
         
     def execute(self, context):
