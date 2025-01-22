@@ -2019,65 +2019,81 @@ class TLM_CalcTexDex(bpy.types.Operator):
 class TLM_AddGLTFNode(bpy.types.Operator):
     bl_idname = "tlm.add_gltf_node"
     bl_label = "Add GLTF Node"
-    bl_description = "Add to GLTF node to active material and connect lightmap if present"
+    bl_description = "Add glTF node to active material and connect lightmap if present"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
 
         scene = context.scene
-        cycles = scene.cycles
+        # If "iterate all" is checked, we iterate over all objects in scene
+        # otherwise, we only iterate over selected objects.
+        if scene.TLM_SceneProperties.tlm_gltf_iterate_all:
+            objects = bpy.context.scene.objects
+        else:
+            objects = bpy.context.selected_objects
 
-        for obj in bpy.context.scene.objects:
+        # Make sure the glTF node group exists
+        gltf_settings = bpy.data.node_groups.get('glTF Material Output')
+        if gltf_settings is None:
+            gltf_settings = bpy.data.node_groups.new('glTF Material Output', 'ShaderNodeTree')
 
-            print("Iterating: " + obj.name)
+        for obj in objects:
+            # For debugging/confirmation when iterate-all is active
+            if scene.TLM_SceneProperties.tlm_gltf_iterate_all:
+                print("Iterating: " + obj.name)
 
-            if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
-                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+            # Only process meshes that are marked to use lightmaps
+            if obj.type == 'MESH' and obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                # For “iterate all” we originally had `and obj.name in bpy.context.view_layer.objects`
+                # but if needed you can still add that check:
+                # if obj.name not in bpy.context.view_layer.objects:
+                #     continue
 
-                    for slot in obj.material_slots:
+                for slot in obj.material_slots:
+                    material = slot.material
 
-                        material = slot.material
+                    # Skip empty material slots
+                    if not material or not material.node_tree:
+                        continue
 
-                        nodes = material.node_tree.nodes
-                        # create group data
-                        gltf_settings = bpy.data.node_groups.get('glTF Material Output')
-                        if gltf_settings is None:
-                            bpy.data.node_groups.new('glTF Material Output', 'ShaderNodeTree')
+                    nodes = material.node_tree.nodes
 
-                        # add group to node tree
-                        gltf_settings_node = nodes.get('glTF Material Output')
-                        if gltf_settings_node is None:
-                            gltf_settings_node = nodes.new('ShaderNodeGroup')
-                            gltf_settings_node.name = 'glTF Material Output'
-                            gltf_settings_node.node_tree = bpy.data.node_groups['glTF Material Output']
+                    # Add the 'glTF Material Output' node if missing
+                    gltf_settings_node = nodes.get('glTF Material Output')
+                    if gltf_settings_node is None:
+                        gltf_settings_node = nodes.new('ShaderNodeGroup')
+                        gltf_settings_node.name = 'glTF Material Output'
+                        gltf_settings_node.node_tree = gltf_settings
 
-                        # create group inputs
-                        if 'Occlusion' not in gltf_settings_node.node_tree:
-                            gltf_settings_node.node_tree.interface.new_socket(name="Occlusion", in_out='INPUT')
+                    # Ensure "Occlusion" socket exists in the node group
+                    if 'Occlusion' not in gltf_settings_node.node_tree:
+                        gltf_settings_node.node_tree.interface.new_socket(name="Occlusion", in_out='INPUT')
 
-                        gltf_settings_node.location.y = 400
+                    # Move the gltf_settings_node for clarity in the node editor
+                    gltf_settings_node.location.y = 400
 
-                        lightmapNode = nodes.get("TLM_Lightmap")
+                    # Attempt to connect the TLM_Lightmap node to the glTF node's Occlusion input
+                    lightmap_node = nodes.get("TLM_Lightmap")
+                    if lightmap_node and lightmap_node.outputs[0].links:
+                        # Remove existing link from TLM_Lightmap output[0]
+                        # (assuming exactly one link you want to remove)
+                        material.node_tree.links.remove(lightmap_node.outputs[0].links[0])
+                        # Create new link to the glTF node's Occlusion
+                        material.node_tree.links.new(lightmap_node.outputs[0], gltf_settings_node.inputs[0])
 
-                        material.node_tree.links.remove(lightmapNode.outputs[0].links[0])
-                        material.node_tree.links.new(lightmapNode.outputs[0], gltf_settings_node.inputs[0])
-
-                        #If the material have a node called "Lightmap_Multiplication" and it does have a input into Color2 called "Lightmap_BasecolorNode_A" remove both "Lightmap_BasecolorNode_A" and ""Lightmap_Multiplication". This needs to be done for materials that dont have a base texture but instead using a just a color
-                        # Check if the "Lightmap_Multiplication" node exists
-                        lightmap_multiplication_node = nodes.get("Lightmap_Multiplication")
-                        if lightmap_multiplication_node is not None:
-                            # Check if the "Lightmap_BasecolorNode_A" node is connected to the "Color2" input of the "Lightmap_Multiplication" node
-                            color2_input = lightmap_multiplication_node.inputs.get("Color2")
-                            if color2_input is not None and color2_input.is_linked:
-                                lightmap_basecolor_node_a = color2_input.links[0].from_node
-                                if lightmap_basecolor_node_a.name == "Lightmap_BasecolorNode_A":
-                                    # Remove the "Lightmap_BasecolorNode_A" node
-                                    nodes.remove(lightmap_basecolor_node_a)
-                                    # Remove the "Lightmap_Multiplication" node
-                                    nodes.remove(lightmap_multiplication_node)
+                        # Clean up unused multiplication nodes if they only provided base color
+                        lightmap_mult = nodes.get("Lightmap_Multiplication")
+                        if lightmap_mult:
+                            color2_input = lightmap_mult.inputs.get("Color2")
+                            if color2_input and color2_input.is_linked:
+                                basecolor_node_a = color2_input.links[0].from_node
+                                if basecolor_node_a and basecolor_node_a.name == "Lightmap_BasecolorNode_A":
+                                    # Remove both
+                                    nodes.remove(basecolor_node_a)
+                                    nodes.remove(lightmap_mult)
                             else:
-                                    # Remove the "Lightmap_Multiplication" node
-                                    nodes.remove(lightmap_multiplication_node)
+                                # Color2 wasn't linked, remove the multiplication node
+                                nodes.remove(lightmap_mult)
 
         return {'FINISHED'}
 
