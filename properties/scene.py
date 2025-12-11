@@ -130,3 +130,25 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Select the level of Zstandard compression for KTX lightmaps.",
         default='10'
     )
+
+    tlm_reset_lightmap_uv: BoolProperty(
+        name="Remove Lightmap UV",
+        description="",
+        default=False
+    )
+
+    tlm_create_atlas: BoolProperty(
+        name="Create Lightmap Atlases",
+        description="",
+        default=False
+    )
+
+    tlm_atlas_max_resolution : EnumProperty(
+        items = [('1024', '1024', 'TODO'),
+                ('2048', '2048', 'TODO'),
+                ('4096', '4096', 'TODO'),
+                ('8192', '8192', 'TODO'),
+                ('16384', '16384', 'TODO')],
+                name = "Atlas Max Resolution", 
+                description="TODO", 
+                default="1024")

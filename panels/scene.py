@@ -52,6 +52,8 @@ class TLM_PT_Settings(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_setting_savedir")
         row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_reset_lightmap_uv")
+        row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_play_sound")
         row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_material_multi_user")
@@ -75,3 +77,10 @@ class TLM_PT_Settings(bpy.types.Panel):
 
                 row = layout.row(align=True)
                 row.prop(sceneProperties, "tlm_tex_compression_level")
+
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_create_atlas")
+
+        if sceneProperties.tlm_create_atlas:
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_atlas_max_resolution")

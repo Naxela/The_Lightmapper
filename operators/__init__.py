@@ -20,7 +20,7 @@ class OBJECT_MT_lightmapping_menu(bpy.types.Menu):
         layout.operator("tlm.disable_metallic", text="Disable Metallic")
 
 classes = [
-    tlm.TLM_BuildLightmaps,
+    tlm.TLM_OT_build_lightmaps,
     tlm.TLM_ApplyLightmaps,
     tlm.TLM_LinkLightmaps,
     tlm.TLM_ExploreLightmaps,

@@ -40,7 +40,7 @@ def callback_operations(argument):
             print(value) 
 
 # Operator for building lightmaps, manages the subprocess and updates progress in Blender
-class TLM_BuildLightmaps(bpy.types.Operator):
+class TLM_OT_build_lightmaps(bpy.types.Operator):
     bl_idname = "tlm.build_lightmaps"
     bl_label = "Build Lightmaps"
     bl_description = "Build Lightmaps"
@@ -49,11 +49,7 @@ class TLM_BuildLightmaps(bpy.types.Operator):
     _timer = None
     _draw_handler = None
     
-    def __init__(self):
-        self.output_queue = Queue()
-        self.error_queue = Queue()
-
-    # Reads output from the subprocess and adds it to a queue
+    # Remove __init__ completely and initialize queues in execute()
     def read_output(self, pipe, queue):
         try:
             for line in iter(pipe.readline, ''):
@@ -61,7 +57,6 @@ class TLM_BuildLightmaps(bpy.types.Operator):
         finally:
             pipe.close()
 
-    # Starts the subprocess to build lightmaps
     def start_process(self, cmd):
         self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, bufsize=1, universal_newlines=True, encoding='utf-8')
         self.stdout_thread = threading.Thread(target=self.read_output, args=(self.process.stdout, self.output_queue), daemon=True)
@@ -69,9 +64,30 @@ class TLM_BuildLightmaps(bpy.types.Operator):
         self.stdout_thread.start()
         self.stderr_thread.start()
         
-    # Executes the lightmap building process, setting up timers and handlers
     def execute(self, context):
+        # Initialize queues here instead of in __init__
+        self.output_queue = Queue()
+        self.error_queue = Queue()
+        
         args = ()
+
+        if bpy.context.scene.TLM_SceneProperties.tlm_reset_lightmap_uv:
+            for obj in bpy.context.scene.objects:
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    if obj.type == "MESH":
+
+                        uv_layers = obj.data.uv_layers
+                        uv_channel = "UVMap-Lightmap"
+
+                        for uvlayer in uv_layers:
+                            if uvlayer.name == uv_channel:
+                                uv_layers.remove(uvlayer)
+
+                        #For old naming convention
+                        uv_channel = "UVMap_Lightmap"
+                        for uvlayer in uv_layers:
+                            if uvlayer.name == uv_channel:
+                                uv_layers.remove(uvlayer)
 
         util.removeLightmapFolder()
         util.configureEngine()
@@ -91,7 +107,7 @@ class TLM_BuildLightmaps(bpy.types.Operator):
         wm.modal_handler_add(self)
         return {'RUNNING_MODAL'}
     
-    # Handles modal events, reading subprocess output and updating progress
+    # Rest of your methods remain the same...
     def modal(self, context, event):
         if event.type == 'TIMER':
             try:
@@ -111,13 +127,12 @@ class TLM_BuildLightmaps(bpy.types.Operator):
                 return self.cancel(context)
         return {'PASS_THROUGH'}
 
-    # Cancels the operation, cleaning up subprocess and handlers
     def cancel(self, context):
-        if self.process and self.process.poll() is None:
+        if hasattr(self, 'process') and self.process and self.process.poll() is None:
             self.process.terminate()
-        if self.stdout_thread.is_alive():
+        if hasattr(self, 'stdout_thread') and self.stdout_thread.is_alive():
             self.stdout_thread.join()
-        if self.stderr_thread.is_alive():
+        if hasattr(self, 'stderr_thread') and self.stderr_thread.is_alive():
             self.stderr_thread.join()
         
         wm = context.window_manager
@@ -129,7 +144,6 @@ class TLM_BuildLightmaps(bpy.types.Operator):
 
         util.removeBuildScript()
         util.postprocessBuild()
-
 
         self.report({'INFO'}, "Lightmapping Finished")
 
@@ -345,7 +359,13 @@ class TLM_OBJECT_OT_lightmap_removeuv(bpy.types.Operator):
                     if uvlayer.name == uv_channel:
                         uv_layers.remove(uvlayer)
 
-        self.report({'INFO'}, "Lightmapping resolution doubled")
+                #For old naming convention
+                uv_channel = "UVMap_Lightmap"
+                for uvlayer in uv_layers:
+                    if uvlayer.name == uv_channel:
+                        uv_layers.remove(uvlayer)
+
+        self.report({'INFO'}, "Lightmap UV's removed")
         return {'FINISHED'}
 
 class TLM_OBJECT_OT_lightmap_onedown(bpy.types.Operator):
@@ -481,131 +501,6 @@ class TLM_DisableMetallic(bpy.types.Operator):
 
         return {'FINISHED'}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-atlas_res = 1024
-
-def loadImagesToAtlas():
-    imagesToAtlas = []
-    relative_directory = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
-    absolute_directory = bpy.path.abspath(relative_directory)
-    manifest_file = os.path.join(absolute_directory, "manifest.json")
-
-    if not os.path.exists(absolute_directory):
-        print("No lightmap directory")
-        return imagesToAtlas
-
-    if not os.path.exists(manifest_file):
-        print("No lightmap manifest")
-        return imagesToAtlas
-
-    with open(manifest_file, 'r') as file:
-        data = json.load(file)
-
-    ext = data.get("ext", "hdr")
-    for key, value in data["lightmaps"].items():
-        image_name = f"{value}.{ext}"
-        imagesToAtlas.append({"name": image_name, "object": key})
-
-    return imagesToAtlas
-
-def createEmptyAtlas(atlas_index, file_format):
-    image_name = f"Atlas_{atlas_index}"
-    new_image = bpy.data.images.new(image_name, width=atlas_res, height=atlas_res, float_buffer=True)
-    pixels = [0.0] * (atlas_res * atlas_res * 4)
-    new_image.pixels = pixels
-    new_image.alpha_mode = 'STRAIGHT'
-    if file_format == "HDR":
-        new_image.file_format = file_format #HDR
-    else:
-        new_image.file_format = "OPEN_EXR" #EXR or KTX will be converted from EXR
-
-    return new_image
-
-def invertPixelsY(source_image):
-    source_pixels = list(source_image.pixels)
-    source_width, source_height = source_image.size
-    corrected_pixels = [0.0] * len(source_pixels)
-
-    for y in range(source_height):
-        for x in range(source_width):
-            source_index = (y * source_width + x) * 4  # Original pixel index
-            corrected_index = ((source_height - 1 - y) * source_width + x) * 4  # Flip Y-axis
-            for c in range(4):  # Iterate over RGBA channels
-                corrected_pixels[source_index + c] = source_pixels[corrected_index + c]
-
-    return corrected_pixels
-
-def transferPixels(inverted_pixels, target_image, x_offset, y_offset, source_width, source_height):
-    target_pixels = list(target_image.pixels)
-
-    for y in range(source_height):
-        for x in range(source_width):
-            source_index = (y * source_width + x) * 4
-            target_index = ((y_offset + (source_height - 1 - y)) * atlas_res + x_offset + x) * 4  # Flip Y
-            for c in range(4):  # RGBA channels
-                target_pixels[target_index + c] = inverted_pixels[source_index + c]
-
-    target_image.pixels = target_pixels
-
-def adjustUVs(obj, x_offset, y_offset, source_width, source_height, atlas_res):
-    mesh = obj.data
-    uv_layer = mesh.uv_layers.get("UVMap-Lightmap")
-
-    if uv_layer is None:
-        raise ValueError(f"UV layer 'UVMap-Lightmap' not found in object {obj.name}")
-
-    for loop in mesh.loops:
-        uv = uv_layer.data[loop.index].uv
-        uv.x = (x_offset + uv.x * source_width) / atlas_res
-        uv.y = (y_offset + uv.y * source_height) / atlas_res
-
-def setMaterialImage(obj, atlas_image):
-    if obj.type != 'MESH':
-        return
-
-    mesh = obj.data
-    if not mesh.materials:
-        return
-
-    material = mesh.materials[0]
-    if not material.use_nodes:
-        return
-
-    nodes = material.node_tree.nodes
-    tlm_lightmap_node = nodes.get("TLM-Lightmap")
-    if tlm_lightmap_node and tlm_lightmap_node.type == 'TEX_IMAGE':
-        tlm_lightmap_node.image = atlas_image
-
 def convertToKTX(absolute_directory, manifest_data):
 
     ktx_outdir = os.path.join(absolute_directory, "KTX")
@@ -647,19 +542,120 @@ def convertToKTX(absolute_directory, manifest_data):
                 hdr_path = os.path.join(absolute_directory, hdr_file)
                 ktx_output_path = os.path.join(ktx_outdir, os.path.basename(hdr_file).replace(".exr", ".ktx2"))
 
-                ktx_command = [
-                    ktx_path,
-                    "create",
-                    "--format", "B10G11R11_UFLOAT_PACK32",
-                    hdr_path,
-                    ktx_output_path
-                ]
+                # ktx_command = [
+                #     ktx_path,
+                #     "create",
+                #     "--format", "B10G11R11_UFLOAT_PACK32",
+                #     hdr_path,
+                #     ktx_output_path
+                # ]
+
+                if bpy.context.scene.TLM_SceneProperties.tlm_tex_compression:
+
+                    ktx_command = [
+                        ktx_path,
+                        "create",
+                        "--format", "R32G32B32A32_SFLOAT",
+                        "--zstd", bpy.context.scene.TLM_SceneProperties.tlm_tex_compression_level,
+                        hdr_path,
+                        ktx_output_path
+                    ]
+
+                else:
+
+                    ktx_command = [
+                        ktx_path,
+                        "create",
+                        "--format", "R32G32B32A32_SFLOAT",
+                        hdr_path,
+                        ktx_output_path
+                    ]
 
                 try:
                     subprocess.run(ktx_command, check=True)
                     print(f"Converted {hdr_path} to {ktx_output_path} in KTX2 format.")
                 except subprocess.CalledProcessError as e:
                     print(f"Error during KTX conversion for {hdr_path}: {e}")
+
+
+
+                # if bpy.context.scene.TLM_SceneProperties.tlm_tex_format == "F32":
+
+                #     if bpy.context.scene.TLM_SceneProperties.tlm_tex_compression:
+
+                #         ktx_command = [
+                #             ktx_path,
+                #             "create",
+                #             "--format", "R32G32B32A32_SFLOAT",
+                #             "--zstd", bpy.context.scene.TLM_SceneProperties.tlm_tex_compression_level,
+                #             exr_path,
+                #             ktx_output_path
+                #         ]
+
+                #     else:
+
+                #         ktx_command = [
+                #             ktx_path,
+                #             "create",
+                #             "--format", "R32G32B32A32_SFLOAT",
+                #             exr_path,
+                #             ktx_output_path
+                #         ]
+
+                # elif bpy.context.scene.TLM_SceneProperties.tlm_tex_format == "F16":
+
+                #     if bpy.context.scene.TLM_SceneProperties.tlm_tex_compression:
+
+                #         ktx_command = [
+                #             ktx_path,
+                #             "create",
+                #             "--format", "R16G16B16A16_SFLOAT",
+                #             "--zstd", bpy.context.scene.TLM_SceneProperties.tlm_tex_compression_level,
+                #             exr_path,
+                #             ktx_output_path
+                #         ]
+
+                #     else:
+
+                #         ktx_command = [
+                #             ktx_path,
+                #             "create",
+                #             "--format", "R16G16B16A16_SFLOAT",
+                #             exr_path,
+                #             ktx_output_path
+                #         ]
+
+                # elif bpy.context.scene.TLM_SceneProperties.tlm_tex_format == "VK":
+
+                #     if bpy.context.scene.TLM_SceneProperties.tlm_tex_compression:
+
+                #         ktx_command = [
+                #             ktx_path,
+                #             "create",
+                #             "--format", "B10G11R11_UFLOAT_PACK32",
+                #             "--zstd", bpy.context.scene.TLM_SceneProperties.tlm_tex_compression_level,
+                #             exr_path,
+                #             ktx_output_path
+                #         ]
+
+                #     else:
+
+                #         ktx_command = [
+                #             ktx_path,
+                #             "create",
+                #             "--format", "B10G11R11_UFLOAT_PACK32",
+                #             exr_path,
+                #             ktx_output_path
+                #         ]
+
+                # try:
+                #     subprocess.run(ktx_command, check=True)
+                #     print(f"Converted {exr_path} to {ktx_output_path} in KTX2 format.")
+                # except subprocess.CalledProcessError as e:
+                #     print(f"Error during KTX conversion for {exr_path}: {e}")
+
+
+
 
     manifest_path = os.path.join(absolute_directory, "manifest.json")
     shutil.copy(manifest_path, ktx_outdir)
@@ -675,7 +671,148 @@ def convertToKTX(absolute_directory, manifest_data):
 
     #TODO - Remove lightmap folder and copy
 
-def createAtlases():
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def loadImagesToAtlas():
+    imagesToAtlas = []
+    relative_directory = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
+    absolute_directory = bpy.path.abspath(relative_directory)
+    manifest_file = os.path.join(absolute_directory, "manifest.json")
+
+    if not os.path.exists(absolute_directory):
+        print("No lightmap directory")
+        return imagesToAtlas
+
+    if not os.path.exists(manifest_file):
+        print("No lightmap manifest")
+        return imagesToAtlas
+
+    with open(manifest_file, 'r') as file:
+        data = json.load(file)
+
+    ext = data.get("ext", "hdr")
+    for key, value in data["lightmaps"].items():
+        image_name = f"{value}.{ext}"
+        imagesToAtlas.append({"name": image_name, "object": key})
+
+    return imagesToAtlas
+
+def createEmptyAtlas(atlas_index, file_format, max_resolution):
+    image_name = f"Atlas_{atlas_index}"
+    new_image = bpy.data.images.new(image_name, width=max_resolution, height=max_resolution, float_buffer=True)
+    pixels = [0.0] * (max_resolution * max_resolution * 4)
+    new_image.pixels = pixels
+    new_image.alpha_mode = 'STRAIGHT'
+    if file_format == "HDR":
+        new_image.file_format = file_format #HDR
+    else:
+        new_image.file_format = "OPEN_EXR" #EXR or KTX will be converted from EXR
+
+    return new_image
+
+def invertPixelsY(source_image):
+    source_pixels = list(source_image.pixels)
+    source_width, source_height = source_image.size
+    corrected_pixels = [0.0] * len(source_pixels)
+
+    for y in range(source_height):
+        for x in range(source_width):
+            source_index = (y * source_width + x) * 4  # Original pixel index
+            corrected_index = ((source_height - 1 - y) * source_width + x) * 4  # Flip Y-axis
+            for c in range(4):  # Iterate over RGBA channels
+                corrected_pixels[source_index + c] = source_pixels[corrected_index + c]
+
+    return corrected_pixels
+
+def transferPixels(inverted_pixels, target_image, x_offset, y_offset, source_width, source_height, max_resolution):
+    target_pixels = list(target_image.pixels)
+
+    for y in range(source_height):
+        for x in range(source_width):
+            source_index = (y * source_width + x) * 4
+            target_index = ((y_offset + (source_height - 1 - y)) * max_resolution + x_offset + x) * 4  # Flip Y
+            for c in range(4):  # RGBA channels
+                target_pixels[target_index + c] = inverted_pixels[source_index + c]
+
+    target_image.pixels = target_pixels
+
+def adjustUVs(obj, x_offset, y_offset, source_width, source_height, max_resolution):
+    mesh = obj.data
+    uv_layer = mesh.uv_layers.get("UVMap-Lightmap")
+
+    if uv_layer is None:
+        raise ValueError(f"UV layer 'UVMap-Lightmap' not found in object {obj.name}")
+
+    for loop in mesh.loops:
+        uv = uv_layer.data[loop.index].uv
+        uv.x = (x_offset + uv.x * source_width) / max_resolution
+        uv.y = (y_offset + uv.y * source_height) / max_resolution
+
+""" def adjustUVs(obj, x_offset, y_offset, source_width, source_height, atlas_res):
+    mesh = obj.data
+    source_uv_layer = mesh.uv_layers.get("UVMap-Lightmap")
+
+    if source_uv_layer is None:
+        raise ValueError(f"UV layer 'UVMap-Lightmap' not found in object {obj.name}")
+
+    # Create or get the atlas UV map
+    atlas_uv_layer = mesh.uv_layers.get("UVMap-Atlas")
+    if atlas_uv_layer is None:
+        atlas_uv_layer = mesh.uv_layers.new(name="UVMap-Atlas")
+
+    # Copy coordinates from source UV map and apply adjustments
+    for loop in mesh.loops:
+        source_uv = source_uv_layer.data[loop.index].uv
+        atlas_uv = atlas_uv_layer.data[loop.index].uv
+        
+        atlas_uv.x = (x_offset + source_uv.x * source_width) / atlas_res
+        atlas_uv.y = (y_offset + source_uv.y * source_height) / atlas_res """
+
+def setMaterialImage(obj, atlas_image):
+    if obj.type != 'MESH':
+        return
+
+    mesh = obj.data
+    if not mesh.materials:
+        return
+
+    material = mesh.materials[0]
+    if not material.use_nodes:
+        return
+
+    nodes = material.node_tree.nodes
+    tlm_lightmap_node = nodes.get("TLM-Lightmap")
+    if tlm_lightmap_node and tlm_lightmap_node.type == 'TEX_IMAGE':
+        tlm_lightmap_node.image = atlas_image
+
+def createAtlases(max_resolution):
     imagesToAtlas = loadImagesToAtlas()
     if not imagesToAtlas:
         print("No images to atlas")
@@ -702,7 +839,7 @@ def createAtlases():
         packer = newPacker(mode=PackingMode.Offline, rotation=False, pack_algo=MaxRectsBssf)
 
         # Add a new bin for the current atlas
-        packer.add_bin(atlas_res, atlas_res)
+        packer.add_bin(max_resolution, max_resolution)
 
         # Add remaining rectangles to the packer
         for rect in rectangles:
@@ -713,10 +850,10 @@ def createAtlases():
 
         # Create an empty atlas for this bin
         atlas_index = len(atlases) + 1
-        atlas_image = createEmptyAtlas(atlas_index, output_format)
+        atlas_image = createEmptyAtlas(atlas_index, output_format, max_resolution)
         atlases.append(atlas_image)
 
-        if output_format.lower() == "HDR":
+        if output_format == "HDR":
             atlas_path = os.path.join(absolute_directory, f"atlas_{atlas_index}.hdr")
             atlas_image.file_format = "HDR"
         else:
@@ -736,7 +873,7 @@ def createAtlases():
 
         # Calculate atlas fill percentage
         used_area = sum(w * h for _, _, _, w, h, _ in packed_rects)
-        total_area = atlas_res * atlas_res
+        total_area = max_resolution * max_resolution
         fill_percentage = (used_area / total_area) * 100
         print(f"Atlas {atlas_index} Fill Percentage: {fill_percentage:.2f}%")
 
@@ -750,9 +887,9 @@ def createAtlases():
             img_info = imagesToAtlas[rid]
             source_image = bpy.data.images[img_info['name']]
             inverted_pixels = invertPixelsY(source_image)
-            transferPixels(inverted_pixels, atlas_image, x, y, w, h)
+            transferPixels(inverted_pixels, atlas_image, x, y, w, h, max_resolution)
             obj = bpy.data.objects[img_info['object']]
-            adjustUVs(obj, x, y, w, h, atlas_res)
+            adjustUVs(obj, x, y, w, h, max_resolution)
 
             # Assign the correct atlas image to the object's material
             setMaterialImage(obj, atlas_image)
@@ -775,10 +912,10 @@ def createAtlases():
     print(f"Manifest saved to {manifest_path}")
 
     # Convert to KTX if required
-    if output_format.upper() == "KTX":
+    if output_format == "KTX":
         print("Converting to KTX")
 
-        shutil.rmtree(os.path.join(absolute_directory,"KTX"))
+        #shutil.rmtree(os.path.join(absolute_directory,"KTX"))
 
         for image in bpy.data.images:
             if image.name.startswith("Atlas"):
@@ -787,11 +924,11 @@ def createAtlases():
         convertToKTX(absolute_directory, manifest_data)
 
     #Clean the lightmap folder
-    for file in os.listdir(absolute_directory):
-        if file.endswith(".hdr"):
-           os.remove(os.path.join(absolute_directory,file))
-        if file.endswith(".exr"):
-           os.remove(os.path.join(absolute_directory,file))
+    # for file in os.listdir(absolute_directory):
+    #     if file.endswith(".hdr"):
+    #        os.remove(os.path.join(absolute_directory,file))
+    #     if file.endswith(".exr"):
+    #        os.remove(os.path.join(absolute_directory,file))
         # if file.endswith(".json"):
         #     os.remove(os.path.join(absolute_directory,file)) 
         # We need the .json for lightmap linking properties
@@ -810,6 +947,6 @@ class TLM_Atlas(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
         
     def execute(self, context):
-        created_atlases = createAtlases()
+        created_atlases = createAtlases(int(bpy.context.scene.TLM_SceneProperties.tlm_atlas_max_resolution))
         print(f"Created {len(created_atlases)} atlases.")
         return {'FINISHED'}

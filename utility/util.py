@@ -1,4 +1,4 @@
-import bpy, shutil, os, json, webbrowser, subprocess
+import bpy, shutil, os, json, webbrowser, subprocess, platform
 from ..denoiser import oidn
 from ..ui.text_field import NX_Text_Display
 from types import SimpleNamespace
@@ -30,9 +30,22 @@ def removeBuildScript():
 def exploreLightmaps():
     relative_directory = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
     absolute_directory = bpy.path.abspath(relative_directory)
+    
     if not os.path.exists(absolute_directory):
         os.makedirs(absolute_directory)
-    webbrowser.open(absolute_directory)
+    
+    # Cross-platform folder opening
+    system = platform.system()
+    
+    try:
+        if system == "Windows":
+            os.startfile(absolute_directory)
+        elif system == "Darwin":  # macOS
+            subprocess.Popen(["open", absolute_directory])
+        else:  # Linux and other Unix-like systems
+            subprocess.Popen(["xdg-open", absolute_directory])
+    except Exception as e:
+        print(f"Error opening folder: {e}")
 
 # Remove the entire lightmap folder
 def removeLightmapFolder():
@@ -270,6 +283,12 @@ def linkLightmap(folder):
     absolute_directory = bpy.path.abspath(relative_directory)
     manifest_file = os.path.join(absolute_directory, "manifest.json")
 
+    #Remove existing links
+    for obj in bpy.context.scene.objects:
+        if obj.type == "MESH":
+            if obj.get("TLM_Lightmap"):
+                del obj["TLM_Lightmap"]
+
     if not os.path.exists(absolute_directory):
         print("No lightmap directory")
         return
@@ -471,27 +490,30 @@ def applyLightmap(folder):
                         obj.data.materials.append(mat)
                         single = True
 
-        print("Applying materials for: " + obj.name)
-        for slot in obj.material_slots:
-            mat = slot.material
-            if not mat or not mat.use_nodes:
-                continue
+        if obj:
+            print("Applying materials for: " + obj.name)
+            for slot in obj.material_slots:
+                mat = slot.material
+                if not mat or not mat.use_nodes:
+                    print("Not using mat nodes")
+                    continue
 
-            if bpy.context.scene.TLM_SceneProperties.tlm_material_multi_user == "Unique":
+                if bpy.context.scene.TLM_SceneProperties.tlm_material_multi_user == "Unique":
 
-                #If the material has more users, make it unique
-                if mat.users > 1:
+                    #If the material has more users, make it unique
+                    if mat.users > 1:
 
-                    original_material = mat
-                    # Duplicate the material
-                    new_mat = mat.copy()
+                        original_material = mat
+                        # Duplicate the material
+                        new_mat = mat.copy()
 
-                    new_mat["TLM_InheritedMaterial"] = original_material
-                    # Rename the new material with the object's name as suffix
-                    new_mat.name = f"{mat.name}-{obj.name}"
-                    # Assign the new, uniquely named material to the slot
-                    slot.material = new_mat
+                        new_mat["TLM_InheritedMaterial"] = original_material
+                        # Rename the new material with the object's name as suffix
+                        new_mat.name = f"{mat.name}-{obj.name}"
+                        # Assign the new, uniquely named material to the slot
+                        slot.material = new_mat
 
+            #TODO - For now it needs to be named Principled BSDF, make it type based in the future. 
             if mat.node_tree.nodes.get("Principled BSDF"):
                 print("Got principled BSDF: " + mat.name)
                 base_color = None

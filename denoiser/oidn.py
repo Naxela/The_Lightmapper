@@ -38,6 +38,10 @@ class TLM_OIDN_Denoise:
                 else:
                 
                     self.oidnProperties.tlm_oidn_path = os.path.join(self.oidnProperties.tlm_oidn_path,"oidnDenoise.exe")
+                    
+            elif platform.system() == 'Linux':
+            
+                self.oidnProperties.tlm_oidn_path = os.path.join(self.oidnProperties.tlm_oidn_path,"oidnDenoise")
 
         else:
 
@@ -91,28 +95,76 @@ class TLM_OIDN_Denoise:
                 threads = str(self.oidnProperties.tlm_oidn_threads)
                 maxmem = str(self.oidnProperties.tlm_oidn_maxmem)
 
-                if platform.system() == 'Windows':
-                    oidnPath = bpy.path.abspath(self.oidnProperties.tlm_oidn_path)
-                    pipePath = [oidnPath, '-f', 'RTLightmap', '-hdr', image_output_denoise_destination, '-o', image_output_denoise_result_destination, '-verbose', v, '-threads', threads, '-affinity', a, '-maxmem', maxmem]
-                elif platform.system() == 'Darwin':
-                    oidnPath = bpy.path.abspath(self.oidnProperties.tlm_oidn_path)
-                    pipePath = [oidnPath + ' -f ' + ' RTLightmap ' + ' -hdr ' + image_output_denoise_destination + ' -o ' + image_output_denoise_result_destination + ' -verbose ' + v]
-                else:
-                    oidnPath = bpy.path.abspath(self.oidnProperties.tlm_oidn_path)
-                    oidnPath = oidnPath.replace(' ', '\\ ')
-                    image_output_denoise_destination = image_output_denoise_destination.replace(' ', '\\ ')
-                    image_output_denoise_result_destination = image_output_denoise_result_destination.replace(' ', '\\ ')
-                    pipePath = [oidnPath + ' -f ' + ' RTLightmap ' + ' -hdr ' + image_output_denoise_destination + ' -o ' + image_output_denoise_result_destination + ' -verbose ' + v]
-                    
-                if not verbose:
-                    denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=None, shell=True)
-                else:
-                    denoisePipe = subprocess.Popen(pipePath, shell=True)
+                oidnPath = bpy.path.abspath(self.oidnProperties.tlm_oidn_path)
 
-                denoisePipe.communicate()[0]
-
+                # Make sure the binary is executable on Linux/macOS
                 if platform.system() != 'Windows':
-                    image_output_denoise_result_destination = image_output_denoise_result_destination.replace('\\', '')
+                    import stat
+                    try:
+                        os.chmod(oidnPath, os.stat(oidnPath).st_mode | stat.S_IEXEC)
+                    except Exception as e:
+                        print(f"Warning: Could not set execute permission: {e}")
+
+                # Check OIDN version first
+                version_check = subprocess.Popen([oidnPath, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                version_out, _ = version_check.communicate()
+                oidn_version = version_out.decode('utf-8').strip() if version_out else "unknown"
+                print(f"OIDN Version: {oidn_version}")
+
+                # Try with -hdr and -ldr flags for RTLightmap (command-line syntax)
+                pipePath = [
+                    oidnPath,
+                    '-f', 'RTLightmap',
+                    '-ldr', image_output_denoise_destination,  # Try -ldr instead of -hdr or --color
+                    '-o', image_output_denoise_result_destination,
+                ]
+
+                # Add optional parameters
+                if v != "0":
+                    pipePath.extend(['-v', v])
+                if threads != "0":
+                    pipePath.extend(['-t', threads])
+                if maxmem != "0":
+                    pipePath.extend(['-m', maxmem])
+
+                if verbose:
+                    print(f"OIDN Command: {' '.join(pipePath)}")
+
+                # Run without shell=True to avoid escaping issues
+                denoisePipe = subprocess.Popen(pipePath, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                stdout, stderr = denoisePipe.communicate()
+
+                # Check for errors
+                if denoisePipe.returncode != 0:
+                    print(f"OIDN Denoiser failed with return code {denoisePipe.returncode}")
+                    print(f"STDOUT: {stdout.decode('utf-8') if stdout else 'None'}")
+                    print(f"STDERR: {stderr.decode('utf-8') if stderr else 'None'}")
+                    print(f"Command: {' '.join(pipePath)}")
+                    
+                    # Try alternative: use -hdr flag
+                    print("Retrying with -hdr flag...")
+                    pipePath_alt = [
+                        oidnPath,
+                        '-f', 'RTLightmap',
+                        '-hdr', image_output_denoise_destination,
+                        '-o', image_output_denoise_result_destination,
+                    ]
+                    if v != "0":
+                        pipePath_alt.extend(['-v', v])
+                    
+                    denoisePipe2 = subprocess.Popen(pipePath_alt, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    stdout2, stderr2 = denoisePipe2.communicate()
+                    
+                    if denoisePipe2.returncode != 0:
+                        print(f"Alternative also failed:")
+                        print(f"STDERR: {stderr2.decode('utf-8') if stderr2 else 'None'}")
+                        continue
+
+                # Check if output file was created
+                if not os.path.exists(image_output_denoise_result_destination):
+                    print(f"Error: Output file was not created: {image_output_denoise_result_destination}")
+                    continue
 
                 with open(image_output_denoise_result_destination, "rb") as f:
                     denoise_data, scale = self.load_pfm(f)
