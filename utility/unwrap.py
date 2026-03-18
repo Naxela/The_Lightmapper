@@ -73,30 +73,36 @@ def unwrapObjectOnChannel(obj):
             existing_lightmap_uv = False
 
             mesh = obj.data
-            
-            if not "UVMap-Lightmap" in mesh.uv_layers:
-                
-                mesh.uv_layers.new(name="UVMap-Lightmap")
+            uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel or "UVMap-Lightmap"
 
+            if uv_channel not in mesh.uv_layers and "UVMap-Atlas" not in mesh.uv_layers:
+                mesh.uv_layers.new(name=uv_channel)
             else:
-
                 existing_lightmap_uv = True
-
-            
 
             #If a lightmap UV map already exists, we don't want to unwrap it
             if not existing_lightmap_uv:
 
-                mesh.uv_layers.active = mesh.uv_layers["UVMap-Lightmap"]
-                mesh.uv_layers["UVMap-Lightmap"].active_render = True
+                mesh.uv_layers.active = mesh.uv_layers[uv_channel]
+                mesh.uv_layers[uv_channel].active_render = True
 
                 #If lightmap
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
 
                     print("Lightmapping UV Map for object: " + obj.name)
 
-                    bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
-                
+                    props = obj.TLM_ObjectProperties
+                    if props.tlm_use_per_object_lightmap_pack:
+                        bpy.ops.uv.lightmap_pack(
+                            'EXEC_SCREEN',
+                            PREF_CONTEXT=props.tlm_lightmap_pack_selection,
+                            PREF_SHARE_SPACE=props.tlm_lightmap_pack_share_space,
+                            PREF_NEW_UVLAYER=props.tlm_lightmap_pack_new_uv,
+                            PREF_BOX_DIV=props.tlm_lightmap_pack_quality,
+                            PREF_MARGIN_DIV=props.tlm_lightmap_pack_margin)
+                    else:
+                        bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=props.tlm_mesh_unwrap_margin)
+
                 #If smart project
                 elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "SmartProject":
 
@@ -107,12 +113,26 @@ def unwrapObjectOnChannel(obj):
                     bpy.ops.object.mode_set(mode='EDIT')
                     bpy.ops.mesh.select_all(action='SELECT')
 
-                    angle = math.radians(45.0)
-                    bpy.ops.uv.smart_project(angle_limit=angle, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, area_weight=1.0, correct_aspect=True, scale_to_bounds=False)
+                    props = obj.TLM_ObjectProperties
+                    if props.tlm_use_per_object_unwrap:
+                        bpy.ops.uv.smart_project(
+                            angle_limit=props.tlm_smart_project_angle_limit,
+                            margin_method=props.tlm_smart_project_margin_method,
+                            island_margin=props.tlm_smart_project_island_margin,
+                            area_weight=props.tlm_smart_project_area_weight,
+                            correct_aspect=props.tlm_smart_project_correct_aspect,
+                            scale_to_bounds=props.tlm_smart_project_scale_to_bounds)
+                    else:
+                        bpy.ops.uv.smart_project(
+                            angle_limit=math.radians(45.0),
+                            island_margin=props.tlm_mesh_unwrap_margin,
+                            area_weight=1.0,
+                            correct_aspect=True,
+                            scale_to_bounds=False)
 
                     bpy.ops.mesh.select_all(action='DESELECT')
                     bpy.ops.object.mode_set(mode='OBJECT')
-                    
+
                 else: #if copy existing
 
                     print("Copied Existing UV Map for object: " + obj.name)
@@ -144,21 +164,27 @@ def prepareObjectsForBaking():
             if obj.type == 'MESH':
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                     for slot in obj.material_slots:
-                        
+
                         mat = slot.material
 
-                        #If the material has more users, make it unique
-                        if mat.users > 1:
+                        if mat:
 
-                            original_material = mat
-                            # Duplicate the material
-                            new_mat = mat.copy()
+                            #If the material has more users, make it unique
+                            if mat.users > 1:
 
-                            new_mat["TLM_InheritedMaterial"] = original_material
-                            # Rename the new material with the object's name as suffix
-                            new_mat.name = f"{mat.name}-{obj.name}"
-                            # Assign the new, uniquely named material to the slot
-                            slot.material = new_mat
+                                original_material = mat
+                                # Duplicate the material
+                                new_mat = mat.copy()
+
+                                new_mat["TLM_InheritedMaterial"] = original_material
+                                # Rename the new material with the object's name as suffix
+                                new_mat.name = f"{mat.name}-{obj.name}"
+                                # Assign the new, uniquely named material to the slot
+                                slot.material = new_mat
+
+                        else:
+
+                            print("Material non-existing: " + obj.name)
 
     elif scene.TLM_SceneProperties.tlm_material_multi_user == "Shared":
 

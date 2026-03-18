@@ -1,6 +1,6 @@
 import bpy
 from bpy.utils import register_class, unregister_class
-from . import tlm
+from . import tlm, distributed
 
 # Define a function to add the Lightmapping menu to the Object menu
 def menu_func(self, context):
@@ -36,7 +36,14 @@ classes = [
     tlm.TLM_DisableSpec,
     tlm.TLM_DisableMetallic,
     tlm.TLM_removeMatLink,
-    tlm.TLM_Atlas
+    tlm.TLM_Atlas,
+    tlm.TLM_OT_texel_density_preview,
+    tlm.TLM_OT_texel_density_apply,
+    distributed.TLM_OT_start_coordinator,
+    distributed.TLM_OT_stop_coordinator,
+    distributed.TLM_OT_start_worker,
+    distributed.TLM_OT_stop_worker,
+    distributed.TLM_OT_build_lightmaps_distributed,
 ]
 
 def menu_func_select_object(self, context):

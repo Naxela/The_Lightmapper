@@ -1,4 +1,5 @@
 import bpy, os, json, math
+import numpy as np
 
 class TLMBuilder:
     
@@ -14,7 +15,9 @@ class TLMBuilder:
     def create_bake_images(self, obj):
         img_name = "TLM-" + obj.name
         if img_name not in bpy.data.images:
-            resolution = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) // int(bpy.context.scene.TLM_SceneProperties.tlm_setting_scale)
+            ss = int(bpy.context.scene.TLM_SceneProperties.tlm_supersampling)
+            ss_factor = ss if ss > 0 else 1
+            resolution = (int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) // int(bpy.context.scene.TLM_SceneProperties.tlm_setting_scale)) * ss_factor
             image = bpy.data.images.new(img_name, resolution, resolution, alpha=True, float_buffer=True)
 
         if bpy.context.scene.TLM_SceneProperties.tlm_material_missing == "Create":
@@ -54,8 +57,13 @@ class TLMBuilder:
                 nodes.active = img_node
 
         mesh = obj.data
-        if "UVMap-Lightmap" in mesh.uv_layers:
-            mesh.uv_layers.active = mesh.uv_layers["UVMap-Lightmap"]
+        uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel or "UVMap-Lightmap"
+        if uv_channel in mesh.uv_layers:
+            mesh.uv_layers.active = mesh.uv_layers[uv_channel]
+        elif "UVMap-Lightmap-part" in mesh.uv_layers:
+            # Object was previously atlassed: UVMap-Lightmap was renamed to UVMap-Atlas.
+            # Use the backed-up per-object UVs so the bake is in object UV space.
+            mesh.uv_layers.active = mesh.uv_layers["UVMap-Lightmap-part"]
 
     # Bakes the diffuse lighting for the given object
     def bake_object(self, obj):
@@ -163,6 +171,58 @@ class TLMBuilder:
             json.dump(manifest, f)
         print("Manifest compiled:", manifest)
 
+    def downscale_if_supersampled(self, obj):
+        ss = int(bpy.context.scene.TLM_SceneProperties.tlm_supersampling)
+        if ss <= 0:
+            return
+        img_name = "TLM-" + obj.name
+        if img_name not in bpy.data.images:
+            return
+        img = bpy.data.images[img_name]
+        target_res = int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) // int(bpy.context.scene.TLM_SceneProperties.tlm_setting_scale)
+        filter_mode = bpy.context.scene.TLM_SceneProperties.tlm_supersampling_filter
+
+        if filter_mode == 'BOX':
+            # Box filter: reshape into ss x ss blocks and average each block.
+            # Every high-res pixel contributes equally to its output pixel.
+            src = np.array(img.pixels[:]).reshape(img.size[1], img.size[0], 4)
+            downsampled = src.reshape(target_res, ss, target_res, ss, 4).mean(axis=(1, 3))
+            img.scale(target_res, target_res)
+            img.pixels[:] = downsampled.flatten().tolist()
+        elif filter_mode == 'GAUSSIAN':
+            # Gaussian filter: weighted average per block, center pixels weighted more.
+            # Produces softer, smoother results than box — reduces block artifacts.
+            src = np.array(img.pixels[:]).reshape(img.size[1], img.size[0], 4)
+            ax = np.arange(ss) - (ss - 1) / 2.0
+            kernel_1d = np.exp(-ax ** 2 / (2 * (ss / 2.0) ** 2))
+            kernel_1d /= kernel_1d.sum()
+            kernel_2d = np.outer(kernel_1d, kernel_1d)  # (ss, ss)
+            weights = kernel_2d[np.newaxis, :, np.newaxis, :, np.newaxis]  # broadcast over blocks
+            blocks = src.reshape(target_res, ss, target_res, ss, 4)
+            downsampled = (blocks * weights).sum(axis=(1, 3))
+            img.scale(target_res, target_res)
+            img.pixels[:] = downsampled.flatten().tolist()
+        elif filter_mode == 'BICUBIC':
+            # Bicubic: uses scipy.ndimage.zoom (order=3) — smooth cubic interpolation.
+            # Blender bundles scipy, so this should always be available.
+            try:
+                from scipy.ndimage import zoom
+                src = np.array(img.pixels[:]).reshape(img.size[1], img.size[0], 4)
+                scale = target_res / img.size[0]
+                downsampled = zoom(src, (scale, scale, 1), order=3)
+                downsampled = np.clip(downsampled, 0.0, None)  # HDR — no upper clamp
+                img.scale(target_res, target_res)
+                img.pixels[:] = downsampled.flatten().tolist()
+            except ImportError:
+                print("[TLM]:2:scipy not available for Bicubic — falling back to Box filter.", flush=True)
+                src = np.array(img.pixels[:]).reshape(img.size[1], img.size[0], 4)
+                downsampled = src.reshape(target_res, ss, target_res, ss, 4).mean(axis=(1, 3))
+                img.scale(target_res, target_res)
+                img.pixels[:] = downsampled.flatten().tolist()
+        else:
+            # Bilinear: Blender's built-in scale (bilinear interpolation at grid points).
+            img.scale(target_res, target_res)
+
     # Manages the entire bake process, reporting progress throughout
     def bake_objects_and_report_progress(self):
         print("[TLM]:1:Starting the baking process for all objects...", flush=True)
@@ -176,6 +236,7 @@ class TLMBuilder:
             obj = bpy.data.objects[obj_name]
             self.create_bake_images(obj)
             self.bake_object(obj)
+            self.downscale_if_supersampled(obj)  # Downscale before saving
             self.save_lightmaps(obj)
             print(f"[TLM]:0: {(index + 1) / total}", flush=True)
 

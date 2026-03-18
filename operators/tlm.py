@@ -2,6 +2,7 @@ import bpy, os, json, sys, time, shutil
 import numpy as np
 
 from ..ui.progress_bar import NX_Progress_Bar
+from ..ui.text_field import NX_Text_Display
 import subprocess
 import threading
 from queue import Queue, Empty
@@ -10,6 +11,22 @@ from ..utility.rectpack import newPacker, PackingMode, MaxRectsBssf
 from ..utility import unwrap
 
 main_progress = NX_Progress_Bar(10, 10, 100, 10, 0.0, (0.0, 0.0, 0.0, 1.0))
+atlas_text_display = NX_Text_Display(x=10, y=12, message="Atlasing lightmaps...", font_size=10)
+
+# All UV layer name prefixes owned by TLM. Covers base names and numbered duplicates
+# (e.g. UVMap-Atlas.001) that Blender creates when a layer with the same name already exists.
+_TLM_UV_PREFIXES = ("UVMap-Lightmap", "UVMap_Lightmap", "UVMap-Atlas")
+
+def remove_tlm_uv_layers(obj):
+    """Remove all TLM-owned UV layers from a mesh object."""
+    if obj.type != 'MESH':
+        return
+    uv_layers = obj.data.uv_layers
+    to_remove = [l.name for l in uv_layers if l.name.startswith(_TLM_UV_PREFIXES)]
+    for name in to_remove:
+        layer = uv_layers.get(name)
+        if layer:
+            uv_layers.remove(layer)
 
 # Draws the 2D progress bar in the Blender interface
 def draw_callback_2d():
@@ -43,12 +60,17 @@ def callback_operations(argument):
 class TLM_OT_build_lightmaps(bpy.types.Operator):
     bl_idname = "tlm.build_lightmaps"
     bl_label = "Build Lightmaps"
-    bl_description = "Build Lightmaps"
+    bl_description = "Build Lightmaps. Ctrl+Click to also toggle lightmaps on after building"
     bl_options = {'REGISTER', 'UNDO'}
 
     _timer = None
     _draw_handler = None
-    
+    apply_after: bpy.props.BoolProperty(default=False, options={'SKIP_SAVE'})
+
+    def invoke(self, context, event):
+        self.apply_after = event.ctrl
+        return self.execute(context)
+
     # Remove __init__ completely and initialize queues in execute()
     def read_output(self, pipe, queue):
         try:
@@ -74,20 +96,7 @@ class TLM_OT_build_lightmaps(bpy.types.Operator):
         if bpy.context.scene.TLM_SceneProperties.tlm_reset_lightmap_uv:
             for obj in bpy.context.scene.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                    if obj.type == "MESH":
-
-                        uv_layers = obj.data.uv_layers
-                        uv_channel = "UVMap-Lightmap"
-
-                        for uvlayer in uv_layers:
-                            if uvlayer.name == uv_channel:
-                                uv_layers.remove(uvlayer)
-
-                        #For old naming convention
-                        uv_channel = "UVMap_Lightmap"
-                        for uvlayer in uv_layers:
-                            if uvlayer.name == uv_channel:
-                                uv_layers.remove(uvlayer)
+                    remove_tlm_uv_layers(obj)
 
         util.removeLightmapFolder()
         util.configureEngine()
@@ -145,7 +154,17 @@ class TLM_OT_build_lightmaps(bpy.types.Operator):
         util.removeBuildScript()
         util.postprocessBuild()
 
+        if (hasattr(self, 'process') and self.process and self.process.returncode == 0
+                and bpy.context.scene.TLM_SceneProperties.tlm_create_atlas):
+            createAtlases(int(bpy.context.scene.TLM_SceneProperties.tlm_atlas_max_resolution))
+
+        # Reset the lightmap state flag after a fresh bake so apply always applies.
+        bpy.context.scene["Lightmapped"] = False
+
         self.report({'INFO'}, "Lightmapping Finished")
+
+        if self.apply_after and hasattr(self, 'process') and self.process and self.process.returncode == 0:
+            bpy.ops.tlm.apply_lightmaps()
 
         return {'CANCELLED'}
     
@@ -163,54 +182,61 @@ class TLM_ApplyLightmaps(bpy.types.Operator):
 class TLM_CleanAndReassignMaterials(bpy.types.Operator):
     bl_idname = "tlm.clean_and_reassign_materials"
     bl_label = "Clean and Reassign Materials"
-    bl_description = "Clean and reassign materials"
+    bl_description = "Clean and reassign materials. Shift+Click to remove all TLM UV layers. Ctrl+Click to delete all files in the lightmap directory"
     bl_options = {'REGISTER', 'UNDO'}
-        
+
+    def invoke(self, context, event):
+        if event.shift:
+            for obj in bpy.context.scene.objects:
+                if obj.type == 'MESH' and obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                    remove_tlm_uv_layers(obj)
+            self.report({'INFO'}, "Lightmap UV layers removed")
+            return {'FINISHED'}
+        if event.ctrl:
+            scene = context.scene
+            dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_setting_savedir)
+            if os.path.isdir(dirpath):
+                for file in os.listdir(dirpath):
+                    file_path = os.path.join(dirpath, file)
+                    if os.path.isfile(file_path):
+                        os.remove(file_path)
+                self.report({'INFO'}, "Lightmap directory cleared")
+            else:
+                self.report({'WARNING'}, "Lightmap directory not found")
+            return {'FINISHED'}
+        return self.execute(context)
+
     def execute(self, context):
+
+        # Revert materials to their original state before reassigning
+        util.removeLightmap()
 
         # Reassign the materials
         for obj in bpy.data.objects:
-
             for slot in obj.material_slots:
-
                 mat = slot.material
                 if not mat or not mat.use_nodes:
                     continue
-
                 inherited_mat = mat.get("TLM_InheritedMaterial")
-
                 if inherited_mat:
-
                     print("Inherited Material: " + obj.name + " : " + inherited_mat.name + " child: " + mat.name)
-
                     slot.material = inherited_mat
 
-        # Clean the lightmap folder
-
-        scene = context.scene
-
-        filepath = bpy.data.filepath
-        dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_SceneProperties.tlm_setting_savedir)
-
-        # if os.path.isdir(dirpath):
-        #     for file in os.listdir(dirpath):
-        #         os.remove(os.path.join(dirpath + "/" + file))
-
-        #import bpy
-
-        # Iterate over all materials in the file
-        for material in bpy.data.materials:
-
-            # Check if the material has 0 users
+        # Remove 0-user materials
+        for material in list(bpy.data.materials):
             if material.users == 0:
-
-                # Unlink and remove the material
                 matname = str(material.name)
                 bpy.data.materials.remove(material)
                 print(f"Removed material: {matname}")
 
-        self.report({'INFO'}, "Materials cleaned and reassigned")
+        # Remove 0-user images
+        for image in list(bpy.data.images):
+            if image.users == 0:
+                imgname = str(image.name)
+                bpy.data.images.remove(image)
+                print(f"Removed image: {imgname}")
 
+        self.report({'INFO'}, "Materials cleaned and reassigned")
         return {'FINISHED'}
 
 # Operator to explore the lightmaps directory
@@ -287,7 +313,7 @@ class TLM_OBJECT_OT_lightmap_enable(bpy.types.Operator):
         name="Lightmap Resolution",
         description="Resolution of the lightmap",
         default=256,
-        min=128,
+        min=32,
         max=4096,
     )
 
@@ -347,24 +373,8 @@ class TLM_OBJECT_OT_lightmap_removeuv(bpy.types.Operator):
     bl_label = "Remove the lightmap UV of the selected objects"
     
     def execute(self, context):
-
         for obj in bpy.context.selected_objects:
-
-            if obj.type == "MESH":
-
-                uv_layers = obj.data.uv_layers
-                uv_channel = "UVMap-Lightmap"
-
-                for uvlayer in uv_layers:
-                    if uvlayer.name == uv_channel:
-                        uv_layers.remove(uvlayer)
-
-                #For old naming convention
-                uv_channel = "UVMap_Lightmap"
-                for uvlayer in uv_layers:
-                    if uvlayer.name == uv_channel:
-                        uv_layers.remove(uvlayer)
-
+            remove_tlm_uv_layers(obj)
         self.report({'INFO'}, "Lightmap UV's removed")
         return {'FINISHED'}
 
@@ -738,15 +748,18 @@ def createEmptyAtlas(atlas_index, file_format, max_resolution):
     return new_image
 
 def invertPixelsY(source_image):
+    # Blender stores pixels bottom-row-first, but rect-pack places rects top-row-first.
+    # This first flip converts the source image from Blender's bottom-up order into top-down order
+    # so that transferPixels can place it at the correct position in the atlas.
     source_pixels = list(source_image.pixels)
     source_width, source_height = source_image.size
     corrected_pixels = [0.0] * len(source_pixels)
 
     for y in range(source_height):
         for x in range(source_width):
-            source_index = (y * source_width + x) * 4  # Original pixel index
-            corrected_index = ((source_height - 1 - y) * source_width + x) * 4  # Flip Y-axis
-            for c in range(4):  # Iterate over RGBA channels
+            source_index = (y * source_width + x) * 4
+            corrected_index = ((source_height - 1 - y) * source_width + x) * 4
+            for c in range(4):
                 corrected_pixels[source_index + c] = source_pixels[corrected_index + c]
 
     return corrected_pixels
@@ -757,78 +770,128 @@ def transferPixels(inverted_pixels, target_image, x_offset, y_offset, source_wid
     for y in range(source_height):
         for x in range(source_width):
             source_index = (y * source_width + x) * 4
-            target_index = ((y_offset + (source_height - 1 - y)) * max_resolution + x_offset + x) * 4  # Flip Y
-            for c in range(4):  # RGBA channels
+            # Second flip: converts back from top-down order into Blender's bottom-up atlas storage,
+            # while applying the y_offset from the rect-packer. Both flips together are intentional —
+            # the two inversions cancel out to a net-zero flip, but are necessary to correctly map
+            # the packer's top-down y coordinates into Blender's bottom-up pixel buffer.
+            target_index = ((y_offset + (source_height - 1 - y)) * max_resolution + x_offset + x) * 4
+            for c in range(4):
                 target_pixels[target_index + c] = inverted_pixels[source_index + c]
 
     target_image.pixels = target_pixels
 
-def adjustUVs(obj, x_offset, y_offset, source_width, source_height, max_resolution):
+def adjustUVs(obj, x_offset, y_offset, source_width, source_height, atlas_res):
     mesh = obj.data
-    uv_layer = mesh.uv_layers.get("UVMap-Lightmap")
 
-    if uv_layer is None:
-        raise ValueError(f"UV layer 'UVMap-Lightmap' not found in object {obj.name}")
+    lightmap_layer = mesh.uv_layers.get("UVMap-Lightmap")
 
-    for loop in mesh.loops:
-        uv = uv_layer.data[loop.index].uv
-        uv.x = (x_offset + uv.x * source_width) / max_resolution
-        uv.y = (y_offset + uv.y * source_height) / max_resolution
+    if lightmap_layer is not None:
+        # First atlas run. Back up original UVs into UVMap-Lightmap-part (UV2),
+        # write atlas coordinates into UVMap-Lightmap (UV1), then rename it to UVMap-Atlas.
+        # This keeps the atlas at the correct UV index for game engine export (Godot UV2 = Blender UV1).
+        part_layer = mesh.uv_layers.get("UVMap-Lightmap-part")
+        if part_layer is None:
+            part_layer = mesh.uv_layers.new(name="UVMap-Lightmap-part")
 
-""" def adjustUVs(obj, x_offset, y_offset, source_width, source_height, atlas_res):
-    mesh = obj.data
-    source_uv_layer = mesh.uv_layers.get("UVMap-Lightmap")
+        # Re-fetch after uv_layers.new() — adding a layer may reallocate the underlying C array,
+        # invalidating any previously obtained Python references to other layers.
+        lightmap_layer = mesh.uv_layers.get("UVMap-Lightmap")
 
-    if source_uv_layer is None:
-        raise ValueError(f"UV layer 'UVMap-Lightmap' not found in object {obj.name}")
+        for loop in mesh.loops:
+            orig_u = lightmap_layer.data[loop.index].uv.x
+            orig_v = lightmap_layer.data[loop.index].uv.y
+            part_layer.data[loop.index].uv.x = orig_u
+            part_layer.data[loop.index].uv.y = orig_v
+            lightmap_layer.data[loop.index].uv.x = (x_offset + orig_u * source_width) / atlas_res
+            lightmap_layer.data[loop.index].uv.y = (y_offset + orig_v * source_height) / atlas_res
 
-    # Create or get the atlas UV map
-    atlas_uv_layer = mesh.uv_layers.get("UVMap-Atlas")
-    if atlas_uv_layer is None:
-        atlas_uv_layer = mesh.uv_layers.new(name="UVMap-Atlas")
+        lightmap_layer.name = "UVMap-Atlas"
 
-    # Copy coordinates from source UV map and apply adjustments
-    for loop in mesh.loops:
-        source_uv = source_uv_layer.data[loop.index].uv
-        atlas_uv = atlas_uv_layer.data[loop.index].uv
-        
-        atlas_uv.x = (x_offset + source_uv.x * source_width) / atlas_res
-        atlas_uv.y = (y_offset + source_uv.y * source_height) / atlas_res """
+    else:
+        # Re-atlas run. UVMap-Lightmap was already renamed to UVMap-Atlas on the first run.
+        # Read original per-object UVs from UVMap-Lightmap-part and write new atlas coordinates
+        # into UVMap-Atlas, so the correct UV index is preserved.
+        part_layer = mesh.uv_layers.get("UVMap-Lightmap-part")
+        atlas_layer = mesh.uv_layers.get("UVMap-Atlas")
+
+        if part_layer is None or atlas_layer is None:
+            raise ValueError(
+                f"Object '{obj.name}' is missing expected UV layers for re-atlasing. "
+                f"Expected 'UVMap-Lightmap' or both 'UVMap-Atlas' and 'UVMap-Lightmap-part'."
+            )
+
+        for loop in mesh.loops:
+            orig_u = part_layer.data[loop.index].uv.x
+            orig_v = part_layer.data[loop.index].uv.y
+            atlas_layer.data[loop.index].uv.x = (x_offset + orig_u * source_width) / atlas_res
+            atlas_layer.data[loop.index].uv.y = (y_offset + orig_v * source_height) / atlas_res
 
 def setMaterialImage(obj, atlas_image):
     if obj.type != 'MESH':
         return
 
-    mesh = obj.data
-    if not mesh.materials:
-        return
+    for slot in obj.material_slots:
+        material = slot.material
+        if not material or not material.use_nodes:
+            continue
+        nodes = material.node_tree.nodes
+        tlm_lightmap_node = nodes.get("TLM-Lightmap")
+        if tlm_lightmap_node and tlm_lightmap_node.type == 'TEX_IMAGE':
+            tlm_lightmap_node.image = atlas_image
 
-    material = mesh.materials[0]
-    if not material.use_nodes:
-        return
-
-    nodes = material.node_tree.nodes
-    tlm_lightmap_node = nodes.get("TLM-Lightmap")
-    if tlm_lightmap_node and tlm_lightmap_node.type == 'TEX_IMAGE':
-        tlm_lightmap_node.image = atlas_image
+        # Renaming a UV layer via Python does not automatically update ShaderNodeUVMap nodes
+        # that reference it by name. Point the TLM-UVMap node at the atlas layer directly.
+        tlm_uvmap_node = nodes.get("TLM-UVMap")
+        if tlm_uvmap_node:
+            tlm_uvmap_node.uv_map = "UVMap-Atlas"
 
 def createAtlases(max_resolution):
+    atlas_text_display.toggle()
+    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+
     imagesToAtlas = loadImagesToAtlas()
     if not imagesToAtlas:
         print("No images to atlas")
-        return
+        atlas_text_display.toggle()
+        atlas_text_display.remove()
+        return []
 
     atlases = []  # List to store created atlases
     manifest_data = {"ext": "", "lightmaps": {}}  # Updated manifest data
+
+    relative_directory = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
+    absolute_directory = bpy.path.abspath(relative_directory)
+
+    # Load images from disk if they are not already in bpy.data.images.
+    # This is required when atlasing runs in the main Blender instance after a bake subprocess,
+    # because the subprocess saves images to disk but never populates the main instance's bpy.data.images.
+    valid_images = []
+    for img_info in imagesToAtlas:
+        if img_info['name'] not in bpy.data.images:
+            file_path = os.path.join(absolute_directory, img_info['name'])
+            if os.path.exists(file_path):
+                bpy.data.images.load(file_path)
+            else:
+                print(f"[TLM]:2:Warning: Image file {img_info['name']} not found on disk, skipping.", flush=True)
+                continue
+        img = bpy.data.images[img_info['name']]
+        w, h = img.size[0], img.size[1]
+        if w > max_resolution or h > max_resolution:
+            print(f"[TLM]:2:Warning: Image {img_info['name']} ({w}x{h}) exceeds atlas max resolution {max_resolution}, skipping.", flush=True)
+            continue
+        valid_images.append(img_info)
+
+    if not valid_images:
+        print("[TLM]:2:No valid images to atlas after filtering.", flush=True)
+        return []
+
+    imagesToAtlas = valid_images
     total_rectangles = len(imagesToAtlas)
     processed_rectangles = 0
 
     source_images = [bpy.data.images[img_info['name']] for img_info in imagesToAtlas]
     rectangles = [(img.size[0], img.size[1], i) for i, img in enumerate(source_images)]
     print("Rectangles for Packing:", rectangles)
-
-    relative_directory = "//" + bpy.context.scene.TLM_SceneProperties.tlm_setting_savedir
-    absolute_directory = bpy.path.abspath(relative_directory)
 
     output_format = bpy.context.scene.TLM_SceneProperties.tlm_format
 
@@ -860,10 +923,7 @@ def createAtlases(max_resolution):
             atlas_path = os.path.join(absolute_directory, f"atlas_{atlas_index}.exr")
             atlas_image.file_format = "OPEN_EXR"
 
-        # Save the atlas to the lightmap directory
         atlas_image.filepath_raw = atlas_path
-        atlas_image.save()
-        print(f"Atlas {atlas_index} saved to {atlas_path}")
 
         # manifest_data["atlases"].append(f"atlas_{atlas_index}.{output_format.lower()}")
 
@@ -898,9 +958,17 @@ def createAtlases(max_resolution):
             packed_ids.add(rid)
             processed_rectangles += 1
 
-            # Update the manifest for the object
+            # Update the manifest for the object.
+            # KTX files are converted from EXR, so the intermediate and atlas files on disk are
+            # always EXR. The manifest ext reflects what the game engine will load after conversion.
             manifest_data["lightmaps"][img_info['object']] = f"atlas_{atlas_index}"
-            manifest_data["ext"] = output_format.lower()
+            manifest_data["ext"] = "hdr" if output_format == "HDR" else "exr"
+
+            print(f"[TLM]:0:{processed_rectangles / total_rectangles}", flush=True)
+
+        # Save after all pixels have been transferred into this atlas.
+        atlas_image.save()
+        print(f"Atlas {atlas_index} saved to {atlas_path}")
 
         # Determine unpacked rectangles
         rectangles = [rect for rect in rectangles if rect[2] not in packed_ids]
@@ -923,21 +991,115 @@ def createAtlases(max_resolution):
 
         convertToKTX(absolute_directory, manifest_data)
 
-    #Clean the lightmap folder
-    # for file in os.listdir(absolute_directory):
-    #     if file.endswith(".hdr"):
-    #        os.remove(os.path.join(absolute_directory,file))
-    #     if file.endswith(".exr"):
-    #        os.remove(os.path.join(absolute_directory,file))
-        # if file.endswith(".json"):
-        #     os.remove(os.path.join(absolute_directory,file)) 
-        # We need the .json for lightmap linking properties
+    # Clean non-atlas lightmap files now that atlases are built
+    for file in os.listdir(absolute_directory):
+        if file.endswith(".hdr") or file.endswith(".exr"):
+            if not file.startswith("atlas_"):
+                os.remove(os.path.join(absolute_directory, file))
 
     # Debug report
     print("\nAtlas Creation Summary:")
     print(f"Total Atlases Created: {len(atlases)}")
     print(f"Total Rectangles Packed: {processed_rectangles}/{total_rectangles}")
+
+    atlas_text_display.toggle()
+    atlas_text_display.remove()
+
     return atlases
+
+
+# ── Texel density helpers ─────────────────────────────────────────────────────
+
+def _compute_world_area(obj):
+    """Return total world-space surface area of obj's mesh via triangle-fan decomposition."""
+    import mathutils
+    mesh = obj.data
+    mw = obj.matrix_world
+    total = 0.0
+    for poly in mesh.polygons:
+        verts = [mw @ mesh.vertices[i].co for i in poly.vertices]
+        for i in range(1, len(verts) - 1):
+            e1 = verts[i] - verts[0]
+            e2 = verts[i + 1] - verts[0]
+            total += e1.cross(e2).length * 0.5
+    return total
+
+_VALID_RESOLUTIONS = [32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
+
+def _nearest_power_of_2_resolution(r):
+    """Round r to the nearest value in _VALID_RESOLUTIONS using linear distance."""
+    import math
+    r = max(32.0, min(8192.0, r))
+    log2r = math.log2(r)
+    lo = int(2 ** math.floor(log2r))
+    hi = int(2 ** math.ceil(log2r))
+    result = lo if abs(r - lo) <= abs(r - hi) else hi
+    return max(32, min(8192, result))
+
+
+class TLM_OT_texel_density_preview(bpy.types.Operator):
+    bl_idname = "tlm.texel_density_preview"
+    bl_label = "Preview"
+    bl_description = "Show what resolution each TLM-enabled object would receive at the target texel density, without changing anything"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        import math
+        texel_size_cm = context.scene.TLM_SceneProperties.tlm_texel_size_cm
+        candidates = [
+            obj for obj in context.scene.objects
+            if obj.type == 'MESH' and obj.TLM_ObjectProperties.tlm_mesh_lightmap_use
+        ]
+        if not candidates:
+            self.report({'WARNING'}, "No TLM-enabled mesh objects in scene")
+            return {'CANCELLED'}
+
+        print(f"\n[TLM] Texel Density Preview (texel size={texel_size_cm:.2f} cm/texel):")
+        for obj in candidates:
+            area = _compute_world_area(obj)
+            if area <= 0.0:
+                print(f"  {obj.name}: no geometry, skipped")
+                continue
+            raw = (math.sqrt(area) * 100) / texel_size_cm
+            res = _nearest_power_of_2_resolution(raw)
+            current = obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution
+            print(f"  {obj.name}: {current} -> {res}  (area={area:.2f} m², raw={raw:.1f})")
+
+        self.report({'INFO'}, f"Texel density preview for {len(candidates)} objects (see console)")
+        return {'FINISHED'}
+
+
+class TLM_OT_texel_density_apply(bpy.types.Operator):
+    bl_idname = "tlm.texel_density_apply"
+    bl_label = "Apply"
+    bl_description = "Auto-assign lightmap resolution to all TLM-enabled objects based on the target texel density and each object's world-space surface area"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        import math
+        texel_size_cm = context.scene.TLM_SceneProperties.tlm_texel_size_cm
+        candidates = [
+            obj for obj in context.scene.objects
+            if obj.type == 'MESH' and obj.TLM_ObjectProperties.tlm_mesh_lightmap_use
+        ]
+        if not candidates:
+            self.report({'WARNING'}, "No TLM-enabled mesh objects in scene")
+            return {'CANCELLED'}
+
+        assigned = 0
+        skipped = 0
+        for obj in candidates:
+            area = _compute_world_area(obj)
+            if area <= 0.0:
+                skipped += 1
+                continue
+            raw = (math.sqrt(area) * 100) / texel_size_cm
+            res = _nearest_power_of_2_resolution(raw)
+            obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution = str(res)
+            assigned += 1
+
+        self.report({'INFO'}, f"Texel density applied: {assigned} assigned, {skipped} skipped (no geometry)")
+        return {'FINISHED'}
 
 
 class TLM_Atlas(bpy.types.Operator):

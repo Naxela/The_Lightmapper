@@ -19,6 +19,29 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 description="Lightmap resolution scaling. Adjust for previewing.", 
                 default="1")
 
+    tlm_supersampling: EnumProperty(
+        items=[
+            ('0', 'None', 'No supersampling. Bake at native resolution.'),
+            ('2', '2x', 'Bake at 2x resolution and downscale. Smoother results with moderate memory cost.'),
+            ('4', '4x', 'Bake at 4x resolution and downscale. Highest quality with significant memory cost.')
+        ],
+        name="Supersampling",
+        description="Supersample lightmaps by baking at a higher resolution and downscaling.",
+        default='0'
+    )
+
+    tlm_supersampling_filter: EnumProperty(
+        items=[
+            ('BOX',      'Box (Average)', 'Average all contributing high-res pixels into each output pixel. Most accurate for supersampling — preserves energy and avoids aliasing.'),
+            ('GAUSSIAN', 'Gaussian',      'Weighted average per block — center pixels contribute more. Produces softer, smoother results than Box.'),
+            ('BICUBIC',  'Bicubic',       'Smooth cubic interpolation via scipy.ndimage. Best quality but slowest. Falls back to Box if scipy is unavailable.'),
+            ('BILINEAR', 'Bilinear',      'Blender\'s built-in bilinear scale. Fast but only samples at grid points, missing some pixel contributions.'),
+        ],
+        name="Downsample Filter",
+        description="Filter algorithm used when downscaling the supersampled lightmap to its final resolution.",
+        default='BOX'
+    )
+
     tlm_dilation_margin : IntProperty(
         name="Dilation margin", 
         default=4,
@@ -149,6 +172,45 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 ('4096', '4096', 'TODO'),
                 ('8192', '8192', 'TODO'),
                 ('16384', '16384', 'TODO')],
-                name = "Atlas Max Resolution", 
-                description="TODO", 
+                name = "Atlas Max Resolution",
+                description="TODO",
                 default="1024")
+
+    tlm_texel_size_cm : FloatProperty(
+        name="Texel Size (cm)",
+        description="Target size of one texel in centimeters. Resolution = (sqrt(world_area_m²) × 100) / texel_size, rounded to nearest power of 2, clamped 32-8192.",
+        default=5.0,
+        min=0.01,
+        max=1000.0,
+        soft_min=0.5,
+        soft_max=50.0,
+        precision=2
+    )
+
+    # ── Distributed Baking ──
+    tlm_dist_role : EnumProperty(
+        items = [('COORDINATOR', 'Coordinator', 'This machine distributes bake jobs to workers'),
+                 ('WORKER', 'Worker', 'This machine receives and executes bake jobs')],
+        name = "Role",
+        description = "Role of this machine in distributed baking",
+        default = "COORDINATOR")
+    
+    tlm_dist_port : IntProperty(
+        name = "Port",
+        description = "TCP port for coordinator/worker communication",
+        default = 9274,
+        min = 1024,
+        max = 65535)
+    
+    tlm_dist_coordinator_address : StringProperty(
+        name = "Coordinator Address",
+        description = "IP address or hostname of the coordinator machine",
+        default = "127.0.0.1")
+    
+    tlm_dist_coordinator_status : StringProperty(
+        name = "Status",
+        default = "Stopped")
+    
+    tlm_dist_worker_status : StringProperty(
+        name = "Status",
+        default = "Disconnected")
