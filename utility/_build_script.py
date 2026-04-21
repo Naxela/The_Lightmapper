@@ -1,4 +1,4 @@
-import bpy, os, json, math
+import bpy, os, json, math, time
 import numpy as np
 
 class TLMBuilder:
@@ -74,8 +74,13 @@ class TLMBuilder:
         #We don't wanna bake it if there isn't any materials
         if len(obj.material_slots) != 0:
             try:
-                bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, margin=bpy.context.scene.TLM_SceneProperties.tlm_dilation_margin, use_clear=True)
-                print(f"[TLM]:1:Baking object '{obj.name}' with diffuse lighting...", flush=True)
+                bake_mode = bpy.context.scene.TLM_SceneProperties.tlm_bake_mode
+                margin = bpy.context.scene.TLM_SceneProperties.tlm_dilation_margin
+                if bake_mode == 'AO':
+                    bpy.ops.object.bake(type="AO", margin=margin, use_clear=True)
+                else:
+                    bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, margin=margin, use_clear=True)
+                print(f"[TLM]:1:Baking object '{obj.name}' ({bake_mode})...", flush=True)
             except RuntimeError as e:
                 msg = str(e).replace(":", " - ")
                 print(f"[TLM]:2:Error baking {obj.name} - {msg}", flush=True)
@@ -159,12 +164,22 @@ class TLMBuilder:
 
             manifest = {"ext": "hdr"}
 
+        directional = bpy.context.scene.TLM_SceneProperties.tlm_directional
         manifest["lightmaps"] = {}
+        if directional:
+            manifest["directional"] = True
+            manifest["dir_ext"] = "png"
+            manifest["directional_lightmaps"] = {}
 
         for obj_name in self.obj_list:
             obj = bpy.data.objects[obj_name]
             if "TLM-Lightmap" in obj:
                 manifest["lightmaps"][obj.name] = obj["TLM-Lightmap"]
+                if directional:
+                    base = obj["TLM-Lightmap"]
+                    manifest["directional_lightmaps"][obj.name] = [
+                        f"{base}_dir0", f"{base}_dir1", f"{base}_dir2"
+                    ]
 
         file_path = os.path.join(self.abs_dir, "manifest.json")
         with open(file_path, "w") as f:
@@ -223,6 +238,113 @@ class TLMBuilder:
             # Bilinear: Blender's built-in scale (bilinear interpolation at grid points).
             img.scale(target_res, target_res)
 
+    def create_directional_bake_image(self, obj, suffix):
+        img_name = f"TLM-{obj.name}_dir{suffix}"
+        if img_name not in bpy.data.images:
+            ss = int(bpy.context.scene.TLM_SceneProperties.tlm_supersampling)
+            ss_factor = ss if ss > 0 else 1
+            resolution = (int(obj.TLM_ObjectProperties.tlm_mesh_lightmap_resolution) // int(bpy.context.scene.TLM_SceneProperties.tlm_setting_scale)) * ss_factor
+            bpy.data.images.new(img_name, resolution, resolution, alpha=True, float_buffer=True)
+
+        node_name = f"TLM-Dir{suffix}"
+        for slot in obj.material_slots:
+            mat = slot.material
+            if not mat or not mat.use_nodes:
+                continue
+            nodes = mat.node_tree.nodes
+            if node_name in nodes:
+                nodes[node_name].image = bpy.data.images[img_name]
+                nodes.active = nodes[node_name]
+            else:
+                img_node = nodes.new('ShaderNodeTexImage')
+                img_node.name = node_name
+                img_node.location = (100, 100 - 300 * (suffix + 1))
+                img_node.image = bpy.data.images[img_name]
+                nodes.active = img_node
+
+    def override_normals(self, obj, nx, ny, nz):
+        restore_dict = {}
+        for slot in obj.material_slots:
+            mat = slot.material
+            if not mat or not mat.use_nodes:
+                continue
+            nodes = mat.node_tree.nodes
+            links = mat.node_tree.links
+            bsdf = next((n for n in nodes if n.type == 'BSDF_PRINCIPLED'), None)
+            if not bsdf:
+                continue
+            normal_input = bsdf.inputs["Normal"]
+            orig = None
+            if normal_input.links:
+                link = normal_input.links[0]
+                orig = (link.from_node, link.from_socket.name)
+                links.remove(link)
+            restore_dict[mat.name] = orig
+            combine = nodes.new('ShaderNodeCombineXYZ')
+            combine.name = "TLM-NormalOverride"
+            combine.inputs[0].default_value = nx
+            combine.inputs[1].default_value = ny
+            combine.inputs[2].default_value = nz
+            links.new(combine.outputs[0], normal_input)
+        return restore_dict
+
+    def restore_normals(self, obj, restore_dict):
+        for slot in obj.material_slots:
+            mat = slot.material
+            if not mat or not mat.use_nodes:
+                continue
+            nodes = mat.node_tree.nodes
+            links = mat.node_tree.links
+            bsdf = next((n for n in nodes if n.type == 'BSDF_PRINCIPLED'), None)
+            if not bsdf:
+                continue
+            for link in list(bsdf.inputs["Normal"].links):
+                links.remove(link)
+            override = nodes.get("TLM-NormalOverride")
+            if override:
+                nodes.remove(override)
+            orig = restore_dict.get(mat.name)
+            if orig:
+                from_node, from_socket_name = orig
+                links.new(from_node.outputs[from_socket_name], bsdf.inputs["Normal"])
+
+    def bake_object_to_dir(self, obj, suffix):
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        if len(obj.material_slots) != 0:
+            try:
+                margin = bpy.context.scene.TLM_SceneProperties.tlm_dilation_margin
+                bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, margin=margin, use_clear=True)
+                print(f"[TLM]:1:Baked directional pass {suffix} for '{obj.name}'.", flush=True)
+            except RuntimeError as e:
+                msg = str(e).replace(":", " - ")
+                print(f"[TLM]:2:Error baking dir{suffix} for {obj.name} - {msg}", flush=True)
+
+    def save_directional_lightmaps(self, obj):
+        for i in range(3):
+            img_name = f"TLM-{obj.name}_dir{i}"
+            if img_name not in bpy.data.images:
+                continue
+            image = bpy.data.images[img_name]
+            file_path = os.path.join(self.abs_dir, f"{img_name}.png")
+            if not os.path.exists(file_path):
+                bpy.context.scene.render.image_settings.file_format = 'PNG'
+                bpy.context.scene.render.image_settings.color_depth = '8'
+                image.save_render(filepath=file_path)
+                print(f"Directional image saved to {file_path}")
+
+    def _fmt(self, seconds):
+        h = int(seconds // 3600)
+        m = int((seconds % 3600) // 60)
+        s = int(seconds % 60)
+        if h > 0:
+            return f"{h}h {m:02d}m {s:02d}s"
+        elif m > 0:
+            return f"{m}m {s:02d}s"
+        else:
+            return f"{s}s"
+
     # Manages the entire bake process, reporting progress throughout
     def bake_objects_and_report_progress(self):
         print("[TLM]:1:Starting the baking process for all objects...", flush=True)
@@ -231,14 +353,42 @@ class TLMBuilder:
         scene = bpy.context.scene
         scene.render.engine = "CYCLES"
 
+        directional = scene.TLM_SceneProperties.tlm_directional
         total = len(self.obj_list)
+        passes_per_obj = 4 if directional else 1
+        total_passes = total * passes_per_obj
+        completed_passes = 0
+        bake_start = time.time()
         for index, obj_name in enumerate(self.obj_list):
             obj = bpy.data.objects[obj_name]
             self.create_bake_images(obj)
             self.bake_object(obj)
-            self.downscale_if_supersampled(obj)  # Downscale before saving
+            self.downscale_if_supersampled(obj)
             self.save_lightmaps(obj)
-            print(f"[TLM]:0: {(index + 1) / total}", flush=True)
+            completed_passes += 1
+            elapsed = time.time() - bake_start
+            avg = elapsed / completed_passes
+            remaining = avg * (total_passes - completed_passes)
+            eta_str = self._fmt(remaining)
+            print(f"[TLM]:1:Progress: {completed_passes}/{total_passes} | Elapsed: {self._fmt(elapsed)} | ETA: {eta_str}", flush=True)
+            print(f"[TLM]:3:{eta_str}", flush=True)
+            print(f"[TLM]:0: {completed_passes / total_passes}", flush=True)
+
+            if directional:
+                for i, (nx, ny, nz) in enumerate([(1, 0, 0), (0, 1, 0), (0, 0, 1)]):
+                    self.create_directional_bake_image(obj, i)
+                    restore = self.override_normals(obj, nx, ny, nz)
+                    self.bake_object_to_dir(obj, i)
+                    self.restore_normals(obj, restore)
+                    completed_passes += 1
+                    elapsed = time.time() - bake_start
+                    avg = elapsed / completed_passes
+                    remaining = avg * (total_passes - completed_passes)
+                    eta_str = self._fmt(remaining)
+                    print(f"[TLM]:1:Progress: {completed_passes}/{total_passes} | Elapsed: {self._fmt(elapsed)} | ETA: {eta_str}", flush=True)
+                    print(f"[TLM]:3:{eta_str}", flush=True)
+                    print(f"[TLM]:0: {completed_passes / total_passes}", flush=True)
+                self.save_directional_lightmaps(obj)
 
         for obj_name in self.obj_list:
             obj = bpy.data.objects[obj_name]
@@ -251,7 +401,14 @@ class TLMBuilder:
 ####################################################
 ################## FUNCTION RUN ####################
 
-obj_list = [obj.name for obj in bpy.context.scene.objects if obj.type == 'MESH' and hasattr(obj, 'TLM_ObjectProperties') and obj.TLM_ObjectProperties.tlm_mesh_lightmap_use]
+bake_selection = bpy.context.scene.get("TLM_bake_selection")
+obj_list = [
+    obj.name for obj in bpy.context.scene.objects
+    if obj.type == 'MESH'
+    and hasattr(obj, 'TLM_ObjectProperties')
+    and obj.TLM_ObjectProperties.tlm_mesh_lightmap_use
+    and (bake_selection is None or obj.name in bake_selection)
+]
 
 tlm_builder = TLMBuilder(obj_list)
 tlm_builder.bake_objects_and_report_progress()

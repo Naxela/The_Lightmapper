@@ -46,6 +46,13 @@ class TLM_PT_Settings(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_quality")
         row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_bake_mode")
+        row = layout.row(align=True)
+        row.prop(sceneProperties, "tlm_directional")
+        if sceneProperties.tlm_directional:
+            row = layout.row(align=True)
+            row.prop(sceneProperties, "tlm_directional_mode")
+        row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_setting_scale", expand=True)
         row = layout.row(align=True)
         row.prop(sceneProperties, "tlm_supersampling")

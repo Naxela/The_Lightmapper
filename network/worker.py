@@ -506,13 +506,12 @@ class TLMWorkerBuilder:
         
         if len(obj.material_slots) != 0:
             try:
-                bpy.ops.object.bake(
-                    type="DIFFUSE",
-                    pass_filter={{"DIRECT", "INDIRECT"}},
-                    margin={dilation},
-                    use_clear=True,
-                )
-                print(f"[TLM]:1:Baking object '{{obj.name}}' with diffuse lighting...", flush=True)
+                bake_mode = bpy.context.scene.TLM_SceneProperties.tlm_bake_mode
+                if bake_mode == 'AO':
+                    bpy.ops.object.bake(type="AO", margin={dilation}, use_clear=True)
+                else:
+                    bpy.ops.object.bake(type="DIFFUSE", pass_filter={{"DIRECT", "INDIRECT"}}, margin={dilation}, use_clear=True)
+                print(f"[TLM]:1:Baking object '{{obj.name}}' ({{bake_mode}})...", flush=True)
             except RuntimeError as e:
                 msg = str(e).replace(":", " - ")
                 print(f"[TLM]:2:Error baking {{obj.name}} - {{msg}}", flush=True)

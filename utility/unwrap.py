@@ -143,11 +143,14 @@ def unwrapObjectOnChannel(obj):
 def prepareObjectsForBaking():
     scene = bpy.context.scene
     obj_list = []
-        
+
+    bake_selection = scene.get("TLM_bake_selection")
+
     for obj in bpy.context.scene.objects:
         if obj.type == 'MESH':
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
-                obj_list.append(obj.name)
+                if bake_selection is None or obj.name in bake_selection:
+                    obj_list.append(obj.name)
 
     total = len(obj_list)
     for index, obj_name in enumerate(obj_list):

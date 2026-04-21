@@ -80,3 +80,18 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
                         row.prop(obj.TLM_ObjectProperties, "tlm_smart_project_correct_aspect")
                         row = layout.row(align=True)
                         row.prop(obj.TLM_ObjectProperties, "tlm_smart_project_scale_to_bounds")
+
+        elif obj.type == 'EMPTY' and obj.instance_type == 'COLLECTION':
+            row = layout.row(align=True)
+            row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_use",
+                     text="Lightmap Collection Instance")
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                row = layout.row(align=True)
+                row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_resolution")
+                row = layout.row(align=True)
+                row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_unwrap_mode")
+                row = layout.row(align=True)
+                row.prop(obj.TLM_ObjectProperties, "tlm_mesh_unwrap_margin")
+                row = layout.row(align=True)
+                row.enabled = False
+                row.label(text="Instance will be realized at bake time (permanent)", icon='INFO')

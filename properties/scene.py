@@ -81,9 +81,16 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 description="Select baking quality", 
                 default="0")
     
+    tlm_bake_mode : EnumProperty(
+        items = [('DIFFUSE', 'Lightmap',          'Bake direct + indirect diffuse lighting'),
+                 ('AO',     'Ambient Occlusion',  'Bake ambient occlusion')],
+        name = "Bake Mode",
+        description = "Select what to bake",
+        default = 'DIFFUSE')
+
     tlm_denoise_use : BoolProperty(
-        name="Enable denoising", 
-        description="Enable denoising for lightmaps", 
+        name="Enable denoising",
+        description="Enable denoising for lightmaps",
         default=False)
     
     tlm_material_multi_user : EnumProperty(
@@ -152,6 +159,19 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         name="Compression Level",
         description="Select the level of Zstandard compression for KTX lightmaps.",
         default='10'
+    )
+
+    tlm_directional: BoolProperty(
+        name="Directional Lightmaps",
+        description="Bake 3 additional directional passes for Spherical Harmonics lightmaps",
+        default=False
+    )
+
+    tlm_directional_mode: EnumProperty(
+        items=[('SH', 'Spherical Harmonics', 'Godot-compatible SH directional lightmaps (3 axis-normal bake passes)')],
+        name="Directional Mode",
+        description="Encoding method for directional lightmaps",
+        default='SH'
     )
 
     tlm_reset_lightmap_uv: BoolProperty(

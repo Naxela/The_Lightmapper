@@ -69,7 +69,7 @@ def load_library(asset_name):
         ref.use_fake_user = True
 
 # Display a processing message while denoising
-text_display = NX_Text_Display(x=10, y=12, message="Processing Denoising...", font_size=10)
+text_display = NX_Text_Display(x=10, y=27, message="Processing Denoising...", font_size=10)
 
 # Post-process after the build, including denoising and UV reset
 def postprocessBuild():
@@ -110,8 +110,12 @@ def postprocessBuild():
             tlm_oidn_maxmem=0
         )
 
+        def _denoise_progress(fraction):
+            bpy.context.scene["denoise_progress"] = fraction
+            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+
         denoiser = oidn.TLM_OIDN_Denoise(props, denoiseList, absolute_directory)
-        denoiser.denoise()
+        denoiser.denoise(progress_cb=_denoise_progress)
         denoiser.clean()
         text_display.toggle()
         text_display.remove()
@@ -357,7 +361,7 @@ def removeLightmap():
                     continue
 
                 node_tree = mat.node_tree
-                PrincipledNode = node_tree.nodes.get("Principled BSDF")
+                PrincipledNode = _find_principled_bsdf(node_tree)
                 TLMNode = node_tree.nodes.get("TLM-Node")
                 LightmapNode = node_tree.nodes.get("TLM-Lightmap")
                 UVMapNode = node_tree.nodes.get("TLM-UVMap")
@@ -388,6 +392,10 @@ def removeLightmap():
                     node_tree.nodes.remove(LightmapNode)
                 if UVMapNode:
                     node_tree.nodes.remove(UVMapNode)
+                for i in range(3):
+                    dir_node = node_tree.nodes.get(f"TLM-Dir{i}")
+                    if dir_node:
+                        node_tree.nodes.remove(dir_node)
 
                 if TLMNode and TLMNodeInput:
                     node_tree.links.new(TLMNodeInput, PrincipledNode.inputs["Base Color"])
@@ -430,6 +438,12 @@ def _lightmaps_are_applied():
             if mat and mat.use_nodes and mat.node_tree.nodes.get("TLM-Node"):
                 return True
     return False
+
+def _find_principled_bsdf(node_tree):
+    for node in node_tree.nodes:
+        if node.type == 'BSDF_PRINCIPLED':
+            return node
+    return None
 
 # Apply lightmaps to objects based on a manifest file
 def applyLightmap(folder):
@@ -521,8 +535,8 @@ def applyLightmap(folder):
                         # Assign the new, uniquely named material to the slot
                         slot.material = new_mat
 
-                #TODO - For now it needs to be named Principled BSDF, make it type based in the future. 
-                if mat.node_tree.nodes.get("Principled BSDF"):
+                PrincipledNode = _find_principled_bsdf(mat.node_tree)
+                if PrincipledNode:
                     print("Got principled BSDF: " + mat.name)
                     base_color = None
                     base_input_from_node = None
@@ -538,11 +552,11 @@ def applyLightmap(folder):
                             mat.node_tree.links.remove(link)
                         mat.node_tree.nodes.remove(TLMNode_to_remove)
 
-                    if len(mat.node_tree.nodes.get("Principled BSDF").inputs[0].links) < 1:
+                    if len(PrincipledNode.inputs[0].links) < 1:
                         print("No links - Adding default value base color")
-                        base_color = mat.node_tree.nodes.get("Principled BSDF").inputs[0].default_value
+                        base_color = PrincipledNode.inputs[0].default_value
                     else:
-                        base_input_link = mat.node_tree.nodes.get("Principled BSDF").inputs[0].links[0]
+                        base_input_link = PrincipledNode.inputs[0].links[0]
                         base_input_from_node = base_input_link.from_node
                         base_input_from_socket_name = base_input_link.from_socket.name
                         print("Found link - Adding link to base input - From node: " + base_input_from_node.name)
@@ -554,8 +568,6 @@ def applyLightmap(folder):
                     addTLMNode(mat)
                     addLightmapNode(mat, lightmapPath)
                     addUVMapNode(mat)
-
-                    PrincipledNode = mat.node_tree.nodes.get("Principled BSDF")
                     TLMNode = mat.node_tree.nodes.get("TLM-Node")
                     LightmapNode = mat.node_tree.nodes.get("TLM-Lightmap")
                     UVMapNode = mat.node_tree.nodes.get("TLM-UVMap")
@@ -580,5 +592,27 @@ def applyLightmap(folder):
                             bpy.ops.object.select_all(action='DESELECT')
                             bpy.context.view_layer.objects.active = obj
                             obj.select_set(True)
+
+                    # Add directional lightmap storage nodes (not connected to BSDF)
+                    dir_data = data.get("directional_lightmaps", {})
+                    dir_ext = "." + data.get("dir_ext", "png")
+                    dir_names = dir_data.get(key, [])
+                    for i, dir_img_name in enumerate(dir_names):
+                        dir_path = os.path.join(absolute_directory, dir_img_name + dir_ext)
+                        node_name = f"TLM-Dir{i}"
+                        existing = mat.node_tree.nodes.get(node_name)
+                        if existing:
+                            mat.node_tree.nodes.remove(existing)
+                        if os.path.exists(dir_path):
+                            dir_img = bpy.data.images.get(dir_img_name)
+                            if dir_img is None:
+                                dir_img = bpy.data.images.load(dir_path)
+                                dir_img.name = dir_img_name
+                            dir_node = mat.node_tree.nodes.new('ShaderNodeTexImage')
+                            dir_node.name = node_name
+                            dir_node.label = node_name
+                            dir_node.location = (100, 100 - 300 * (i + 1))
+                            dir_node.image = dir_img
+                            safe_node_link(mat.node_tree, UVMapNode, "UV", dir_node, "Vector")
 
     print("Lightmap applied")

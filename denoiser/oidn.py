@@ -48,9 +48,10 @@ class TLM_OIDN_Denoise:
             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                 print("Please provide OIDN path")
 
-    def denoise(self):
+    def denoise(self, progress_cb=None):
 
-        for image in self.image_array:
+        total = len(self.image_array)
+        for i, image in enumerate(self.image_array):
 
             if image not in self.denoised_array:
 
@@ -190,6 +191,9 @@ class TLM_OIDN_Denoise:
                 self.denoised_array.append(image)
 
                 print(image_path)
+
+                if progress_cb:
+                    progress_cb((i + 1) / max(total, 1))
 
     def clean(self):
 

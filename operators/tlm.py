@@ -10,8 +10,10 @@ from ..utility import util
 from ..utility.rectpack import newPacker, PackingMode, MaxRectsBssf
 from ..utility import unwrap
 
-main_progress = NX_Progress_Bar(10, 10, 100, 10, 0.0, (0.0, 0.0, 0.0, 1.0))
-atlas_text_display = NX_Text_Display(x=10, y=12, message="Atlasing lightmaps...", font_size=10)
+bake_bar    = NX_Progress_Bar(10, 10, 100, 10, 0.0, (1.00, 0.00, 0.00, 1.0), label="Building Lightmaps")
+denoise_bar = NX_Progress_Bar(10, 25, 100, 10, 0.0, (0.00, 1.00, 0.00, 1.0), label="Denoising")
+atlas_bar   = NX_Progress_Bar(10, 40, 100, 10, 0.0, (0.00, 0.00, 1.00, 1.0), label="Atlasing")
+atlas_text_display = NX_Text_Display(x=10, y=42, message="Atlasing lightmaps...", font_size=10)
 
 # All UV layer name prefixes owned by TLM. Covers base names and numbered duplicates
 # (e.g. UVMap-Atlas.001) that Blender creates when a layer with the same name already exists.
@@ -28,10 +30,15 @@ def remove_tlm_uv_layers(obj):
         if layer:
             uv_layers.remove(layer)
 
-# Draws the 2D progress bar in the Blender interface
+# Draws the 2D progress bars in the Blender interface
 def draw_callback_2d():
-    main_progress.progress = bpy.context.scene.get("baking_progress", 0.0)
-    main_progress.draw()
+    bake_bar.progress = bpy.context.scene.get("baking_progress", 0.0)
+    bake_bar.eta = bpy.context.scene.get("bake_eta", "")
+    denoise_bar.progress = bpy.context.scene.get("denoise_progress", 0.0)
+    atlas_bar.progress = bpy.context.scene.get("atlas_progress", 0.0)
+    atlas_bar.draw()
+    denoise_bar.draw()
+    bake_bar.draw()
     
 # Handles operations based on output from the subprocess, updating progress or printing messages
 def callback_operations(argument):
@@ -40,7 +47,7 @@ def callback_operations(argument):
         if len(call) < 3:
             return
         key_type = call[1].strip()
-        value = call[2].strip()
+        value = ":".join(call[2:]).strip()
 
         if key_type == "0":
             try:
@@ -54,21 +61,66 @@ def callback_operations(argument):
             print(value)
 
         elif key_type == "2": #ERROR - Popup dialogue?
-            print(value) 
+            print(value)
+
+        elif key_type == "3":  # ETA string from subprocess
+            bpy.context.scene["bake_eta"] = value 
+
+def realize_collection_instances(context):
+    instance_empties = [
+        obj for obj in context.scene.objects
+        if obj.type == 'EMPTY'
+        and obj.instance_type == 'COLLECTION'
+        and obj.TLM_ObjectProperties.tlm_mesh_lightmap_use
+    ]
+    if not instance_empties:
+        return 0
+
+    total_realized = 0
+    for empty in instance_empties:
+        empty.hide_set(False)
+        empty.hide_viewport = False
+
+        bpy.ops.object.select_all(action='DESELECT')
+        context.view_layer.objects.active = empty
+        empty.select_set(True)
+
+        before = set(context.scene.objects)
+
+        bpy.ops.object.duplicates_make_real(use_base_parent=True, use_hierarchy=True)
+        bpy.ops.object.make_single_user(type='SELECTED_OBJECTS', object=False, obdata=True)
+
+        after = set(context.scene.objects)
+        new_meshes = [obj for obj in (after - before) if obj.type == 'MESH']
+
+        src = empty.TLM_ObjectProperties
+        for mesh_obj in new_meshes:
+            dst = mesh_obj.TLM_ObjectProperties
+            dst.tlm_mesh_lightmap_use        = True
+            dst.tlm_mesh_lightmap_resolution  = src.tlm_mesh_lightmap_resolution
+            dst.tlm_mesh_lightmap_unwrap_mode = src.tlm_mesh_lightmap_unwrap_mode
+            dst.tlm_mesh_unwrap_margin        = src.tlm_mesh_unwrap_margin
+            total_realized += 1
+
+        src.tlm_mesh_lightmap_use = False
+
+    return total_realized
 
 # Operator for building lightmaps, manages the subprocess and updates progress in Blender
 class TLM_OT_build_lightmaps(bpy.types.Operator):
     bl_idname = "tlm.build_lightmaps"
     bl_label = "Build Lightmaps"
-    bl_description = "Build Lightmaps. Ctrl+Click to also toggle lightmaps on after building"
+    bl_description = "Build Lightmaps. Ctrl+Click to also toggle lightmaps on after building. Shift+Click to bake selected objects only"
     bl_options = {'REGISTER', 'UNDO'}
 
     _timer = None
     _draw_handler = None
     apply_after: bpy.props.BoolProperty(default=False, options={'SKIP_SAVE'})
+    selected_only: bpy.props.BoolProperty(default=False, options={'SKIP_SAVE'})
 
     def invoke(self, context, event):
         self.apply_after = event.ctrl
+        self.selected_only = event.shift
         return self.execute(context)
 
     # Remove __init__ completely and initialize queues in execute()
@@ -90,6 +142,12 @@ class TLM_OT_build_lightmaps(bpy.types.Operator):
         # Initialize queues here instead of in __init__
         self.output_queue = Queue()
         self.error_queue = Queue()
+
+        # Reset all progress bars for a fresh bake
+        bpy.context.scene["baking_progress"] = 0.0
+        bpy.context.scene["denoise_progress"] = 0.0
+        bpy.context.scene["atlas_progress"]   = 0.0
+        bpy.context.scene["bake_eta"]         = ""
         
         args = ()
 
@@ -97,6 +155,21 @@ class TLM_OT_build_lightmaps(bpy.types.Operator):
             for obj in bpy.context.scene.objects:
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
                     remove_tlm_uv_layers(obj)
+
+        n = realize_collection_instances(context)
+        if n > 0:
+            self.report({'WARNING'},
+                f"Realized {n} mesh object(s) from collection instances. "
+                "Undo (Ctrl+Z) after baking to revert if needed.")
+
+        if self.selected_only:
+            selected_names = [
+                obj.name for obj in context.selected_objects
+                if obj.type == 'MESH' and obj.TLM_ObjectProperties.tlm_mesh_lightmap_use
+            ]
+            context.scene["TLM_bake_selection"] = selected_names
+        elif "TLM_bake_selection" in context.scene:
+            del context.scene["TLM_bake_selection"]
 
         util.removeLightmapFolder()
         util.configureEngine()
@@ -107,6 +180,7 @@ class TLM_OT_build_lightmaps(bpy.types.Operator):
         blender_exe_path = bpy.app.binary_path
         blend_file_path = bpy.data.filepath
         cmd = f'"{blender_exe_path}" "{blend_file_path}" --background --python "{script_path}"'
+        self._bake_start = time.time()
         self.start_process(cmd)
 
         wm = context.window_manager
@@ -143,20 +217,59 @@ class TLM_OT_build_lightmaps(bpy.types.Operator):
             self.stdout_thread.join()
         if hasattr(self, 'stderr_thread') and self.stderr_thread.is_alive():
             self.stderr_thread.join()
-        
+
         wm = context.window_manager
         wm.event_timer_remove(self._timer)
-        
+
+        if "TLM_bake_selection" in bpy.context.scene:
+            del bpy.context.scene["TLM_bake_selection"]
+
+        util.removeBuildScript()
+
+        t_bake = time.time() - self._bake_start if hasattr(self, '_bake_start') else 0.0
+
+        # Denoising — show progress in UI bar
+        bpy.context.scene["bake_eta"] = ""
+        bpy.context.scene["denoise_progress"] = 0.0
+        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        t0 = time.time()
+        util.postprocessBuild()
+        t_denoise = time.time() - t0
+        bpy.context.scene["denoise_progress"] = 1.0
+        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+
+        # Atlasing — show progress in UI bar
+        t0 = time.time()
+        if (hasattr(self, 'process') and self.process and self.process.returncode == 0
+                and bpy.context.scene.TLM_SceneProperties.tlm_create_atlas):
+            bpy.context.scene["atlas_progress"] = 0.0
+            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+            createAtlases(int(bpy.context.scene.TLM_SceneProperties.tlm_atlas_max_resolution))
+            bpy.context.scene["atlas_progress"] = 1.0
+            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        t_atlas = time.time() - t0
+
+        # Now remove the draw handler
         if self._draw_handler:
             bpy.types.SpaceView3D.draw_handler_remove(self._draw_handler, 'WINDOW')
             bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
-        util.removeBuildScript()
-        util.postprocessBuild()
+        def _fmt(seconds):
+            h = int(seconds // 3600)
+            m = int((seconds % 3600) // 60)
+            s = int(seconds % 60)
+            if h > 0:
+                return f"{h}h {m:02d}m {s:02d}s"
+            elif m > 0:
+                return f"{m}m {s:02d}s"
+            else:
+                return f"{s}s"
 
-        if (hasattr(self, 'process') and self.process and self.process.returncode == 0
-                and bpy.context.scene.TLM_SceneProperties.tlm_create_atlas):
-            createAtlases(int(bpy.context.scene.TLM_SceneProperties.tlm_atlas_max_resolution))
+        print("=== TLM Timing Summary ===")
+        print(f"Rendering:  {_fmt(t_bake)}")
+        print(f"Denoising:  {_fmt(t_denoise)}")
+        print(f"Atlasing:   {_fmt(t_atlas)}")
+        print(f"Total:      {_fmt(t_bake + t_denoise + t_atlas)}")
 
         # Reset the lightmap state flag after a fresh bake so apply always applies.
         bpy.context.scene["Lightmapped"] = False
@@ -425,7 +538,8 @@ class TLM_OBJECT_OT_selected_lightmapped(bpy.types.Operator):
 
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use == True:
 
-                    obj.select_set(True)
+                    if obj.visible_get():
+                        obj.select_set(True)
 
         print("Select lightmapped!")
 
@@ -964,7 +1078,8 @@ def createAtlases(max_resolution):
             manifest_data["lightmaps"][img_info['object']] = f"atlas_{atlas_index}"
             manifest_data["ext"] = "hdr" if output_format == "HDR" else "exr"
 
-            print(f"[TLM]:0:{processed_rectangles / total_rectangles}", flush=True)
+            bpy.context.scene["atlas_progress"] = processed_rectangles / total_rectangles
+            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
         # Save after all pixels have been transferred into this atlas.
         atlas_image.save()
