@@ -1,6 +1,18 @@
 import bpy
 from bpy.props import *
 
+def _tlm_atlas_unwrap_modes():
+    modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
+             ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm'),
+             ('Copy', 'Copy existing', 'Use the existing UV channel')]
+
+    if "blender_xatlas" in bpy.context.preferences.addons.keys():
+        modes.append(('Xatlas', 'Xatlas', 'Use the Blender Xatlas add-on'))
+
+    modes.append(('XatlasPython', 'Xatlas Python', 'Use the xatlas-python package'))
+
+    return modes
+
 class TLM_PostAtlasListItem(bpy.types.PropertyGroup):
     obj: PointerProperty(type=bpy.types.Object, description="The object to bake")
     tlm_atlas_lightmap_resolution : EnumProperty(
@@ -29,17 +41,12 @@ class TLM_PostAtlasListItem(bpy.types.PropertyGroup):
 
     tlm_atlas_unwrap_margin : FloatProperty(
         name="Unwrap Margin", 
-        default=0.1, 
+        default=0.02,
         min=0.0, 
         max=1.0, 
         subtype='FACTOR')
 
-    unwrap_modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
-                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm'),
-                 ('Copy', 'Copy existing', 'Use the existing UV channel')]
-
-    if "blender_xatlas" in bpy.context.preferences.addons.keys():
-        unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))
+    unwrap_modes = _tlm_atlas_unwrap_modes()
 
     tlm_atlas_merge_samemat : BoolProperty(
         name="Merge materials", 
@@ -97,17 +104,12 @@ class TLM_AtlasListItem(bpy.types.PropertyGroup):
 
     tlm_atlas_unwrap_margin : FloatProperty(
         name="Unwrap Margin", 
-        default=0.1, 
+        default=0.02,
         min=0.0, 
         max=1.0, 
         subtype='FACTOR')
 
-    unwrap_modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
-                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm'),
-                 ('Copy', 'Copy existing', 'Use the existing UV channel')]
-
-    if "blender_xatlas" in bpy.context.preferences.addons.keys():
-        unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))
+    unwrap_modes = _tlm_atlas_unwrap_modes()
 
     tlm_atlas_lightmap_unwrap_mode : EnumProperty(
         items = unwrap_modes,

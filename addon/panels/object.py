@@ -29,6 +29,10 @@ class TLM_PT_ObjectMenu(bpy.types.Panel):
 
                     row = layout.row()
                     row.prop_search(obj.TLM_ObjectProperties, "tlm_uv_channel", obj.data, "uv_layers", text='UV Channel')
+                    row = layout.row()
+                    box = row.box()
+                    box.label(text="Unwrap modes will modify the selected UV layer.", icon="ERROR")
+                    box.label(text="Use a dedicated layer (e.g. copy to UVMap_Lightmap first).")
 
                 row = layout.row()
                 row.prop(obj.TLM_ObjectProperties, "tlm_mesh_lightmap_resolution")

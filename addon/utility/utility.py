@@ -1,5 +1,5 @@
 import bpy.ops as O
-import bpy, os, re, sys, importlib, struct, platform, subprocess, threading, string, bmesh, shutil, glob, uuid
+import bpy, os, re, sys, importlib, struct, platform, subprocess, threading, string, bmesh, shutil, glob, uuid, time
 from io import StringIO
 from threading  import Thread
 from queue import Queue, Empty
@@ -35,6 +35,24 @@ class Shader_Node_Types:
     ao = "ShaderNodeAmbientOcclusion"
     uv = "ShaderNodeUVMap"
     mix = "ShaderNodeMixRGB"
+
+def tlm_set_active_uv_layer_by_name(mesh, name):
+    """Select UV layer by name for unwrap/bake. Returns False if the layer does not exist."""
+    layers = mesh.uv_layers
+    for i, layer in enumerate(layers):
+        if layer.name == name:
+            layers.active_index = i
+            return True
+    return False
+
+
+def tlm_active_uv_layer_name(mesh):
+    layers = mesh.uv_layers
+    if not layers:
+        return None
+    act = layers.active
+    return act.name if act else None
+
 
 def select_object(self,obj):
     C = bpy.context
@@ -317,13 +335,242 @@ def gen_safe_name():
     # genId = "u_" + genId.replace("-","_")
     return "u_" + genId
 
-def Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj):
+def _tlm_target_uv_name_from_object(obj):
+    if hasattr(obj, "TLM_ObjectProperties"):
+        props = obj.TLM_ObjectProperties
+        if not props.tlm_use_default_channel and props.tlm_uv_channel:
+            return props.tlm_uv_channel
+    return "UVMap_Lightmap"
+
+def _tlm_uv_diagnostic(layer):
+    if layer is None or len(layer.data) == 0:
+        return "missing-or-empty"
+
+    xs = [loop.uv.x for loop in layer.data]
+    ys = [loop.uv.y for loop in layer.data]
+    signature = 0
+    samples = []
+
+    for index, loop in enumerate(layer.data):
+        x = round(loop.uv.x, 6)
+        y = round(loop.uv.y, 6)
+        signature += int((x * 1000003) + (y * 917609)) * (index + 1)
+        if index < 5:
+            samples.append("(" + str(x) + "," + str(y) + ")")
+
+    return (
+        "loops=" + str(len(layer.data)) +
+        ", bounds=(" + str(round(min(xs), 6)) + "," + str(round(min(ys), 6)) + ")-(" + str(round(max(xs), 6)) + "," + str(round(max(ys), 6)) + ")" +
+        ", signature=" + str(signature) +
+        ", samples=[" + ", ".join(samples) + "]"
+    )
+
+def _tlm_diag_path():
+    base_path = os.path.dirname(bpy.data.filepath) if bpy.data.filepath else bpy.app.tempdir
+    return os.path.join(base_path, "tlm_xatlas_diag_latest.txt")
+
+def _tlm_write_diag(path, lines):
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as diag_file:
+            diag_file.write("\n".join(lines))
+            diag_file.write("\n")
+    except Exception as e:
+        print("TLM_XATLAS_DIAG: failed to write diagnostic report: " + str(e))
+
+def _unwrap_objects_with_xatlas_python(objects):
+    diag_lines = []
+    diag_path = _tlm_diag_path()
+
+    def diag(message):
+        line = "TLM_XATLAS_DIAG: " + message
+        diag_lines.append(line)
+        print(line)
+        _tlm_write_diag(diag_path, diag_lines)
+
+    diag("report=" + diag_path)
+    diag("blend=" + (bpy.data.filepath if bpy.data.filepath else "<unsaved>"))
+
+    try:
+        import numpy as np
+        import xatlas
+    except Exception as e:
+        diag("IMPORT_FAILED: xatlas-python is not available in Blender Python: " + str(e))
+        diag("Install xatlas-python with Blender's Python to use the Xatlas unwrap mode.")
+        return False
+
+    selected_objects = [
+        selected_obj for selected_obj in objects
+        if selected_obj and selected_obj.type == 'MESH'
+    ]
+
+    if not selected_objects:
+        diag("skipped: no mesh objects were provided")
+        return False
+
+    diag("starting xatlas-python unwrap for " + str(len(selected_objects)) + " object(s): " + ", ".join([obj.name for obj in selected_objects]))
+
+    if bpy.context.object and bpy.context.object.mode != "OBJECT":
+        bpy.ops.object.mode_set(mode="OBJECT")
+
+    combined_vertices = []
+    combined_indices = []
+    combined_loop_triangles = []
+    target_layers = {}
+    vertex_offset = 0
+
+    for selected_obj in selected_objects:
+        mesh = selected_obj.data
+        target_uv = _tlm_target_uv_name_from_object(selected_obj)
+        if target_uv not in mesh.uv_layers:
+            mesh.uv_layers.new(name=target_uv)
+        tlm_set_active_uv_layer_by_name(mesh, target_uv)
+        diag("before " + selected_obj.name + " target=" + target_uv + " " + _tlm_uv_diagnostic(mesh.uv_layers.get(target_uv)))
+
+        mesh.calc_loop_triangles()
+        if len(mesh.loop_triangles) == 0:
+            diag("skipped " + selected_obj.name + " because it has no triangles.")
+            continue
+
+        diag("mesh " + selected_obj.name + " vertices=" + str(len(mesh.vertices)) + ", polygons=" + str(len(mesh.polygons)) + ", loop_triangles=" + str(len(mesh.loop_triangles)) + ", matrix_world_translation=(" + str(round(selected_obj.matrix_world.translation.x, 6)) + "," + str(round(selected_obj.matrix_world.translation.y, 6)) + "," + str(round(selected_obj.matrix_world.translation.z, 6)) + ")")
+
+        target_layers[selected_obj.name] = mesh.uv_layers.get(target_uv)
+
+        for vertex in mesh.vertices:
+            co = selected_obj.matrix_world @ vertex.co
+            combined_vertices.append((co.x, co.y, co.z))
+
+        for loop_tri in mesh.loop_triangles:
+            combined_indices.append((
+                loop_tri.vertices[0] + vertex_offset,
+                loop_tri.vertices[1] + vertex_offset,
+                loop_tri.vertices[2] + vertex_offset
+            ))
+            combined_loop_triangles.append((selected_obj, tuple(loop_tri.loops)))
+
+        vertex_offset += len(mesh.vertices)
+
+    if not combined_indices:
+        _tlm_write_diag(diag_path, diag_lines)
+        return False
+
+    diag("combined mesh vertices=" + str(len(combined_vertices)) + ", triangles=" + str(len(combined_indices)))
+
+    atlas = xatlas.Atlas()
+    vertices = np.asarray(combined_vertices, dtype=np.float64)
+    indices = np.asarray(combined_indices, dtype=np.uint32)
+    atlas.add_mesh(vertices, indices)
+
+    chart_options = xatlas.ChartOptions()
+    pack_options = xatlas.PackOptions()
+
+    try:
+        atlas.generate(chart_options, pack_options, True)
+    except TypeError:
+        atlas.generate(chart_options, pack_options)
+
+    _vertex_mapping, xatlas_indices, xatlas_uvs = atlas[0]
+    diag("xatlas output indices=" + str(len(xatlas_indices)) + ", uvs=" + str(len(xatlas_uvs)) + ", vmapping=" + str(len(_vertex_mapping)))
+
+    if len(xatlas_indices) != len(combined_loop_triangles):
+        diag("WARNING triangle count mismatch, input=" + str(len(combined_loop_triangles)) + ", output=" + str(len(xatlas_indices)))
+
+    for triangle_index, triangle_ref in enumerate(combined_loop_triangles):
+        selected_obj, loop_indices = triangle_ref
+        layer = target_layers.get(selected_obj.name)
+        if layer is None:
+            continue
+
+        for corner_index, loop_index in enumerate(loop_indices):
+            uv = xatlas_uvs[xatlas_indices[triangle_index][corner_index]]
+            layer.data[loop_index].uv = (float(uv[0]), float(uv[1]))
+
+    for selected_obj in selected_objects:
+        selected_obj.data.update()
+        target_uv = _tlm_target_uv_name_from_object(selected_obj)
+        diag("after " + selected_obj.name + " target=" + target_uv + " " + _tlm_uv_diagnostic(selected_obj.data.uv_layers.get(target_uv)))
+
+    diagnostics = {}
+    for selected_obj in selected_objects:
+        layer = selected_obj.data.uv_layers.get(_tlm_target_uv_name_from_object(selected_obj))
+        diagnostics[selected_obj.name] = _tlm_uv_diagnostic(layer)
+
+    names = list(diagnostics.keys())
+    for i in range(len(names)):
+        for j in range(i + 1, len(names)):
+            if diagnostics[names[i]] == diagnostics[names[j]]:
+                diag("WARNING identical UV diagnostics for " + names[i] + " and " + names[j])
+
+    _tlm_write_diag(diag_path, diag_lines)
+    print("TLM_XATLAS_DIAG: wrote diagnostic report to " + diag_path)
+
+    del atlas
+    return True
+
+def Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj, use_python=False, objects=None):
+
+    unwrap_objects = objects if objects is not None else [obj]
+
+    if use_python:
+        if _unwrap_objects_with_xatlas_python(unwrap_objects):
+            return {'FINISHED'}
+        return {'CANCELLED'}
 
     blender_xatlas = importlib.util.find_spec("blender_xatlas")
 
     if blender_xatlas is not None:
         import blender_xatlas
     else:
+        print("TLM: Xatlas addon is not installed or enabled.")
+        return 0
+
+    target_uv = _tlm_target_uv_name_from_object(obj)
+    sharedProperties = getattr(bpy.context.scene, "shared_properties", None)
+
+    if hasattr(bpy.ops.object, "unwrap_lightmap_group_xatlas_2") and sharedProperties is not None:
+        starting_active = bpy.context.view_layer.objects.active
+        starting_mode = bpy.context.object.mode if bpy.context.object else "OBJECT"
+
+        if bpy.context.object and bpy.context.object.mode != "OBJECT":
+            bpy.ops.object.mode_set(mode="OBJECT")
+
+        selected_objects = list(bpy.context.selected_objects)
+        if not selected_objects:
+            obj.select_set(True)
+            selected_objects = [obj]
+
+        sharedProperties.unwrapSelection = "SELECTED"
+        sharedProperties.lightmapUVChoiceType = "NAME"
+        sharedProperties.lightmapUVName = target_uv
+        sharedProperties.mainUVChoiceType = "NAME"
+        sharedProperties.mainUVName = "UVMap"
+        sharedProperties.atlasLayout = "OVERLAP"
+
+        bpy.context.view_layer.objects.active = obj
+        for selected_obj in selected_objects:
+            selected_obj.select_set(True)
+
+        try:
+            result = bpy.ops.object.unwrap_lightmap_group_xatlas_2()
+        except Exception as e:
+            print("TLM: Bundled blender_xatlas operator failed: " + str(e))
+            result = 0
+
+        bpy.ops.object.select_all(action="DESELECT")
+        for selected_obj in selected_objects:
+            selected_obj.select_set(True)
+        if starting_active:
+            bpy.context.view_layer.objects.active = starting_active
+        if bpy.context.object and starting_mode != "OBJECT":
+            try:
+                bpy.ops.object.mode_set(mode=starting_mode)
+            except Exception as e:
+                print("TLM: Could not restore mode after xatlas unwrap: " + str(e))
+
+        return result
+
+    if not hasattr(blender_xatlas, "export_obj_simple"):
+        print("TLM: Xatlas addon API is not compatible; missing unwrap operator and export_obj_simple.")
         return 0
 
     packOptions = bpy.context.scene.pack_tool

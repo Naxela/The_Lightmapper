@@ -676,6 +676,9 @@ class TLM_PT_Additional(bpy.types.Panel):
                                 amount = amount + 1
 
                 layout.label(text="Objects: " + str(amount))
+                row = layout.row(align=True)
+                row.operator("tlm_atlaslist.assign_selected", text="Assign Selected")
+                row.operator("tlm_atlaslist.remove_selected", text="Remove Selected")
                 layout.prop(item, "tlm_atlas_merge_samemat")
 
                 # layout.prop(item, "tlm_use_uv_packer")

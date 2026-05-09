@@ -56,6 +56,16 @@ class TLM_AddonPreferences(AddonPreferences):
 
         box = layout.box()
         row = box.row()
+        row.label(text="Xatlas Python")
+        if importlib.util.find_spec("xatlas") is not None and importlib.util.find_spec("numpy") is not None:
+            row.label(text="xatlas-python installed and available")
+        else:
+            row.label(text="xatlas-python not installed", icon_value=2)
+        row = box.row()
+        row.label(text="Package: https://github.com/mworchel/xatlas-python")
+
+        box = layout.box()
+        row = box.row()
         row.label(text="RizomUV Bridge")
         row.label(text="Coming soon")
 

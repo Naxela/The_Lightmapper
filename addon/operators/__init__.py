@@ -13,6 +13,8 @@ classes = [
     tlm.TLM_ToggleTexelDensity,
     installopencv.TLM_Install_OpenCV,
     tlm.TLM_AtlasListNewItem,
+    tlm.TLM_AssignSelectedToAtlas,
+    tlm.TLM_RemoveSelectedFromAtlas,
     tlm.TLM_AtlastListDeleteItem,
     tlm.TLM_AtlasListMoveItem,
     tlm.TLM_PostAtlasListNewItem,
