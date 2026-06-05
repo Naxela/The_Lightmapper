@@ -63,6 +63,10 @@ def _activate_lightmap_uv(obj):
     for i, layer in enumerate(uv_layers):
         if layer.name == uv_channel:
             uv_layers.active_index = i
+            # Cycles bakes into the layer flagged active_render, NOT the active
+            # edit index. Without this, non-primary atlas members bake into the
+            # original "UVMap" (often degenerate) and come out black in headless.
+            layer.active_render = True
             return True
     print("TLM Bake warning: UV layer '" + uv_channel + "' not found for " + obj.name)
     return False
@@ -108,6 +112,156 @@ def _activate_bake_image_nodes(obj):
     return found
 
 
+def _emit_bake_op(scene):
+    """Issue one bpy.ops.object.bake call for the current selection."""
+    ep = scene.TLM_EngineProperties
+    margin = ep.tlm_dilation_margin
+
+    if ep.tlm_target == "vertex":
+        scene.render.bake.target = "VERTEX_COLORS"
+
+    mode = ep.tlm_lighting_mode
+
+    if mode == "combined" or mode == "combinedneutral":
+        bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, margin=margin, use_clear=False)
+    elif mode == "indirect":
+        bpy.ops.object.bake(type="DIFFUSE", pass_filter={"INDIRECT"}, margin=margin, use_clear=False)
+    elif mode == "ao":
+        bpy.ops.object.bake(type="AO", margin=margin, use_clear=False)
+    elif mode == "combinedao":
+        if bpy.app.driver_namespace["tlm_plus_mode"] == 1:
+            bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, margin=margin, use_clear=False)
+        elif bpy.app.driver_namespace["tlm_plus_mode"] == 2:
+            bpy.ops.object.bake(type="AO", margin=margin, use_clear=False)
+    elif mode == "indirectao":
+        if bpy.app.driver_namespace["tlm_plus_mode"] == 1:
+            bpy.ops.object.bake(type="DIFFUSE", pass_filter={"INDIRECT"}, margin=margin, use_clear=False)
+        elif bpy.app.driver_namespace["tlm_plus_mode"] == 2:
+            bpy.ops.object.bake(type="AO", margin=margin, use_clear=False)
+    elif mode == "complete":
+        bpy.ops.object.bake(type="COMBINED", margin=margin, use_clear=False)
+    else:
+        bpy.ops.object.bake(type="DIFFUSE", pass_filter={"DIRECT", "INDIRECT"}, margin=margin, use_clear=False)
+
+
+def _collect_prepack_atlas_groups(scene):
+    groups = {}
+    for obj in scene.objects:
+        if obj.type != 'MESH' or obj.name not in bpy.context.view_layer.objects:
+            continue
+        props = obj.TLM_ObjectProperties
+        if not props.tlm_mesh_lightmap_use:
+            continue
+        if _is_hidden_from_lightmap(obj):
+            continue
+        if props.tlm_mesh_lightmap_unwrap_mode != "AtlasGroupA":
+            continue
+        if not _valid_prepack_atlas_object(obj):
+            continue
+        groups.setdefault(props.tlm_atlas_pointer, []).append(obj)
+    return groups
+
+
+def _bake_atlas_group_composited(scene, atlas_name, members):
+    """Bake each atlas member into its own image, then composite into the shared atlas.
+
+    Atlas Group (Prepack) members all share one lightmap image. In
+    `blender --background`, baking them into that shared image does NOT
+    accumulate, regardless of how it is issued:
+      - separate per-object calls: each call clears the shared image, so only
+        the last object's region survives (confirmed via TLM_BAKE_PROBE=1).
+      - one multi-object call: same outcome, only the last object survives.
+    The UI tolerates shared-image accumulation; headless does not.
+
+    Since every member occupies a disjoint cell of the atlas (the prepack grid
+    layout in prepare.py gives each object its own region), we bake each object
+    into a private full-size image and composite the cells together with a
+    per-pixel max. This never relies on shared-image accumulation and matches
+    the UI result exactly.
+    """
+    import numpy as np
+
+    shared = bpy.data.images.get(atlas_name + "_baked")
+    if shared is None or shared.size[0] == 0 or shared.size[1] == 0:
+        print("TLM Bake warning: shared atlas image '" + atlas_name + "_baked' not ready.")
+        return
+
+    width, height = shared.size[0], shared.size[1]
+    accum = np.zeros(width * height * 4, dtype=np.float32)
+    baked_any = False
+
+    for obj in members:
+        obj.hide_render = False
+        if not _activate_lightmap_uv(obj):
+            continue
+
+        tmp_name = "TLM_ATLASTMP_" + obj.name
+        if tmp_name in bpy.data.images:
+            bpy.data.images.remove(bpy.data.images[tmp_name], do_unlink=True)
+        tmp_img = bpy.data.images.new(tmp_name, width, height, alpha=True, float_buffer=True)
+
+        assigned = False
+        for slot in obj.material_slots:
+            mat = slot.material
+            if mat is None or not mat.use_nodes:
+                continue
+            nodes = mat.node_tree.nodes
+            bake_node = nodes.get("Baked Image") or nodes.get("TLM_Lightmap")
+            if bake_node is None or bake_node.type != "TEX_IMAGE":
+                continue
+            bake_node.image = tmp_img
+            bake_node.select = True
+            nodes.active = bake_node
+            assigned = True
+        if not assigned:
+            print("TLM Bake warning: no bake node for atlas member " + obj.name)
+            bpy.data.images.remove(tmp_img, do_unlink=True)
+            continue
+
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
+
+        _emit_bake_op(scene)
+
+        buf = np.empty(len(tmp_img.pixels), dtype=np.float32)
+        tmp_img.pixels.foreach_get(buf)
+        np.maximum(accum, buf, out=accum)
+        baked_any = True
+
+        bpy.data.images.remove(tmp_img, do_unlink=True)
+        bpy.ops.object.select_all(action='DESELECT')
+
+    if not baked_any:
+        print("TLM Bake warning: atlas group '" + atlas_name + "' has no bakeable members.")
+        return
+
+    shared.pixels.foreach_set(accum)
+    shared.update()
+
+    # Re-point each member's bake node back to the shared atlas image so TLM's
+    # stage-2 save / encoding writes the composited result.
+    for obj in members:
+        _activate_bake_image_nodes(obj)
+
+    print("Baked atlas group '" + atlas_name + "' by compositing " + str(len(members)) + " object(s).")
+
+
+def _bake_prepack_atlas_groups(scene):
+    """Bake every Atlas Group (Prepack) by compositing per-object bakes.
+
+    See _bake_atlas_group_composited for why shared-image accumulation cannot be
+    used in `blender --background`.
+    """
+    groups = _collect_prepack_atlas_groups(scene)
+
+    for atlas_name, members in groups.items():
+        _bake_atlas_group_composited(scene, atlas_name, members)
+
+    bpy.ops.object.select_all(action='DESELECT')
+    return groups
+
+
 def bake(plus_pass=0):
 
     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
@@ -116,6 +270,11 @@ def bake(plus_pass=0):
     for obj in bpy.context.scene.objects:
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(False)
+
+    # Atlas Group (Prepack) members share one image and must be baked together
+    # in a single call (see _bake_prepack_atlas_groups). The per-object loop
+    # below then handles only non-atlas objects.
+    _bake_prepack_atlas_groups(bpy.context.scene)
 
     iterNum = 0
     currentIterNum = 0
@@ -190,6 +349,10 @@ def bake(plus_pass=0):
 
         if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use and not hidden and _valid_prepack_atlas_object(obj):
+
+                # Prepack atlas members are already baked together above.
+                if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+                    continue
 
                 scene = bpy.context.scene
 
