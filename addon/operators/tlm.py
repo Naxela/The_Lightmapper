@@ -5,6 +5,20 @@ from .. utility import build
 from .. utility.cycles import cache
 from .. network import server
 
+def _tlm_atlas_operator_unwrap_modes(include_copy=True):
+    modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
+             ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm')]
+
+    if include_copy:
+        modes.append(('Copy', 'Copy existing', 'Use the existing UV channel'))
+
+    if "blender_xatlas" in bpy.context.preferences.addons.keys():
+        modes.append(('Xatlas', 'Xatlas', 'Use the Blender Xatlas add-on'))
+
+    modes.append(('XatlasPython', 'Xatlas Python', 'Use the xatlas-python package'))
+
+    return modes
+
 def setObjectLightmapByWeight(minimumRes, maximumRes, objWeight):
         
         availableResolutions = [32,64,128,256,512,1024,2048,4096,8192]
@@ -57,6 +71,15 @@ class TLM_BuildLightmaps(bpy.types.Operator):
 
         return {'RUNNING_MODAL'}
 
+    def execute(self, context):
+
+        if not bpy.app.background:
+            build.prepare_build(self, False)
+        else:
+            print("Running in background mode. Contextual operator not available. Use command 'thelightmapper.addon.build.prepare_build()'")
+
+        return {'FINISHED'}
+
     def cancel(self, context):
         pass
 
@@ -108,7 +131,8 @@ class TLM_CleanLightmaps(bpy.types.Operator):
                     bpy.data.materials.remove(mat)
 
         for image in bpy.data.images:
-            if image.name.endswith("_baked"):
+            base_name = image.name.rsplit(".", 1)[0]
+            if image.name.endswith("_baked") or base_name.endswith("_baked"):
                 bpy.data.images.remove(image, do_unlink=True)
 
         for obj in bpy.context.scene.objects:
@@ -557,6 +581,61 @@ class TLM_PostAtlasListNewItem(bpy.types.Operator):
         scene.TLM_PostAtlasList[len(scene.TLM_PostAtlasList) - 1].name = "AtlasGroup"
 
         return{'FINISHED'}
+
+class TLM_AssignSelectedToAtlas(bpy.types.Operator):
+    bl_idname = "tlm_atlaslist.assign_selected"
+    bl_label = "Assign Selected Objects"
+    bl_description = "Assign selected mesh objects to the active atlas group"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        scene = context.scene
+        return len(scene.TLM_AtlasList) > 0 and len(context.selected_objects) > 0
+
+    def execute(self, context):
+        scene = context.scene
+        atlas = scene.TLM_AtlasList[scene.TLM_AtlasListItem].name
+        assigned = 0
+
+        for obj in context.selected_objects:
+            if obj.type != 'MESH':
+                continue
+            obj.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
+            obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode = "AtlasGroupA"
+            obj.TLM_ObjectProperties.tlm_atlas_pointer = atlas
+            assigned += 1
+
+        self.report({'INFO'}, "Assigned " + str(assigned) + " object(s) to " + atlas)
+        return {'FINISHED'}
+
+class TLM_RemoveSelectedFromAtlas(bpy.types.Operator):
+    bl_idname = "tlm_atlaslist.remove_selected"
+    bl_label = "Remove Selected Objects"
+    bl_description = "Remove selected mesh objects from the active atlas group"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        scene = context.scene
+        return len(scene.TLM_AtlasList) > 0 and len(context.selected_objects) > 0
+
+    def execute(self, context):
+        scene = context.scene
+        atlas = scene.TLM_AtlasList[scene.TLM_AtlasListItem].name
+        removed = 0
+
+        for obj in context.selected_objects:
+            if obj.type != 'MESH':
+                continue
+            if obj.TLM_ObjectProperties.tlm_atlas_pointer != atlas:
+                continue
+            obj.TLM_ObjectProperties.tlm_atlas_pointer = ""
+            obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode = "SmartProject"
+            removed += 1
+
+        self.report({'INFO'}, "Removed " + str(removed) + " object(s) from " + atlas)
+        return {'FINISHED'}
 
 class TLM_AtlastListDeleteItem(bpy.types.Operator):
     # Delete the selected item from the list
@@ -1572,11 +1651,7 @@ class TLM_AddCollectionsPost(bpy.types.Operator):
                     description="Atlas lightmap resolution",
                     default='256')
 
-    unwrap_modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
-                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm')]
-
-    if "blender_xatlas" in bpy.context.preferences.addons.keys():
-        unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))
+    unwrap_modes = _tlm_atlas_operator_unwrap_modes(include_copy=False)
 
     unwrap : bpy.props.EnumProperty(
         items = unwrap_modes,
@@ -1647,11 +1722,7 @@ class TLM_AddSelectedCollectionsPost(bpy.types.Operator):
                     description="Atlas lightmap resolution",
                     default='256')
 
-    unwrap_modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
-                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm')]
-
-    if "blender_xatlas" in bpy.context.preferences.addons.keys():
-        unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))
+    unwrap_modes = _tlm_atlas_operator_unwrap_modes(include_copy=False)
 
     unwrap : bpy.props.EnumProperty(
         items = unwrap_modes,
@@ -1805,12 +1876,7 @@ class TLM_AddCollections(bpy.types.Operator):
                     description="Atlas lightmap resolution",
                     default='256')
 
-    unwrap_modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
-                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm'),
-                 ('Copy', 'Copy existing', 'Use the existing UV channel')]
-
-    if "blender_xatlas" in bpy.context.preferences.addons.keys():
-        unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))
+    unwrap_modes = _tlm_atlas_operator_unwrap_modes()
 
     unwrap : bpy.props.EnumProperty(
         items = unwrap_modes,
@@ -1881,12 +1947,7 @@ class TLM_AddSelectedCollections(bpy.types.Operator):
                     description="Atlas lightmap resolution",
                     default='256')
 
-    unwrap_modes = [('Lightmap', 'Lightmap', 'Use Blender Lightmap Pack algorithm'),
-                 ('SmartProject', 'Smart Project', 'Use Blender Smart Project algorithm'),
-                 ('Copy', 'Copy existing', 'Use the existing UV channel')]
-
-    if "blender_xatlas" in bpy.context.preferences.addons.keys():
-        unwrap_modes.append(('Xatlas', 'Xatlas', 'Use Xatlas addon packing algorithm'))
+    unwrap_modes = _tlm_atlas_operator_unwrap_modes()
 
     unwrap : bpy.props.EnumProperty(
         items = unwrap_modes,

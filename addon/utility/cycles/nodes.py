@@ -79,7 +79,18 @@ def apply_materials(load_atlas=0):
                 if not hidden:
 
                     uv_layers = obj.data.uv_layers
-                    uv_layers.active_index = 0
+                    # Restore a sensible preview UV (paint channel), not blindly slot 0
+                    if uv_layers:
+                        preferred = None
+                        for i, layer in enumerate(uv_layers):
+                            if layer.name == "UVMap":
+                                preferred = i
+                                break
+                        uv_layers.active_index = preferred if preferred is not None else 0
+                        try:
+                            uv_layers[uv_layers.active_index].active_render = True
+                        except:
+                            pass
                     scene = bpy.context.scene
 
                     decoding = False

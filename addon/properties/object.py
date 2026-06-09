@@ -1,9 +1,20 @@
 import bpy
 from bpy.props import *
 
-class TLM_ObjectProperties(bpy.types.PropertyGroup):
+def _tlm_object_unwrap_modes():
+    modes = [('Lightmap', 'Lightmap', 'TODO'),
+             ('SmartProject', 'Smart Project', 'TODO'),
+             ('AtlasGroupA', 'Atlas Group (Prepack)', 'Attaches the object to a prepack Atlas group. Will overwrite UV map on build.'),
+             ('Copy', 'Copy existing', 'Use the existing UV channel')]
 
-    addon_keys = bpy.context.preferences.addons.keys()
+    if "blender_xatlas" in bpy.context.preferences.addons.keys():
+        modes.append(('Xatlas', 'Xatlas', 'Use the Blender Xatlas add-on'))
+
+    modes.append(('XatlasPython', 'Xatlas Python', 'Use the xatlas-python package'))
+
+    return modes
+
+class TLM_ObjectProperties(bpy.types.PropertyGroup):
 
     tlm_atlas_pointer : StringProperty(
             name = "Atlas Group",
@@ -49,18 +60,12 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
                 description="TODO", 
                 default='256')
 
-    unwrap_modes = [('Lightmap', 'Lightmap', 'TODO'),
-                ('SmartProject', 'Smart Project', 'TODO'),
-                ('AtlasGroupA', 'Atlas Group (Prepack)', 'Attaches the object to a prepack Atlas group. Will overwrite UV map on build.'),
-                 ('Copy', 'Copy existing', 'Use the existing UV channel')]
+    unwrap_modes = _tlm_object_unwrap_modes()
 
     tlm_postpack_object : BoolProperty( #CHECK INSTEAD OF ATLASGROUPB
         name="Postpack object", 
         description="Postpack object into an AtlasGroup", 
         default=False)
-
-    if "blender_xatlas" in addon_keys:
-        unwrap_modes.append(('Xatlas', 'Xatlas', 'TODO'))
 
     tlm_mesh_lightmap_unwrap_mode : EnumProperty(
         items = unwrap_modes,
@@ -70,7 +75,7 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
 
     tlm_mesh_unwrap_margin : FloatProperty(
         name="Unwrap Margin", 
-        default=0.1, 
+        default=0.02,
         min=0.0, 
         max=1.0, 
         subtype='FACTOR')
@@ -149,7 +154,7 @@ class TLM_ObjectProperties(bpy.types.PropertyGroup):
 
     tlm_use_default_channel : BoolProperty(
         name="Use default UV channel", 
-        description="Will either use or create the default UV Channel 'UVMap_Lightmap' upon build.", 
+        description="Keep painting UVs unchanged: use or create a separate layer named UVMap_Lightmap for baking. Turn off only to bake using another layer name (unwrap will edit that layer).",
         default=True)
 
     tlm_uv_channel : StringProperty(

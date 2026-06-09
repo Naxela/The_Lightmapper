@@ -2,6 +2,18 @@ import bpy, os
 from bpy.props import *
 from .. utility import utility
 
+def _tlm_scene_unwrap_modes():
+    modes = [('Lightmap', 'Lightmap', 'TODO'),
+             ('SmartProject', 'Smart Project', 'TODO'),
+             ('AtlasGroupA', 'Atlas Group (Prepack)', 'Attaches the object to a prepack Atlas group. Will overwrite UV map on build.')]
+
+    if "blender_xatlas" in bpy.context.preferences.addons.keys():
+        modes.append(('Xatlas', 'Xatlas', 'Use the Blender Xatlas add-on'))
+
+    modes.append(('XatlasPython', 'Xatlas Python', 'Use the xatlas-python package'))
+
+    return modes
+
 def transfer_load():
     load_folder = bpy.context.scene.TLM_SceneProperties.tlm_load_folder
     lightmap_folder = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
@@ -325,10 +337,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
                 default='256')
 
     tlm_mesh_lightmap_unwrap_mode : EnumProperty(
-        items = [('Lightmap', 'Lightmap', 'TODO'),
-                 ('SmartProject', 'Smart Project', 'TODO'),
-                 ('AtlasGroupA', 'Atlas Group (Prepack)', 'Attaches the object to a prepack Atlas group. Will overwrite UV map on build.'),
-                 ('Xatlas', 'Xatlas', 'TODO')],
+        items = _tlm_scene_unwrap_modes(),
                 name = "Unwrap Mode", 
                 description="TODO", 
                 default='SmartProject')
@@ -340,7 +349,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
 
     tlm_mesh_unwrap_margin : FloatProperty(
         name="Unwrap Margin", 
-        default=0.1, 
+        default=0.02,
         min=0.0, 
         max=1.0, 
         subtype='FACTOR')
@@ -592,10 +601,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         max=10)
 
     tlm_atlasgroup_division_unwrap_mode : EnumProperty(
-        items = [('Lightmap', 'Lightmap', 'TODO'),
-                 ('SmartProject', 'Smart Project', 'TODO'),
-                 ('AtlasGroupA', 'Atlas Group (Prepack)', 'Attaches the object to a prepack Atlas group. Will overwrite UV map on build.'),
-                 ('Xatlas', 'Xatlas', 'TODO')],
+        items = _tlm_scene_unwrap_modes(),
                 name = "Unwrap Mode", 
                 description="TODO", 
                 default='SmartProject')
@@ -616,7 +622,7 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
     
     tlm_atlasgroup_division_unwrap_margin : FloatProperty(
         name="Unwrap Margin", 
-        default=0.1, 
+        default=0.02,
         min=0.0, 
         max=1.0, 
         subtype='FACTOR')

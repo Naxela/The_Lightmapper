@@ -108,9 +108,12 @@ def configure_meshes(self):
                             bpy.ops.mesh.select_all(action='DESELECT')
                             bpy.ops.object.mode_set(mode='OBJECT')
                         
-                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Xatlas":
+                        elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode in ["Xatlas", "XatlasPython"]:
                             
-                            Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj)
+                            Unwrap_Lightmap_Group_Xatlas_2_headless_call(
+                                obj,
+                                obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "XatlasPython"
+                            )
 
                         elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
 
