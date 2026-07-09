@@ -2,9 +2,8 @@
 <br>
 Key features :
 
-Preview Mode Toggle
-Smart UV Channels (doesn't create second layer if you have it already)
-
+###Preview Mode Toggle
+###Smart UV Channels (doesn't create second layer if you have it already)
 
 ![](img/a.png)
 
