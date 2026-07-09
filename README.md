@@ -1,4 +1,4 @@
-# This Fork is updated version of the  [![Lightmapper]](https://github.com/Naxela/The_Lightmapper) for Blender 5.1+
+# This Fork is updated version of the  [Lightmapper](https://github.com/Naxela/The_Lightmapper) for Blender 5.1+
 <br>
 
 ## The Lightmapper
