@@ -734,7 +734,7 @@ def preprocess_material(obj, scene):
                 img_node = nodes.new('ShaderNodeTexImage')
                 img_node.name = 'Baked Image'
                 img_node.location = (100, 100)
-                img_node.image = img
+            img_node.image = img
             img_node.select = True
             nodes.active = img_node
 
@@ -748,6 +748,9 @@ def preprocess_material(obj, scene):
         image.file_format = "HDR"
         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
             print("Saving to: " + image.filepath_raw)
+        save_path = bpy.path.abspath(image.filepath_raw)
+        if os.path.exists(save_path):
+            os.remove(save_path)
         image.save()
 
     else:
@@ -793,7 +796,7 @@ def preprocess_material(obj, scene):
                 img_node = nodes.new('ShaderNodeTexImage')
                 img_node.name = 'Baked Image'
                 img_node.location = (100, 100)
-                img_node.image = img
+            img_node.image = img
             img_node.select = True
             nodes.active = img_node
 
@@ -807,6 +810,9 @@ def preprocess_material(obj, scene):
         image.file_format = "HDR"
         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
             print("Saving to: " + image.filepath_raw)
+        save_path = bpy.path.abspath(image.filepath_raw)
+        if os.path.exists(save_path):
+            os.remove(save_path)
         image.save()
 
 def set_settings():

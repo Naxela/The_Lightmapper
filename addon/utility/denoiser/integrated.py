@@ -27,15 +27,41 @@ class TLM_Integrated_Denoise:
                     bpy.context.scene.camera = obj
                     return
 
+    def _get_compositor_tree(self, scene):
+        if hasattr(scene, 'compositing_node_group'):
+            tree = scene.compositing_node_group
+            if tree is None:
+                tree = bpy.data.node_groups.new("TLM Compositor", 'CompositorNodeTree')
+                scene.compositing_node_group = tree
+            scene.render.use_compositing = True
+            return tree
+
+        if not scene.use_nodes:
+            scene.use_nodes = True
+        return scene.node_tree
+
+    def _create_output_node(self, tree):
+        if bpy.app.version >= (5, 0, 0):
+            has_output = False
+            for item in tree.interface.items_tree:
+                if item.item_type == 'SOCKET' and item.in_out == 'OUTPUT' and item.name == "Image":
+                    has_output = True
+                    break
+            if not has_output:
+                tree.interface.new_socket(name="Image", in_out="OUTPUT", socket_type="NodeSocketColor")
+            output_node = tree.nodes.new(type='NodeGroupOutput')
+            return output_node, output_node.inputs["Image"]
+
+        comp_node = tree.nodes.new('CompositorNodeComposite')
+        return comp_node, comp_node.inputs[0]
+
     def denoise(self):
 
-        if not bpy.context.scene.use_nodes:
-            bpy.context.scene.use_nodes = True
-
-        tree = bpy.context.scene.node_tree
+        scene = bpy.context.scene
+        tree = self._get_compositor_tree(scene)
         
         #Remove existing nodes (which comes by default in Blender 3.4/3.5?)
-        for node in tree.nodes:
+        for node in list(tree.nodes):
                 tree.nodes.remove(node)
 
         for image in self.image_array:
@@ -52,12 +78,12 @@ class TLM_Integrated_Denoise:
             denoise_node = tree.nodes.new(type='CompositorNodeDenoise')
             denoise_node.location = 300, 0
 
-            comp_node = tree.nodes.new('CompositorNodeComposite')
+            comp_node, comp_input = self._create_output_node(tree)
             comp_node.location = 600, 0
 
             links = tree.links
             links.new(image_node.outputs[0], denoise_node.inputs[0])
-            links.new(denoise_node.outputs[0], comp_node.inputs[0])
+            links.new(denoise_node.outputs[0], comp_input)
 
             # set output resolution to image res
             bpy.context.scene.render.resolution_x = img.size[0]

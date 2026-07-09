@@ -1072,7 +1072,14 @@ def manage_build(background_pass=False, load_atlas=0):
                     filename = extension = os.path.splitext(file)[0]
                     extension = os.path.splitext(file)[1]
 
-                    os.rename(os.path.join(dirpath, file), os.path.join(dirpath, filename + "_dir" + extension))
+                    dst = os.path.join(dirpath, filename + "_dir" + extension)
+                    src = os.path.join(dirpath, file)
+                    try:
+                        os.rename(src, dst)
+                    except FileExistsError:
+                        if os.path.exists(dst):
+                            os.remove(dst)
+                        os.rename(src, dst)
                 
                 print("First DIR pass complete")
 
@@ -1098,7 +1105,14 @@ def manage_build(background_pass=False, load_atlas=0):
                     extension = os.path.splitext(file)[1]
 
                     if not filename.endswith("_dir"):
-                        os.rename(os.path.join(dirpath, file), os.path.join(dirpath, filename + "_ao" + extension))
+                        dst = os.path.join(dirpath, filename + "_ao" + extension)
+                        src = os.path.join(dirpath, file)
+                        try:
+                            os.rename(src, dst)
+                        except FileExistsError:
+                            if os.path.exists(dst):
+                                os.remove(dst)
+                            os.rename(src, dst)
                 
                 print("Second AO pass complete")
 
@@ -1122,6 +1136,8 @@ def manage_build(background_pass=False, load_atlas=0):
 
                     nodes.applyAOPass()
 
+                    nodes.set_active_lightmap_uv_layers()
+
         else:
 
             total_time = sec_to_hours((time() - start_time))
@@ -1136,6 +1152,8 @@ def manage_build(background_pass=False, load_atlas=0):
             tlm_log.append("Lightmap building finished")
             tlm_log.append("--------------------------")
             print("Lightmap building finished")
+
+            nodes.set_active_lightmap_uv_layers()
 
             if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 

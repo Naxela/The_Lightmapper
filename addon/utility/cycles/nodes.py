@@ -127,6 +127,9 @@ def apply_materials(load_atlas=0):
                             node_tree = mat.node_tree
                             nodes = mat.node_tree.nodes
 
+                            if "Lightmap_Multiplication" in nodes:
+                                continue
+
                             foundBakedNode = False
 
                             #Find nodes
@@ -352,6 +355,24 @@ def apply_materials(load_atlas=0):
                                     moutput = mainNode.inputs[0].links[0].from_node
                                     mat.node_tree.links.remove(moutput.outputs[0].links[0])
 
+def set_active_lightmap_uv_layers():
+    for obj in bpy.context.scene.objects:
+        if obj.type != 'MESH' or obj.name not in bpy.context.view_layer.objects:
+            continue
+        if not obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+            continue
+
+        uv_layers = obj.data.uv_layers
+        if not obj.TLM_ObjectProperties.tlm_use_default_channel:
+            uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+        else:
+            uv_channel = "UVMap_Lightmap"
+
+        for i, layer in enumerate(uv_layers):
+            if layer.name == uv_channel:
+                uv_layers.active_index = i
+                break
+
 def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
 
     if not bpy.context.scene.TLM_EngineProperties.tlm_target == "vertex":
@@ -405,28 +426,52 @@ def exchangeLightmapsToPostfix(ext_postfix, new_postfix, formatHDR=".hdr"):
                                 nodes = mat.node_tree.nodes
 
                                 for node in nodes:
-                                    if node.name == "Baked Image" or node.name.startswith("TLM_Lightmap"):
+                                    if node.name == "Baked Image" or (node.name.startswith("TLM_Lightmap") and node.name != "TLM_Lightmap_Extra"):
 
                                         if node.image != None:
 
                                             print("Node: " + node.name + " in " + mat.name )
-                                            
-                                            img_name = node.image.filepath_raw
-                                            cutLen = len(ext_postfix + formatHDR)
-                                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                                print("Len:" + str(len(ext_postfix + formatHDR)) + "|" + ext_postfix + ".." + formatHDR)
 
-                                            #Simple way to sort out objects with multiple materials
-                                            if formatHDR == ".hdr" or formatHDR == ".exr":
-                                                if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
-                                                    print("Node1: " + node.image.filepath_raw + " => " + img_name[:-cutLen] + new_postfix + formatHDR)
-                                                    node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
+                                            dirpath = os.path.join(os.path.dirname(bpy.data.filepath), bpy.context.scene.TLM_EngineProperties.tlm_lightmap_savedir)
+
+                                            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA" and obj.TLM_ObjectProperties.tlm_atlas_pointer != "":
+                                                base = obj.TLM_ObjectProperties.tlm_atlas_pointer
+                                            elif obj.TLM_ObjectProperties.tlm_postpack_object and obj.TLM_ObjectProperties.tlm_postatlas_pointer:
+                                                base = obj.TLM_ObjectProperties.tlm_postatlas_pointer
                                             else:
-                                                cutLen = len(ext_postfix + ".hdr")
-                                                if not node.image.filepath_raw.endswith(new_postfix + formatHDR):
-                                                    if not node.image.filepath_raw.endswith("_XYZ.png"):
-                                                        print("Node2: " + node.image.filepath_raw + " => " + img_name[:-cutLen] + new_postfix + formatHDR)
-                                                        node.image.filepath_raw = img_name[:-cutLen] + new_postfix + formatHDR
+                                                base = obj.name
+
+                                            stem_prefix = base + new_postfix
+                                            best_file = stem_prefix + formatHDR
+                                            best_num = -1
+
+                                            if os.path.isdir(dirpath):
+                                                for fname in os.listdir(dirpath):
+                                                    if not fname.endswith(formatHDR):
+                                                        continue
+                                                    name_stem = fname[:-len(formatHDR)]
+                                                    for prefix in (stem_prefix, base):
+                                                        if name_stem == prefix:
+                                                            if 0 > best_num:
+                                                                best_file = fname
+                                                                best_num = 0
+                                                        elif name_stem.startswith(prefix + ".") and name_stem[len(prefix) + 1:].isdigit():
+                                                            num = int(name_stem[len(prefix) + 1:])
+                                                            if num > best_num:
+                                                                best_num = num
+                                                                best_file = fname
+
+                                            filepath = bpy.path.abspath(os.path.join(dirpath, best_file))
+                                            if not os.path.isfile(filepath):
+                                                baked_key = base + "_baked"
+                                                if baked_key in bpy.data.images and bpy.data.images[baked_key].filepath_raw:
+                                                    filepath = bpy.path.abspath(bpy.data.images[baked_key].filepath_raw)
+
+                                            print("Node1: " + node.name + " => " + filepath)
+                                            if os.path.isfile(filepath):
+                                                node.image = bpy.data.images.load(filepath, check_existing=True)
+                                                node.image.filepath_raw = filepath
+                                                node.image.reload()
 
                                 for node in nodes:
                                     if bpy.context.scene.TLM_SceneProperties.tlm_encoding_use and bpy.context.scene.TLM_SceneProperties.tlm_encoding_mode_b == "LogLuv": 
