@@ -1,6 +1,6 @@
 # This Fork is updated version of the  [Lightmapper](https://github.com/Naxela/The_Lightmapper) for Blender 5.1+
 <br>
-## Key features :
+##Key features :
 
 ###Preview Mode Toggle
 
