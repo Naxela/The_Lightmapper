@@ -1,4 +1,4 @@
-ℹ Note: I'm slowly making a new and improved version of the Lightmapper. It's currently located in the "Lightmapper-One" branch, but keep in mind, it's very early and WIP - Naxela.
+ℹ This Fork is updated version of the Lightmapper for Blender 5.1+
 <br>
 
 ## The Lightmapper
