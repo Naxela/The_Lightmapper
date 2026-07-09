@@ -1,4 +1,4 @@
-ℹ This Fork is updated version of the Lightmapper for Blender 5.1+
+# This Fork is updated version of the Lightmapper for Blender 5.1+
 <br>
 
 ## The Lightmapper
