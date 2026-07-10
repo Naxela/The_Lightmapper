@@ -1,8 +1,8 @@
 # This Fork is updated version of the  [Lightmapper](https://github.com/Naxela/The_Lightmapper) for Blender 5.1+
 
-## Key features :
-### Preview Mode Toggle
-### Smart UV Channels (doesn't create second layer if you have it already)
+### Key features :
+- Preview Mode Toggle
+- Smart UV Channels (doesn't create second layer if you have it already)
 
 ![](img/a.png)
 
