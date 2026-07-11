@@ -1,7 +1,8 @@
-ℹ Note: I'm slowly making a new and improved version of the Lightmapper. It's currently located in the "Lightmapper-One" branch, but keep in mind, it's very early and WIP - Naxela.
-<br>
+# This Fork is updated version of the  [Lightmapper](https://github.com/Naxela/The_Lightmapper) for Blender 5.1+
 
-## The Lightmapper
+### New Key features :
+- Preview Mode Toggle
+- Smart UV Channels (doesn't create second layer if you have it already)
 
 ![](img/a.png)
 

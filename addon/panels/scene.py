@@ -78,6 +78,8 @@ class TLM_PT_Settings(bpy.types.Panel):
             row = layout.row(align=True)
             row.operator("tlm.build_lightmaps")
             row = layout.row(align=True)
+            row.operator("tlm.toggle_lightmap_preview", depress=sceneProperties.tlm_lightmap_preview)
+            row = layout.row(align=True)
             row.operator("tlm.clean_lightmaps")
             row = layout.row(align=True)
             row.operator("tlm.explore_lightmaps")

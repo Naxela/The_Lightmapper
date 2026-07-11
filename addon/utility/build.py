@@ -1,7 +1,7 @@
 import bpy, os, subprocess, sys, platform, aud, json, datetime, socket
 
 from . import encoding, pack, log
-from . cycles import lightmap, prepare, nodes, cache
+from . cycles import lightmap, prepare, nodes, cache, preview
 from . luxcore import setup
 from . octane import configure, lightmap2
 from . denoiser import integrated, oidn, optix
@@ -810,88 +810,19 @@ def manage_build(background_pass=False, load_atlas=0):
                     print("Turn on verbose mode to get more detail.")
 
 
-        try:
-            nodes.apply_materials(load_atlas) #From here the name is changed...
+        if sceneProperties.tlm_headless:
+            pass
+        else:
+            try:
+                preview.finish_bake(background_pass=background_pass)
 
-        except Exception as e:
+            except Exception as e:
 
-            print("An error occured during material application. See the line below for more detail:")
-            print(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
+                print("An error occured during material application. See the line below for more detail:")
+                print(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
 
-            tlm_log.append("An error occured during material application. See the line below for more detail:")
-            tlm_log.append(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
-
-            if not bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                print("Turn on verbose mode to get more detail.")
-
-        end = "_baked"
-
-        if sceneProperties.tlm_denoise_use:
-
-            end = "_denoised"
-
-        if sceneProperties.tlm_filtering_use:
-
-            end = "_filtered"
-
-        formatEnc = ".hdr"
-        
-        if sceneProperties.tlm_encoding_use and scene.TLM_EngineProperties.tlm_bake_mode != "Background":
-
-            if sceneProperties.tlm_encoding_device == "CPU":
-
-                print("CPU Encoding")
-
-                if sceneProperties.tlm_encoding_mode_a == "HDR":
-
-                    if sceneProperties.tlm_format == "EXR":
-
-                        formatEnc = ".exr"
-
-                if sceneProperties.tlm_encoding_mode_a == "RGBM":
-
-                    formatEnc = "_encoded.png"
-
-                if sceneProperties.tlm_encoding_mode_a == "RGBD":
-
-                    formatEnc = "_encoded.png"
-
-                if sceneProperties.tlm_encoding_mode_a == "SDR":
-
-                    formatEnc = ".png"
-
-            else:
-
-                print("GPU Encoding")
-
-                if sceneProperties.tlm_encoding_mode_b == "HDR":
-
-                    if sceneProperties.tlm_format == "KTX":
-
-                        formatEnc = ".ktx2"
-
-                    if sceneProperties.tlm_format == "EXR":
-
-                        formatEnc = ".exr"
-
-                if sceneProperties.tlm_encoding_mode_b == "LogLuv":
-
-                    formatEnc = "_encoded.png"
-
-                if sceneProperties.tlm_encoding_mode_b == "RGBM":
-
-                    formatEnc = "_encoded.png"
-
-                if sceneProperties.tlm_encoding_mode_b == "RGBD":
-
-                    formatEnc = "_encoded.png"
-
-                if sceneProperties.tlm_encoding_mode_b == "SDR":
-
-                    formatEnc = ".png"
-
-        if not background_pass:
-            nodes.exchangeLightmapsToPostfix("_baked", end, formatEnc)
+                tlm_log.append("An error occured during material application. See the line below for more detail:")
+                tlm_log.append(f"{type(e).__name__} at line {e.__traceback__.tb_lineno} of {__file__}: {e}")
 
         if scene.TLM_EngineProperties.tlm_setting_supersample == "2x":
             supersampling_scale = 2
@@ -1072,7 +1003,14 @@ def manage_build(background_pass=False, load_atlas=0):
                     filename = extension = os.path.splitext(file)[0]
                     extension = os.path.splitext(file)[1]
 
-                    os.rename(os.path.join(dirpath, file), os.path.join(dirpath, filename + "_dir" + extension))
+                    dst = os.path.join(dirpath, filename + "_dir" + extension)
+                    src = os.path.join(dirpath, file)
+                    try:
+                        os.rename(src, dst)
+                    except FileExistsError:
+                        if os.path.exists(dst):
+                            os.remove(dst)
+                        os.rename(src, dst)
                 
                 print("First DIR pass complete")
 
@@ -1098,7 +1036,14 @@ def manage_build(background_pass=False, load_atlas=0):
                     extension = os.path.splitext(file)[1]
 
                     if not filename.endswith("_dir"):
-                        os.rename(os.path.join(dirpath, file), os.path.join(dirpath, filename + "_ao" + extension))
+                        dst = os.path.join(dirpath, filename + "_ao" + extension)
+                        src = os.path.join(dirpath, file)
+                        try:
+                            os.rename(src, dst)
+                        except FileExistsError:
+                            if os.path.exists(dst):
+                                os.remove(dst)
+                            os.rename(src, dst)
                 
                 print("Second AO pass complete")
 
@@ -1118,6 +1063,7 @@ def manage_build(background_pass=False, load_atlas=0):
 
                     #TODO CHANGE!
 
+                    end, formatEnc = nodes.get_lightmap_output_suffix(scene)
                     nodes.exchangeLightmapsToPostfix(end, end + "_dir", formatEnc)
 
                     nodes.applyAOPass()
@@ -1136,6 +1082,9 @@ def manage_build(background_pass=False, load_atlas=0):
             tlm_log.append("Lightmap building finished")
             tlm_log.append("--------------------------")
             print("Lightmap building finished")
+
+            if sceneProperties.tlm_lightmap_preview:
+                nodes.set_active_lightmap_uv_layers()
 
             if sceneProperties.tlm_lightmap_engine == "LuxCoreRender":
 
@@ -1336,7 +1285,23 @@ def sec_to_hours(seconds):
 
 def setMode():
 
-    obj = bpy.context.scene.objects[0]
+    obj = bpy.context.view_layer.objects.active
+
+    if obj is None or obj.name not in bpy.context.view_layer.objects:
+        obj = None
+        for candidate in bpy.context.view_layer.objects:
+            if candidate.type == 'MESH' and candidate.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                obj = candidate
+                break
+        if obj is None:
+            for candidate in bpy.context.view_layer.objects:
+                if candidate.type == 'MESH':
+                    obj = candidate
+                    break
+
+    if obj is None:
+        return
+
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
 

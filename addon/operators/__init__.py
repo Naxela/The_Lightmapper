@@ -4,6 +4,7 @@ from . import tlm, installopencv, imagetools
 
 classes = [
     tlm.TLM_BuildLightmaps,
+    tlm.TLM_ToggleLightmapPreview,
     tlm.TLM_CleanLightmaps,
     tlm.TLM_ExploreLightmaps,
     tlm.TLM_EnableSet,

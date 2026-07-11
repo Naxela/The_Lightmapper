@@ -3,6 +3,24 @@ import bpy, math, time
 from . import cache
 from .. utility import *
 
+def lightmap_uv_channel(obj):
+    props = obj.TLM_ObjectProperties
+    uv_layers = obj.data.uv_layers
+    if not props.tlm_use_default_channel and props.tlm_uv_channel:
+        return props.tlm_uv_channel
+    for layer in uv_layers:
+        if layer.name == "UVMap_Lightmap":
+            return "UVMap_Lightmap"
+    if len(uv_layers) >= 2:
+        return uv_layers[1].name
+    return "UVMap_Lightmap"
+
+def find_uv_layer_index(uv_layers, name):
+    for i, layer in enumerate(uv_layers):
+        if layer.name == name:
+            return i
+    return -1
+
 def assemble():
 
     configure_world()
@@ -46,6 +64,9 @@ def configure_meshes(self):
 
     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
         print("Configuring meshes: Material restore")
+    bpy.context.scene.TLM_SceneProperties.tlm_lightmap_preview = False
+    from . import nodes
+    nodes.set_active_texture_uv_layers()
     for obj in bpy.context.scene.objects:
         if obj.type == 'MESH' and obj.name in bpy.context.view_layer.objects:
             if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
@@ -203,23 +224,18 @@ def configure_meshes(self):
                 if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA" and not hidden:
 
                     uv_layers = obj.data.uv_layers
+                    uv_channel = lightmap_uv_channel(obj)
+                    layer_index = find_uv_layer_index(uv_layers, uv_channel)
 
-                    if not obj.TLM_ObjectProperties.tlm_use_default_channel:
-                        uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+                    if layer_index >= 0:
+                        uv_layers.active_index = layer_index
+                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                            print("Existing UV map found for object: " + obj.name)
                     else:
-                        uv_channel = "UVMap_Lightmap"
-
-                    if not uv_channel in uv_layers:
                         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                             print("UV map created for object: " + obj.name)
-                        uvmap = uv_layers.new(name=uv_channel)
+                        uv_layers.new(name=uv_channel)
                         uv_layers.active_index = len(uv_layers) - 1
-                    else:
-                        print("Existing UV map found for object: " + obj.name)
-                        for i in range(0, len(uv_layers)):
-                            if uv_layers[i].name == 'UVMap_Lightmap':
-                                uv_layers.active_index = i
-                                break
 
                     atlas_items.append(obj)
                     obj.select_set(True)
@@ -382,25 +398,27 @@ def configure_meshes(self):
 
                         print("Managing layer for Obj: " + obj.name)
 
+                        uv_channel = lightmap_uv_channel(obj)
                         uv_layers = obj.data.uv_layers
+                        unwrap_mode = obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode
+                        layer_index = find_uv_layer_index(uv_layers, uv_channel)
 
-                        if not obj.TLM_ObjectProperties.tlm_use_default_channel:
-                            uv_channel = obj.TLM_ObjectProperties.tlm_uv_channel
+                        if layer_index >= 0:
+                            uv_layers.active_index = layer_index
+                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
+                                print("Using existing UV map for obj: " + obj.name)
+                        elif unwrap_mode == "Copy":
+                            print(f"TLM: {obj.name}: lightmap UV '{uv_channel}' not found")
                         else:
-                            uv_channel = "UVMap_Lightmap"
-
-                        if not uv_channel in uv_layers:
                             if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                                 print("UV map created for obj: " + obj.name)
-                            uvmap = uv_layers.new(name=uv_channel)
+                            uv_layers.new(name=uv_channel)
                             uv_layers.active_index = len(uv_layers) - 1
 
-                            #If lightmap
-                            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Lightmap":
+                            if unwrap_mode == "Lightmap":
                                 bpy.ops.uv.lightmap_pack('EXEC_SCREEN', PREF_CONTEXT='ALL_FACES', PREF_MARGIN_DIV=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin)
                             
-                            #If smart project
-                            elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "SmartProject":
+                            elif unwrap_mode == "SmartProject":
 
                                 if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                                     print("Smart Project B")
@@ -408,7 +426,6 @@ def configure_meshes(self):
                                 obj.select_set(True)
                                 bpy.ops.object.mode_set(mode='EDIT')
                                 bpy.ops.mesh.select_all(action='SELECT')
-                                #API changes in 2.91 causes errors:
                                 if (2, 91, 0) > bpy.app.version:
                                     bpy.ops.uv.smart_project(angle_limit=45.0, island_margin=obj.TLM_ObjectProperties.tlm_mesh_unwrap_margin, user_area_weight=1.0, use_aspect=True, stretch_to_bounds=False)
                                 else:
@@ -418,19 +435,14 @@ def configure_meshes(self):
                                 bpy.ops.mesh.select_all(action='DESELECT')
                                 bpy.ops.object.mode_set(mode='OBJECT')
                             
-                            elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "Xatlas":
+                            elif unwrap_mode == "Xatlas":
                                 
                                 Unwrap_Lightmap_Group_Xatlas_2_headless_call(obj)
 
-                            elif obj.TLM_ObjectProperties.tlm_mesh_lightmap_unwrap_mode == "AtlasGroupA":
+                            elif unwrap_mode == "AtlasGroupA":
 
                                 if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                                     print("ATLAS GROUP: " + obj.TLM_ObjectProperties.tlm_atlas_pointer)
-                                
-                            else: #if copy existing
-
-                                if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                    print("Copied Existing UV Map for object: " + obj.name)
 
                         if obj.TLM_ObjectProperties.tlm_use_uv_packer:
                             bpy.ops.object.select_all(action='DESELECT')
@@ -446,17 +458,10 @@ def configure_meshes(self):
 
                             print("!!!!!!!!!!!!!!!!!!!!! Using UV Packer on: " + obj.name)
 
-                            if uv_layers.active == "UVMap_Lightmap":
-                                print("YES")
-                            else:
-                                print("NO")
-                                uv_layers.active_index = len(uv_layers) - 1
-
-                            if uv_layers.active == "UVMap_Lightmap":
-                                print("YES")
-                            else:
-                                print("NO")
-                                uv_layers.active_index = len(uv_layers) - 1
+                            if uv_layers.active.name != uv_channel:
+                                layer_index = find_uv_layer_index(uv_layers, uv_channel)
+                                if layer_index >= 0:
+                                    uv_layers.active_index = layer_index
 
                             bpy.ops.uvpackeroperator.packbtn()
 
@@ -469,16 +474,6 @@ def configure_meshes(self):
 
                             bpy.ops.mesh.select_all(action='DESELECT')
                             bpy.ops.object.mode_set(mode='OBJECT')
-
-                            #print(x)
-
-                        else:
-                            if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                                print("Existing UV map found for obj: " + obj.name)
-                            for i in range(0, len(uv_layers)):
-                                if uv_layers[i].name == uv_channel:
-                                    uv_layers.active_index = i
-                                    break
 
                     #print(x)
 
@@ -647,7 +642,7 @@ def preprocess_material(obj, scene):
     #We copy the existing material slots to an ordered array, which corresponds to the slot index
     matArray = []
     for slot in obj.material_slots:
-        matArray.append(slot.name)
+        matArray.append(slot.material.name if slot.material else "")
     
     obj["TLM_PrevMatArray"] = matArray
 
@@ -734,7 +729,7 @@ def preprocess_material(obj, scene):
                 img_node = nodes.new('ShaderNodeTexImage')
                 img_node.name = 'Baked Image'
                 img_node.location = (100, 100)
-                img_node.image = img
+            img_node.image = img
             img_node.select = True
             nodes.active = img_node
 
@@ -748,6 +743,9 @@ def preprocess_material(obj, scene):
         image.file_format = "HDR"
         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
             print("Saving to: " + image.filepath_raw)
+        save_path = bpy.path.abspath(image.filepath_raw)
+        if os.path.exists(save_path):
+            os.remove(save_path)
         image.save()
 
     else:
@@ -793,7 +791,7 @@ def preprocess_material(obj, scene):
                 img_node = nodes.new('ShaderNodeTexImage')
                 img_node.name = 'Baked Image'
                 img_node.location = (100, 100)
-                img_node.image = img
+            img_node.image = img
             img_node.select = True
             nodes.active = img_node
 
@@ -807,6 +805,9 @@ def preprocess_material(obj, scene):
         image.file_format = "HDR"
         if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
             print("Saving to: " + image.filepath_raw)
+        save_path = bpy.path.abspath(image.filepath_raw)
+        if os.path.exists(save_path):
+            os.remove(save_path)
         image.save()
 
 def set_settings():

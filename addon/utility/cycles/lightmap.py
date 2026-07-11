@@ -193,4 +193,7 @@ def bake(plus_pass=0):
                 image.file_format = "HDR"
                 if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
                     print("Saving to: " + image.filepath_raw)
+                save_path = bpy.path.abspath(image.filepath_raw)
+                if os.path.exists(save_path):
+                    os.remove(save_path)
                 image.save()

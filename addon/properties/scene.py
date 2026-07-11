@@ -350,6 +350,11 @@ class TLM_SceneProperties(bpy.types.PropertyGroup):
         description="Headless; Do not apply baked materials on finish.", 
         default=False)
 
+    tlm_lightmap_preview : BoolProperty(
+        name="Lightmap Preview",
+        description="Show baked lightmaps in the viewport (original materials preserved)",
+        default=False)
+
     tlm_atlas_mode : EnumProperty(
         items = [('Prepack', 'Pre-packing', 'Todo.'),
                  ('Postpack', 'Post-packing', 'Todo.')],

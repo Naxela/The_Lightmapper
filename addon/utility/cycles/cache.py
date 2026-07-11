@@ -1,12 +1,41 @@
 import bpy
 
-#Todo - Check if already exists, in case multiple objects has the same material
+PREVIEW_MAT_SUFFIX = '_LMPreview'
+
+def iter_lightmap_objects(context=None):
+    context = context or bpy.context
+    for obj in context.scene.objects:
+        if obj.type == 'MESH' and obj.name in context.view_layer.objects:
+            if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
+                yield obj
+
+def _original_backup_key(material_name):
+    return "." + material_name + "_Original"
+
+def preview_material_name(orig_name, obj_name):
+    return orig_name + '_' + obj_name + PREVIEW_MAT_SUFFIX
+
+def is_preview_material(mat):
+    return mat and mat.name.endswith(PREVIEW_MAT_SUFFIX)
 
 def backup_material_copy(slot):
     material = slot.material
+    key = _original_backup_key(material.name)
+    if key in bpy.data.materials:
+        return
     dup = material.copy()
-    dup.name = "." + material.name + "_Original"
+    dup.name = key
     dup.use_fake_user = True
+
+def _find_material_source(orig_name):
+    key = _original_backup_key(orig_name)
+    mat = bpy.data.materials.get(key)
+    if mat:
+        return mat
+    for candidate in bpy.data.materials:
+        if candidate.name.startswith(key + "."):
+            return candidate
+    return bpy.data.materials.get(orig_name)
 
 def backup_material_cache(slot, path):
     bpy.ops.wm.save_as_mainfile(filepath=path, copy=True)
@@ -15,110 +44,96 @@ def backup_material_cache_restore(slot, path):
     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
         print("Restore cache")
 
-# def backup_material_restore(obj): #??
-#     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-#         print("Restoring material for: " + obj.name)
+def restore_original_slots(obj):
+    if "TLM_PrevMatArray" not in obj:
+        return False
 
-#Check if object has TLM_PrevMatArray
-#   if yes
-#       - check if array.len is bigger than 0:
-#           if yes:
-#               for slot in object:
-#                   originalMaterial = TLM_PrevMatArray[index]
-#
-#
-#           if no:
-#               - In which cases are these?
+    prevMatArray = obj["TLM_PrevMatArray"]
+    if len(prevMatArray) < 1:
+        return False
 
-#   if no:
-#    - In which cases are there not?
-#    - If a lightmapped material was applied to a non-lightmap object?
+    restored = False
+    for idx, slot in enumerate(obj.material_slots):
+        try:
+            originalMaterial = prevMatArray[idx]
+        except IndexError:
+            continue
 
+        if not originalMaterial or slot.material is None:
+            continue
 
-                # if bpy.data.materials[originalMaterial].users > 0: #TODO - Check if all lightmapped
+        backup_key = _original_backup_key(originalMaterial)
+        if originalMaterial in bpy.data.materials:
+            slot.material = bpy.data.materials[originalMaterial]
+            restored = True
+        elif backup_key in bpy.data.materials:
+            slot.material = bpy.data.materials[backup_key]
+            slot.material.use_fake_user = False
+            restored = True
 
-                #     print("Material has multiple users")
-                
-                #     if originalMaterial in bpy.data.materials:
-                #         slot.material = bpy.data.materials[originalMaterial]
-                #         slot.material.use_fake_user = False
-                #     elif "." + originalMaterial + "_Original" in bpy.data.materials:
-                #         slot.material = bpy.data.materials["." + originalMaterial + "_Original"]
-                #         slot.material.use_fake_user = False
-                
-                # else:
+    return restored
 
-                #     print("Material has one user")
-
-                #     if "." + originalMaterial + "_Original" in bpy.data.materials:
-                #         slot.material = bpy.data.materials["." + originalMaterial + "_Original"]
-                #         slot.material.use_fake_user = False
-                #     elif originalMaterial in bpy.data.materials:
-                #         slot.material = bpy.data.materials[originalMaterial]
-                #         slot.material.use_fake_user = False
-
-def backup_material_restore(obj): #??
+def backup_material_restore(obj):
     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
         print("Restoring material for: " + obj.name)
+    return restore_original_slots(obj)
 
-    if "TLM_PrevMatArray" in obj:
+def use_preview_slots(obj):
+    if "TLM_PrevMatArray" not in obj:
+        return False
 
-        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-            print("Material restore array found: " + str(obj["TLM_PrevMatArray"]))
-        #Running through the slots
-        prevMatArray = obj["TLM_PrevMatArray"]
-        slotsLength = len(prevMatArray)
+    preview_names = []
+    for idx, slot in enumerate(obj.material_slots):
+        try:
+            orig_name = obj["TLM_PrevMatArray"][idx]
+        except IndexError:
+            preview_names.append("")
+            continue
 
-        if len(prevMatArray) > 0:
-            for idx, slot in enumerate(obj.material_slots): #For each slot, we get the index
-                #We only need the index, corresponds to the array index
-                try:
-                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                        print("Attempting to set material")
-                    originalMaterial = prevMatArray[idx]
-                except IndexError:
-                    if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                        print("Material restore failed - Resetting")
-                    originalMaterial = ""
+        if not orig_name:
+            preview_names.append("")
+            continue
 
-                if slot.material is not None:
-                    #if slot.material.users < 2:
-                    #slot.material.user_clear() #Seems to be bad; See: https://developer.blender.org/T49837
-                    #bpy.data.materials.remove(slot.material)
+        source = _find_material_source(orig_name)
+        if not source:
+            preview_names.append("")
+            continue
 
-                    if "." + originalMaterial + "_Original" in bpy.data.materials:
-                        slot.material = bpy.data.materials["." + originalMaterial + "_Original"]
-                        slot.material.use_fake_user = False
+        preview_mat = source.copy()
+        preview_mat.name = preview_material_name(orig_name, obj.name)
+        preview_names.append(preview_mat.name)
+        slot.material = preview_mat
 
-        else:
+    obj["TLM_PreviewMatArray"] = preview_names
+    return any(preview_names)
 
-            print("No previous material for " + obj.name)
+def assign_preview_slots(obj):
+    if "TLM_PreviewMatArray" not in obj:
+        return False
 
-    else:
+    assigned = False
+    for idx, slot in enumerate(obj.material_slots):
+        try:
+            preview_name = obj["TLM_PreviewMatArray"][idx]
+        except IndexError:
+            continue
 
-        print("No previous material for " + obj.name)
+        if preview_name and preview_name in bpy.data.materials:
+            slot.material = bpy.data.materials[preview_name]
+            assigned = True
 
-def backup_material_rename(obj): #??
+    return assigned
+
+def backup_material_rename(obj):
     if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
         print("Renaming material for: " + obj.name)
 
-
-    if "TLM_PrevMatArray" in obj:
-
-        for slot in obj.material_slots:
-
-            if slot.material is not None:
-                if slot.material.name.endswith("_Original"):
-                    newname = slot.material.name[1:-9]
-                    if newname in bpy.data.materials:
-                        if bpy.context.scene.TLM_SceneProperties.tlm_verbose:
-                            print("Removing material: " + bpy.data.materials[newname].name)
-                        #if bpy.data.materials[newname].users < 2:
-                            #bpy.data.materials.remove(bpy.data.materials[newname]) #TODO - Maybe remove this
-                    slot.material.name = newname
-
-        del obj["TLM_PrevMatArray"]
-
-    else:
-
+    if "TLM_PrevMatArray" not in obj:
         print("No Previous material array for: " + obj.name)
+        return
+
+    for slot in obj.material_slots:
+        if slot.material is not None and slot.material.name.endswith("_Original"):
+            slot.material.name = slot.material.name[1:-9]
+
+    del obj["TLM_PrevMatArray"]

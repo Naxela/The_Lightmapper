@@ -63,6 +63,20 @@ class TLM_BuildLightmaps(bpy.types.Operator):
     def draw_callback_px(self, context, event):
         pass
 
+class TLM_ToggleLightmapPreview(bpy.types.Operator):
+    bl_idname = "tlm.toggle_lightmap_preview"
+    bl_label = "Preview Lightmaps"
+    bl_description = "Toggle baked lightmap preview on/off (restores original materials when off)"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        from ..utility.cycles import preview
+        ok, message = preview.toggle(context)
+        if not ok:
+            self.report({'WARNING'}, message)
+            return {'CANCELLED'}
+        return {'FINISHED'}
+
 class TLM_CleanLightmaps(bpy.types.Operator):
     bl_idname = "tlm.clean_lightmaps"
     bl_label = "Clean Lightmaps"
@@ -72,6 +86,7 @@ class TLM_CleanLightmaps(bpy.types.Operator):
     def execute(self, context):
 
         scene = context.scene
+        scene.TLM_SceneProperties.tlm_lightmap_preview = False
 
         filepath = bpy.data.filepath
         dirpath = os.path.join(os.path.dirname(bpy.data.filepath), scene.TLM_EngineProperties.tlm_lightmap_savedir)
@@ -231,7 +246,7 @@ class TLM_EnableSet(bpy.types.Operator):
 
         if bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Scene":
             for obj in bpy.context.scene.objects:
-                if obj.type == "MESH":
+                if obj.type == "MESH" and obj.name in bpy.context.view_layer.objects:
 
                     print("Enabling for scene: " + obj.name)
                     
@@ -274,7 +289,7 @@ class TLM_EnableSet(bpy.types.Operator):
         
         elif bpy.context.scene.TLM_SceneProperties.tlm_utility_set == "Selection":
             for obj in bpy.context.selected_objects:
-                if obj.type == "MESH":
+                if obj.type == "MESH" and obj.name in bpy.context.view_layer.objects:
                     
                     print("Enabling for selection: " + obj.name)
                     
@@ -317,7 +332,7 @@ class TLM_EnableSet(bpy.types.Operator):
         
         else: #Enabled
             for obj in bpy.context.scene.objects:
-                if obj.type == "MESH":
+                if obj.type == "MESH" and obj.name in bpy.context.view_layer.objects:
                     if obj.TLM_ObjectProperties.tlm_mesh_lightmap_use:
 
                         print("Enabling for designated: " + obj.name)
